@@ -15,11 +15,17 @@ export RSYNC_RSH="sshpass -p $ALIYUN_DC_PASS ssh $SSH_BASE"
 REMOTE=/opt/research_view
 
 echo "[premarket] 1/4 台北拉隔夜美股 $DATE ..."
-./.venv-taipei/bin/python scripts/fetch_us_overnight.py "$DATE"
+if ! ./.venv-taipei/bin/python scripts/fetch_us_overnight.py "$DATE"; then
+  echo "[premarket] ⚠ 隔夜美股拉取失败(Yahoo 抖动?),降级:盘前仅出国内部分"
+fi
 
 echo "[premarket] 2/4 推隔夜美股文件到阿里云 ..."
-rsync -az "exports/us_overnight_${DATE}.json" \
-  "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/" 2>&1 | grep -v "Warning: Permanently" || true
+if [ -f "exports/us_overnight_${DATE}.json" ]; then
+  rsync -az "exports/us_overnight_${DATE}.json" \
+    "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/" 2>&1 | grep -v "Warning: Permanently" || true
+else
+  echo "[premarket] 无美股文件,跳过推送(persist_premarket 会自动降级)"
+fi
 
 echo "[premarket] 3/4 阿里云合成盘前报告 ..."
 $SSH "cd $REMOTE && ./.venv/bin/python -c \"import sys;sys.path.insert(0,'src');from research_view import report;print('premarket:',report.persist_premarket('$DATE'))\"" 2>&1 | grep -v "Warning: Permanently"

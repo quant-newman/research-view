@@ -19,10 +19,17 @@ from research_view.funnel import run_funnel  # noqa: E402
 from research_view.structure import run_structure  # noqa: E402
 
 
-def step(name, fn):
-    with monitor.task_run(name) as t:
-        t["result"] = fn()
-    print(f"  {name}: {t['result']}")
+def step(name, fn) -> bool:
+    """跑一步:计时+落 task_log。失败只记录+打印,不抛出——保证后续步骤(尤其
+    export_dashboard 兜底导出)照常跑,前端拿到"现有数据+失败告警"而非冻结。返回是否成功。"""
+    try:
+        with monitor.task_run(name) as t:
+            t["result"] = fn()
+        print(f"  {name}: {t['result']}")
+        return True
+    except Exception as e:  # noqa: BLE001 单步失败不阻断整条管道
+        print(f"  {name}: ✗失败 {str(e)[:140]}(已记 task_log,继续)")
+        return False
 
 
 def main() -> None:
@@ -39,13 +46,22 @@ def main() -> None:
     step("report_afterhours", lambda: {"report_id": report.persist_afterhours(date)})
 
     # 数据质量校验
-    with db.rv_conn() as conn, conn.cursor() as cur:
-        cur.execute("SELECT ts_code FROM stock WHERE ts_code IS NOT NULL")
-        pool_ts = [r[0] for r in cur.fetchall()]
-    step("sanity_checks", lambda: monitor.sanity_checks(pool_ts))
+    try:
+        with db.rv_conn() as conn, conn.cursor() as cur:
+            cur.execute("SELECT ts_code FROM stock WHERE ts_code IS NOT NULL")
+            pool_ts = [r[0] for r in cur.fetchall()]
+    except Exception as e:  # noqa: BLE001 取池失败不阻断导出
+        print(f"  pool_ts 取失败,跳过校验: {str(e)[:80]}")
+        pool_ts = []
+    if pool_ts:
+        step("sanity_checks", lambda: monitor.sanity_checks(pool_ts))
 
+    # 兜底导出:无论上面哪步失败,都刷新 dashboard(前端至少拿到现有数据+失败角标)
     step("export_dashboard", lambda: str(export.build_dashboard(date)))
-    print(f"  health level: {monitor.health()['level']}")
+    try:
+        print(f"  health level: {monitor.health()['level']}")
+    except Exception as e:  # noqa: BLE001
+        print(f"  health 汇总失败: {str(e)[:80]}")
 
 
 if __name__ == "__main__":
