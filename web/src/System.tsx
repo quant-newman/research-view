@@ -55,9 +55,13 @@ export default function SystemView({ h }: { h: Health | undefined }) {
           {h.sources.map((s, i) => (
             <div key={i} className="flex items-center justify-between">
               <span className="text-muted">{s.name}</span>
-              <span className={s.stale ? "text-accent" : "text-dim"}>
-                {s.stale ? "⚠ " : ""}{s.latest}
-              </span>
+              {s.pending ? (
+                <span className="text-dim">◌ {s.latest}<span className="text-[10px] ml-1">待接入</span></span>
+              ) : (
+                <span className={s.stale ? "text-accent" : "text-dim"}>
+                  {s.stale ? "⚠ " : ""}{s.latest}
+                </span>
+              )}
             </div>
           ))}
         </div>

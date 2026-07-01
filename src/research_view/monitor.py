@@ -77,23 +77,32 @@ def health() -> dict:
     """各源新鲜度 + 今日任务成功率 + 数据存疑数,给前端角标/状态页。"""
     out: dict = {"sources": [], "tasks": [], "flags": [], "level": "green"}
     with db.marketdata_conn() as mc, mc.cursor() as cur:
+        # 基准 = 交易日历上"最近的开市日"。行情类表本应更新到此日,落后即滞后(能抓到"上游停更")。
+        cur.execute("SELECT max(cal_date) FROM md.trade_calendar WHERE is_open AND cal_date<=current_date")
+        ltd = cur.fetchone()[0]
         for tbl, col in [("bar_daily_raw", "trade_date"), ("daily_basic", "trade_date"),
                          ("moneyflow", "trade_date"), ("top_list", "trade_date")]:
             cur.execute(f"SELECT max({col}) FROM md.{tbl}")
             mx = cur.fetchone()[0]
-            stale = mx is None
+            stale = mx is None or (ltd is not None and mx < ltd)
             out["sources"].append({"name": f"marketdata.{tbl}", "latest": str(mx), "stale": stale})
 
     with db.rv_conn() as conn, conn.cursor() as cur:
-        # research_view 侧新鲜度
+        # research_view 侧新鲜度(用我方落库/生成时点判"今天有没有跑")
         for label, q in [("raw_news", "SELECT max(pub_time)::date FROM raw_news"),
                          ("stock_event", "SELECT max(created_at)::date FROM stock_event"),
+                         ("research_report", "SELECT max(created_at)::date FROM research_report"),
                          ("daily_report", "SELECT max(generated_at)::date FROM daily_report"),
                          ("heatmap", "SELECT max(updated_at)::date FROM heatmap_node")]:
             cur.execute(q)
             mx = cur.fetchone()[0]
             out["sources"].append({"name": label, "latest": str(mx),
                                    "stale": mx is None or str(mx) != _today(cur)})
+        # 基金信函:采集器未接入,标 pending(计入展示但不拉红黄,避免已知待办长期告警)
+        cur.execute("SELECT count(*) FROM fund_letter")
+        fl = cur.fetchone()[0]
+        out["sources"].append({"name": "fund_letter", "latest": f"{fl}条" if fl else "未接入",
+                               "stale": fl == 0, "pending": True})
         # 今日任务成功率
         cur.execute("""SELECT task, status, records_count, duration_ms, ts_utc8
             FROM task_log WHERE ts_utc8::date=current_date ORDER BY ts_utc8 DESC""")
@@ -105,7 +114,7 @@ def health() -> dict:
         out["flags"] = [{"kind": k, "count": c} for k, c in cur.fetchall()]
 
     any_fail = any(t["status"] == "失败" for t in out["tasks"])
-    any_stale = any(s["stale"] for s in out["sources"])
+    any_stale = any(s["stale"] for s in out["sources"] if not s.get("pending"))
     out["level"] = "red" if any_fail else "yellow" if (any_stale or out["flags"]) else "green"
     return out
 

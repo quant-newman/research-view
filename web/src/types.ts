@@ -37,7 +37,7 @@ export interface HeatStock {
 }
 export interface Heatmap { nodes: HeatNode[]; stocks: HeatStock[]; }
 
-export interface HealthSource { name: string; latest: string; stale: boolean; }
+export interface HealthSource { name: string; latest: string; stale: boolean; pending?: boolean; }
 export interface HealthTask { task: string; status: string; count: number | null; duration_ms: number | null; ts: string; }
 export interface HealthFlag { kind: string; count: number; }
 export interface Health {

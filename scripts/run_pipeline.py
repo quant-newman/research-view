@@ -13,7 +13,7 @@ from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-from research_view import config, db, export, monitor, universe  # noqa: E402
+from research_view import config, db, export, monitor, report, universe  # noqa: E402
 from research_view.collect import announcements, heatmap, news, research  # noqa: E402
 from research_view.funnel import run_funnel  # noqa: E402
 from research_view.structure import run_structure  # noqa: E402
@@ -35,6 +35,8 @@ def main() -> None:
     step("stock_events", announcements.collect_events)
     step("heatmap", heatmap.compute)
     step("research", lambda: research.collect_reports(30))
+    # 每日报告(心脏 B3):需在上面各源采集后、导出前生成,dashboard 才拿得到当日报告
+    step("report_afterhours", lambda: {"report_id": report.persist_afterhours(date)})
 
     # 数据质量校验
     with db.rv_conn() as conn, conn.cursor() as cur:
