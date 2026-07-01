@@ -18,7 +18,7 @@ function timeShort(t?: string) {
 function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button onClick={onClick}
-      className={`px-2 py-0.5 rounded text-[11px] border ${on ? "border-accent text-accent bg-accent/10" : "border-hairline text-muted hover:text-primary"}`}>
+      className={`px-2 py-0.5 rounded text-[12px] border ${on ? "border-accent text-accent bg-accent/10" : "border-hairline text-muted hover:text-primary"}`}>
       {children}
     </button>
   );
@@ -29,10 +29,10 @@ function NewsRow({ n }: { n: Flat }) {
   return (
     <div className={`border rounded px-3 py-2 ${mine ? "border-accent/40 bg-accent/5" : "hairline bg-surface"}`}>
       <div className="flex items-start gap-2">
-        <span className={`px-1.5 py-0.5 rounded text-[11px] shrink-0 ${sentColor[n.sentiment] || "text-muted"}`}>{n.sentiment}</span>
+        <span className={`px-1.5 py-0.5 rounded text-[12px] shrink-0 ${sentColor[n.sentiment] || "text-muted"}`}>{n.sentiment}</span>
         <div className="flex-1 min-w-0">
-          <p className="text-primary text-[13px] leading-snug">{n.one_line || n.title}</p>
-          <div className="flex flex-wrap items-center gap-2 mt-1 text-[11px] text-dim">
+          <p className="text-primary text-[14px] leading-snug">{n.one_line || n.title}</p>
+          <div className="flex flex-wrap items-center gap-2 mt-1 text-[12px] text-dim">
             <span className="text-muted">{n.chain}/{n.node}</span>
             {n.codes?.slice(0, 4).map((c) => <span key={c} className="mono text-muted">{c}</span>)}
             {n.holding && <span className="text-accent">持仓</span>}
@@ -87,7 +87,7 @@ export function NewsView({ nodes }: { nodes: NewsNode[] }) {
   return (
     <div className="space-y-3">
       {/* 过滤条 */}
-      <div className="flex flex-wrap items-center gap-3 text-[12px]">
+      <div className="flex flex-wrap items-center gap-3 text-[13px]">
         <div className="flex items-center gap-1">
           {SENTS.map((s) => <Chip key={s} on={sent.has(s)} onClick={() => toggleSent(s)}>{s}</Chip>)}
         </div>
@@ -106,7 +106,7 @@ export function NewsView({ nodes }: { nodes: NewsNode[] }) {
       </div>
 
       {mineCount === 0 && (
-        <div className="text-dim text-[11px]">未设持仓/自选 — 设置后你的票有新闻会高亮置顶。</div>
+        <div className="text-dim text-[12px]">未设持仓/自选 — 设置后你的票有新闻会高亮置顶。</div>
       )}
 
       {/* 内容 */}
@@ -123,10 +123,10 @@ export function NewsView({ nodes }: { nodes: NewsNode[] }) {
             if (!items.length) return null;
             return (
               <div key={g.node_id}>
-                <div className="flex items-center gap-2 mb-1.5 text-[12px]">
+                <div className="flex items-center gap-2 mb-1.5 text-[13px]">
                   <span className="w-0.5 h-3.5 bg-accent" />
                   <span className="text-primary font-semibold">{g.chain}/{g.node}</span>
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] ${g.scope === "泛科技" ? "text-muted bg-muted/10" : "text-accent bg-accent/10"}`}>{g.scope || "核心链"}</span>
+                  <span className={`px-1.5 py-0.5 rounded text-[11px] ${g.scope === "泛科技" ? "text-muted bg-muted/10" : "text-accent bg-accent/10"}`}>{g.scope || "核心链"}</span>
                   <span className="text-dim">({items.length})</span>
                 </div>
                 <div className="space-y-1.5">

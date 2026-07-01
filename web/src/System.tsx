@@ -5,7 +5,7 @@ const LEVEL_TEXT: Record<string, string> = { green: "全部正常", yellow: "有
 
 export function HealthDot({ level, onClick }: { level: string; onClick: () => void }) {
   return (
-    <button onClick={onClick} className="flex items-center gap-1.5 text-[11px] hover:opacity-80" title="系统状态">
+    <button onClick={onClick} className="flex items-center gap-1.5 text-[12px] hover:opacity-80" title="系统状态">
       <span className="w-2 h-2 rounded-full inline-block" style={{ background: LEVEL_COLOR[level] || "#5A6474" }} />
       <span className="text-dim">系统 {LEVEL_TEXT[level] || "—"}</span>
     </button>
@@ -15,7 +15,7 @@ export function HealthDot({ level, onClick }: { level: string; onClick: () => vo
 function Sec({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="border hairline rounded bg-surface">
-      <div className="px-3 py-2 border-b hairline text-[11px] text-muted uppercase tracking-wide">{title}</div>
+      <div className="px-3 py-2 border-b hairline text-[12px] text-muted uppercase tracking-wide">{title}</div>
       <div className="p-3">{children}</div>
     </div>
   );
@@ -31,7 +31,7 @@ export default function SystemView({ h }: { h: Health | undefined }) {
       </div>
 
       <Sec title="今日采集/生成任务">
-        <table className="w-full text-[12px] mono">
+        <table className="w-full text-[13px] mono">
           <thead><tr className="text-muted text-left">
             <th className="py-1 font-normal">任务</th><th className="font-normal">状态</th>
             <th className="font-normal text-right">记录</th><th className="font-normal text-right">耗时</th>
@@ -51,12 +51,12 @@ export default function SystemView({ h }: { h: Health | undefined }) {
       </Sec>
 
       <Sec title="数据源新鲜度">
-        <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-[12px] mono">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-[13px] mono">
           {h.sources.map((s, i) => (
             <div key={i} className="flex items-center justify-between">
               <span className="text-muted">{s.name}</span>
               {s.pending ? (
-                <span className="text-dim">◌ {s.latest}<span className="text-[10px] ml-1">{s.latest === "未接入" ? "待接入" : "低频·不计告警"}</span></span>
+                <span className="text-dim">◌ {s.latest}<span className="text-[11px] ml-1">{s.latest === "未接入" ? "待接入" : "低频·不计告警"}</span></span>
               ) : (
                 <span className={s.stale ? "text-accent" : "text-dim"}>
                   {s.stale ? "⚠ " : ""}{s.latest}
@@ -69,8 +69,8 @@ export default function SystemView({ h }: { h: Health | undefined }) {
 
       <Sec title="数据质量存疑(标记而非丢弃)">
         {h.flags.length === 0
-          ? <div className="text-dim text-[12px]">今日无存疑数据</div>
-          : <div className="flex gap-3 text-[12px]">
+          ? <div className="text-dim text-[13px]">今日无存疑数据</div>
+          : <div className="flex gap-3 text-[13px]">
               {h.flags.map((f, i) => (
                 <span key={i} className="text-accent">{f.kind} <span className="mono">{f.count}</span></span>
               ))}

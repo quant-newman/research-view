@@ -86,7 +86,7 @@ function NodeTable({ nodes }: { nodes: HeatNode[] }) {
   const pctCls = (v: any) => (typeof v === "number" ? (v > 0 ? "text-up" : v < 0 ? "text-down" : "text-muted") : "");
   return (
     <div className="overflow-auto">
-      <table className="w-full text-[12px] mono">
+      <table className="w-full text-[13px] mono">
         <thead className="sticky top-0 bg-surface">
           <tr className="text-muted text-left">
             {cols.map(([k, label]) => (
@@ -111,7 +111,7 @@ function NodeTable({ nodes }: { nodes: HeatNode[] }) {
               <td className="px-2 py-1.5 text-right text-muted">{num(n.pe)}</td>
               <td className="px-2 py-1.5 text-right text-muted">{num(n.ps)}</td>
               <td className="px-2 py-1.5">
-                <span className="px-1.5 py-0.5 rounded text-[11px]"
+                <span className="px-1.5 py-0.5 rounded text-[12px]"
                       style={{ color: QUAD_COLOR[n.quadrant], background: `${QUAD_COLOR[n.quadrant]}1a` }}>
                   {n.quadrant}
                 </span>
@@ -132,8 +132,8 @@ export default function HeatmapView({ h }: { h: Heatmap | undefined }) {
     <div className="space-y-4">
       <div className="border hairline rounded bg-surface">
         <div className="flex items-center justify-between px-3 py-2 border-b hairline">
-          <span className="text-[11px] text-muted uppercase tracking-wide">四象限 · 叙事强度 × 财报兑现(气泡=市值)</span>
-          <div className="flex gap-3 text-[11px]">
+          <span className="text-[12px] text-muted uppercase tracking-wide">四象限 · 叙事强度 × 财报兑现(气泡=市值)</span>
+          <div className="flex gap-3 text-[12px]">
             {legend.map(([q, d]) => (
               <span key={q} className="flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full inline-block" style={{ background: QUAD_COLOR[q] }} />
@@ -145,7 +145,7 @@ export default function HeatmapView({ h }: { h: Heatmap | undefined }) {
         <div className="p-2"><Scatter nodes={h.nodes} /></div>
       </div>
       <div className="border hairline rounded bg-surface">
-        <div className="px-3 py-2 border-b hairline text-[11px] text-muted uppercase tracking-wide">
+        <div className="px-3 py-2 border-b hairline text-[12px] text-muted uppercase tracking-wide">
           节点监控表 · {h.nodes.length} 节点(点表头排序)
         </div>
         <NodeTable nodes={h.nodes} />
