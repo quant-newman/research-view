@@ -6,13 +6,33 @@
 from __future__ import annotations
 
 import json
+import math
 from datetime import datetime
+from decimal import Decimal
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from . import config, db
 
 EXPORT_DIR = config.ROOT / "exports"
+
+
+def _scrub(o):
+    """递归把 NaN/Inf(float 或 Decimal('NaN'))转成 None,否则 json.dumps 会吐非法 NaN token
+    致前端 JSON.parse 崩溃。其余原样返回(Decimal/date 交给 json 的 default=str)。"""
+    if isinstance(o, float):
+        return None if (math.isnan(o) or math.isinf(o)) else o
+    if isinstance(o, Decimal):
+        return None if not o.is_finite() else float(o)
+    if isinstance(o, dict):
+        return {k: _scrub(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple)):
+        return [_scrub(v) for v in o]
+    return o
+
+
+def _dump(obj) -> str:
+    return json.dumps(_scrub(obj), ensure_ascii=False, indent=2, default=str)
 
 
 def _limit_threshold(ts_code: str) -> float:
@@ -112,7 +132,7 @@ def build_export(date_utc8: str) -> Path:
     }
     EXPORT_DIR.mkdir(exist_ok=True)
     path = EXPORT_DIR / f"events_{date_utc8}.json"
-    path.write_text(json.dumps(out, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
+    path.write_text(_dump(out), encoding="utf-8")
     return path
 
 
@@ -209,5 +229,5 @@ def build_dashboard(date_utc8: str) -> Path:
             "news_by_node": ev["news_by_node"], "stock_events": ev["stock_events"],
             "heatmap": heatmap, "health": health, "research": research, "ledger": ledger}
     path = EXPORT_DIR / "dashboard.json"
-    path.write_text(json.dumps(dash, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
+    path.write_text(_dump(dash), encoding="utf-8")
     return path
