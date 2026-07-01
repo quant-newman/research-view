@@ -66,7 +66,7 @@ def _heatmap(stocks: list[dict]) -> dict:
             "等待验证" if y >= my else "风险区")
     hs = [{"code": s["ticker"], "name": s["name"], "total_mv": s["market_cap"], "pe": s["pe"], "ps": None,
            "ret_1m": None, "ret_6m": s["ret_6m"], "or_yoy": s["rev_growth"],
-           "gross_margin": s["gross_margin"], "pe_pct": None} for s in stocks]
+           "gross_margin": s["gross_margin"], "pe_pct": None, "node_ids": [s["sector"]]} for s in stocks]
     return {"nodes": nodes, "stocks": hs}
 
 

@@ -171,11 +171,15 @@ def build_dashboard(date_utc8: str) -> Path:
                "total_mv": fnum(r[4]), "ret_1m": fnum(r[5]), "ret_6m": fnum(r[6]),
                "or_yoy": fnum(r[7]), "gross_margin": fnum(r[8]), "pe": fnum(r[9]),
                "ps": fnum(r[10]), "quadrant": r[11]} for r in cur.fetchall()]
+        # 个股→节点映射(供前端点气泡看成分股)
+        cur.execute("SELECT code, array_agg(node_id) FROM stock_node GROUP BY code")
+        code_nodes = dict(cur.fetchall())
         cur.execute("""SELECT code,name,total_mv,pe,ps,ret_1m,ret_6m,or_yoy,gross_margin,pe_pct
             FROM heatmap_stock ORDER BY total_mv DESC NULLS LAST""")
         hs = [{"code": r[0], "name": r[1], "total_mv": fnum(r[2]), "pe": fnum(r[3]),
                "ps": fnum(r[4]), "ret_1m": fnum(r[5]), "ret_6m": fnum(r[6]),
-               "or_yoy": fnum(r[7]), "gross_margin": fnum(r[8]), "pe_pct": fnum(r[9])}
+               "or_yoy": fnum(r[7]), "gross_margin": fnum(r[8]), "pe_pct": fnum(r[9]),
+               "node_ids": code_nodes.get(r[0], [])}
               for r in cur.fetchall()]
     heatmap = {"nodes": hn, "stocks": hs}
 

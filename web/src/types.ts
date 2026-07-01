@@ -34,6 +34,7 @@ export interface HeatStock {
   code: string; name: string; total_mv: number | null; pe: number | null;
   ps: number | null; ret_1m: number | null; ret_6m: number | null;
   or_yoy: number | null; gross_margin: number | null; pe_pct: number | null;
+  node_ids?: string[];
 }
 export interface Heatmap { nodes: HeatNode[]; stocks: HeatStock[]; }
 
