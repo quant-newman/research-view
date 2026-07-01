@@ -119,17 +119,22 @@ def build_dashboard(date_utc8: str) -> Path:
                       "headline": row[3], "top3": row[4], "sectors": row[5],
                       "falsification": row[6], "holdings_moves": row[7],
                       "generated_at": str(row[8])}
-    # 热力图(节点四象限 + 个股散点)
+    # 热力图(节点四象限 + 个股散点)。数值列 Decimal → float,否则前端拿到字符串画不出点。
+    def fnum(v):
+        return float(v) if v is not None else None
+
     with db.rv_conn() as conn, conn.cursor() as cur:
         cur.execute("""SELECT node_id,chain,node,n_stocks,total_mv,ret_1m,ret_6m,
             or_yoy,gross_margin,pe,ps,quadrant FROM heatmap_node ORDER BY total_mv DESC NULLS LAST""")
-        hn = [dict(zip(["node_id","chain","node","n_stocks","total_mv","ret_1m","ret_6m",
-                        "or_yoy","gross_margin","pe","ps","quadrant"],
-                       [float(x) if isinstance(x,(int,float)) and not isinstance(x,bool) else x for x in r]))
-              for r in cur.fetchall()]
+        hn = [{"node_id": r[0], "chain": r[1], "node": r[2], "n_stocks": r[3],
+               "total_mv": fnum(r[4]), "ret_1m": fnum(r[5]), "ret_6m": fnum(r[6]),
+               "or_yoy": fnum(r[7]), "gross_margin": fnum(r[8]), "pe": fnum(r[9]),
+               "ps": fnum(r[10]), "quadrant": r[11]} for r in cur.fetchall()]
         cur.execute("""SELECT code,name,total_mv,pe,ps,ret_1m,ret_6m,or_yoy,gross_margin,pe_pct
             FROM heatmap_stock ORDER BY total_mv DESC NULLS LAST""")
-        hs = [dict(zip(["code","name","total_mv","pe","ps","ret_1m","ret_6m","or_yoy","gross_margin","pe_pct"], r))
+        hs = [{"code": r[0], "name": r[1], "total_mv": fnum(r[2]), "pe": fnum(r[3]),
+               "ps": fnum(r[4]), "ret_1m": fnum(r[5]), "ret_6m": fnum(r[6]),
+               "or_yoy": fnum(r[7]), "gross_margin": fnum(r[8]), "pe_pct": fnum(r[9])}
               for r in cur.fetchall()]
     heatmap = {"nodes": hn, "stocks": hs}
 

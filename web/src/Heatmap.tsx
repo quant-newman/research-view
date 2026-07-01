@@ -6,8 +6,10 @@ const QUAD_COLOR: Record<string, string> = {
   核心主线: "#F6465D", 潜在补涨: "#F0B90B", 等待验证: "#4A9EFF", 风险区: "#5A6474", 数据不足: "#232B36",
 };
 
-function median(xs: number[]) {
-  const a = xs.filter((v) => v != null).sort((x, y) => x - y);
+const nz = (v: any): number | null => (v == null || v === "" ? null : Number(v));
+
+function median(xs: (number | null)[]) {
+  const a = xs.filter((v): v is number => v != null && !Number.isNaN(v)).sort((x, y) => x - y);
   return a.length ? a[Math.floor(a.length / 2)] : 0;
 }
 
@@ -16,9 +18,11 @@ function Scatter({ nodes }: { nodes: HeatNode[] }) {
   useEffect(() => {
     if (!ref.current) return;
     const chart = echarts.init(ref.current, undefined, { renderer: "canvas" });
-    const pts = nodes.filter((n) => n.ret_6m != null && n.or_yoy != null);
-    const xSplit = median(pts.map((n) => n.ret_6m!));
-    const ySplit = median(pts.map((n) => n.or_yoy!));
+    const pts = nodes
+      .map((n) => ({ ...n, ret_6m: nz(n.ret_6m), or_yoy: nz(n.or_yoy), total_mv: nz(n.total_mv) }))
+      .filter((n) => n.ret_6m != null && n.or_yoy != null);
+    const xSplit = median(pts.map((n) => n.ret_6m));
+    const ySplit = median(pts.map((n) => n.or_yoy));
     const maxMv = Math.max(...pts.map((n) => n.total_mv || 0), 1);
     chart.setOption({
       backgroundColor: "transparent",
