@@ -46,8 +46,9 @@ function Scatter({ nodes }: { nodes: HeatNode[] }) {
       },
       series: [{
         type: "scatter",
-        symbolSize: (d: any) => 8 + 34 * Math.sqrt((d.n.total_mv || 0) / maxMv),
-        itemStyle: { color: (p: any) => QUAD_COLOR[p.data.n.quadrant] || "#5A6474", opacity: 0.82 },
+        // symbolSize 回调签名是 (value, params);自定义字段要从 params.data.n 取
+        symbolSize: (_val: any, params: any) => 8 + 34 * Math.sqrt((params?.data?.n?.total_mv || 0) / maxMv),
+        itemStyle: { color: (p: any) => QUAD_COLOR[p.data?.n?.quadrant] || "#5A6474", opacity: 0.82 },
         data: pts.map((n) => ({ value: [n.ret_6m, n.or_yoy], n })),
         markLine: {
           silent: true, symbol: "none", lineStyle: { color: "#3A4452", type: "dashed" },
