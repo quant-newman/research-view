@@ -68,12 +68,33 @@ export interface Ledger {
 export interface UsBoardItem {
   ticker: string; name: string; sector: string; close: number | null; pct: number | null;
   ret_6m: number | null; pos_52w: number | null; market_cap: number | null; pe: number | null;
+  rev_growth?: number | null; gross_margin?: number | null;
+  target_mean?: number | null; rec_key?: string | null; n_analysts?: number | null;
 }
-export interface UsBoard { us_session_date: string; items: UsBoardItem[]; n_ok: number; fetched_at: string; }
+export interface UsBoard { us_session_date: string; items: UsBoardItem[]; n_ok: number; fetched_at?: string; }
+export interface UsTemperature { counted: number; up: number; down: number; flat: number; avg_pct: number; }
+export interface UsResearchItem {
+  code: string; name: string; sector: string; target_mean: number | null; upside: number | null;
+  rec_key: string | null; n_analysts: number | null; pe: number | null;
+}
+export interface UsNewsItem {
+  title: string; one_line: string; sentiment: string; src: string; url: string | null;
+  sector: string; ticker: string;
+}
+export interface UsData {
+  us_session_date: string;
+  board: { items: UsBoardItem[]; n_ok: number };
+  temperature: UsTemperature;
+  heatmap: Heatmap;
+  research: UsResearchItem[];
+  news: UsNewsItem[];
+  report: Report | null;
+  indices: UsBoardItem[];
+}
 
 export interface Dashboard {
   meta: Meta; report: Report | null; temperature: Temperature;
   news_by_node: NewsNode[]; stock_events: StockEvent[];
   heatmap?: Heatmap; health?: Health; research?: Research; ledger?: Ledger;
-  us_board?: UsBoard | null;
+  us?: UsData | null;
 }

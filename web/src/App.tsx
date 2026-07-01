@@ -1,10 +1,26 @@
-import { useEffect, useState } from "react";
-import type { Dashboard, NewsItem, StockEvent } from "./types";
+import { useEffect, useMemo, useState } from "react";
+import type { Dashboard, NewsItem, NewsNode, Report, StockEvent } from "./types";
 import HeatmapView from "./Heatmap";
 import SystemView, { HealthDot } from "./System";
 import { ResearchView, LettersView } from "./Research";
 import { NewsView } from "./News";
 import { UsBoardView } from "./UsBoard";
+import { UsResearchView } from "./UsResearch";
+
+type Market = "A" | "US";
+
+function MarketToggle({ market, onMarket }: { market: Market; onMarket: (m: Market) => void }) {
+  return (
+    <div className="flex rounded overflow-hidden border hairline text-[11px] shrink-0">
+      {(["A", "US"] as const).map((m) => (
+        <button key={m} onClick={() => onMarket(m)}
+          className={`px-2.5 py-0.5 ${market === m ? "bg-accent text-black font-semibold" : "text-muted hover:text-primary"}`}>
+          {m === "A" ? "A股" : "美股"}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 // A股红涨绿跌:正=红(up) 负=绿(down)
 const pctColor = (v: number) => (v > 0 ? "text-up" : v < 0 ? "text-down" : "text-muted");
@@ -30,24 +46,39 @@ function Badge({ text, cls }: { text: string; cls: string }) {
   return <span className={`px-1.5 py-0.5 rounded text-[11px] ${cls}`}>{text}</span>;
 }
 
-function StatusBar({ d, onHealth }: { d: Dashboard; onHealth: () => void }) {
-  const t = d.temperature;
+function StatusBar({ d, market, onMarket, onHealth }: { d: Dashboard; market: Market; onMarket: (m: Market) => void; onHealth: () => void }) {
+  const us = d.us;
+  const isUS = market === "US";
+  const ut = us?.temperature;
+  const at = d.temperature;
   const sessionLabel = d.report?.session === "premarket" ? "盘前" : "盘后";
   return (
     <div className="flex items-center gap-4 px-4 h-11 border-b hairline bg-surface text-[12px]">
+      <MarketToggle market={market} onMarket={onMarket} />
       <div className="flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full bg-accent inline-block" />
-        <span className="font-semibold">{sessionLabel}</span>
+        <span className={`w-2 h-2 rounded-full inline-block ${isUS ? "bg-info" : "bg-accent"}`} />
+        <span className="font-semibold">{isUS ? "美股" : sessionLabel}</span>
         <span className="text-dim">·</span>
-        <span className="text-muted">{d.report?.data_cutoff || d.meta.date}</span>
+        <span className="text-muted">{isUS ? `美东 ${us?.us_session_date || "—"} 收盘` : (d.report?.data_cutoff || d.meta.date)}</span>
       </div>
-      <div className="mono text-muted flex gap-3">
-        <span>池 <span className="text-primary">{t.pool_counted}</span></span>
-        <span className="text-up">涨 {t.up}</span>
-        <span className="text-down">跌 {t.down}</span>
-        <span className="text-up">涨停 {t.limit_up}</span>
-        <span className={pctColor(t.avg_pct)}>均 {t.avg_pct}%</span>
-      </div>
+      {isUS ? (
+        ut && (
+          <div className="mono text-muted flex gap-3">
+            <span>覆盖 <span className="text-primary">{ut.counted}</span></span>
+            <span className="text-up">涨 {ut.up}</span>
+            <span className="text-down">跌 {ut.down}</span>
+            <span className={pctColor(ut.avg_pct)}>均 {ut.avg_pct}%</span>
+          </div>
+        )
+      ) : (
+        <div className="mono text-muted flex gap-3">
+          <span>池 <span className="text-primary">{at.pool_counted}</span></span>
+          <span className="text-up">涨 {at.up}</span>
+          <span className="text-down">跌 {at.down}</span>
+          <span className="text-up">涨停 {at.limit_up}</span>
+          <span className={pctColor(at.avg_pct)}>均 {at.avg_pct}%</span>
+        </div>
+      )}
       <div className="ml-auto flex items-center gap-4">
         {d.health && <HealthDot level={d.health.level} onClick={onHealth} />}
         <Clock />
@@ -56,8 +87,8 @@ function StatusBar({ d, onHealth }: { d: Dashboard; onHealth: () => void }) {
   );
 }
 
-function DailyReport({ d }: { d: Dashboard }) {
-  const r = d.report;
+function DailyReport({ report }: { report: Report | null | undefined }) {
+  const r = report;
   if (!r) return <div className="text-muted p-4">今日暂无报告</div>;
   return (
     <div className="space-y-5">
@@ -263,7 +294,6 @@ const NAV = [
   { key: "report", label: "报告" },
   { key: "heatmap", label: "热力" },
   { key: "news", label: "新闻" },
-  { key: "us", label: "美股" },
   { key: "research", label: "研究" },
   { key: "letters", label: "信函" },
   { key: "system", label: "系统" },
@@ -273,14 +303,29 @@ export default function App() {
   const [d, setD] = useState<Dashboard | null>(null);
   const [err, setErr] = useState("");
   const [view, setView] = useState("report");
+  const [market, setMarket] = useState<Market>("A");
   useEffect(() => {
     fetch("/data/dashboard.json").then((r) => r.json()).then(setD).catch((e) => setErr(String(e)));
   }, []);
 
+  // 美股新闻(扁平)→ 复用 A股 的按节点分组结构(按板块分组)
+  const usNewsNodes: NewsNode[] = useMemo(() => {
+    const m: Record<string, NewsNode> = {};
+    for (const n of d?.us?.news || []) {
+      (m[n.sector] ||= { node_id: n.sector, chain: "美股", node: n.sector, scope: "美股", items: [] });
+      m[n.sector].items.push({
+        title: n.title, one_line: n.one_line, sentiment: n.sentiment, event_type: "",
+        src: n.src, url: n.url, time: "", codes: [n.ticker], holding: false, watching: false,
+      });
+    }
+    return Object.values(m).sort((a, b) => b.items.length - a.items.length);
+  }, [d]);
+
   if (err) return <div className="p-6 text-down">加载失败：{err}</div>;
   if (!d) return <div className="p-6 text-muted">加载中…</div>;
 
-  const enabled = new Set(["report", "heatmap", "news", "us", "research", "letters", "system"]);
+  const isUS = market === "US";
+  const enabled = new Set(["report", "heatmap", "news", "research", "letters", "system"]);
 
   return (
     <div className="min-h-screen flex">
@@ -301,44 +346,72 @@ export default function App() {
       </nav>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <StatusBar d={d} onHealth={() => setView("system")} />
+        <StatusBar d={d} market={market} onMarket={setMarket} onHealth={() => setView("system")} />
         {view === "report" && (
           <div className="flex-1 grid grid-cols-[1.6fr_1fr] gap-4 p-4 overflow-auto">
-            <div><DailyReport d={d} /></div>
+            <div><DailyReport report={isUS ? d.us?.report : d.report} /></div>
             <div className="space-y-4">
-              {d.report?.us_overnight && (
-                <Panel title="隔夜美股科技链 · 盘前">
-                  <UsOvernightBoard us={d.report.us_overnight} />
-                </Panel>
+              {isUS ? (
+                <>
+                  <Panel title="美股新闻流 · 按板块">
+                    <EventStream nodes={usNewsNodes} />
+                  </Panel>
+                  <Panel title="美股指数">
+                    <div className="space-y-1">
+                      {(d.us?.indices || []).map((i) => (
+                        <div key={i.ticker} className="flex items-center gap-2 text-[13px]">
+                          <span className="text-primary flex-1">{i.name}</span>
+                          <span className="mono text-dim text-[11px]">{i.ticker}</span>
+                          <span className={`mono ${pctColor(i.pct ?? 0)}`}>{i.pct == null ? "—" : `${i.pct > 0 ? "+" : ""}${i.pct}%`}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </Panel>
+                </>
+              ) : (
+                <>
+                  {d.report?.us_overnight && (
+                    <Panel title="隔夜美股科技链 · 盘前">
+                      <UsOvernightBoard us={d.report.us_overnight} />
+                    </Panel>
+                  )}
+                  <Panel title="判断复盘账本 · 近30日">
+                    <LedgerPanel ledger={d.ledger} />
+                  </Panel>
+                  <Panel title="我的持仓 / 自选动态">
+                    {d.report?.holdings_moves?.length
+                      ? <div className="text-primary text-[13px]">{d.report.holdings_moves.length} 条异动</div>
+                      : <div className="text-dim text-[13px]">未设持仓/自选。设置后,你的票有事永远第一时间最高优先级出现。</div>}
+                  </Panel>
+                  <Panel title="事件流 · 按节点">
+                    <EventStream nodes={d.news_by_node} />
+                  </Panel>
+                  <Panel title="个股事件 · 公告/龙虎榜">
+                    <Events events={d.stock_events} />
+                  </Panel>
+                </>
               )}
-              <Panel title="判断复盘账本 · 近30日">
-                <LedgerPanel ledger={d.ledger} />
-              </Panel>
-              <Panel title="我的持仓 / 自选动态">
-                {d.report?.holdings_moves?.length
-                  ? <div className="text-primary text-[12px]">{d.report.holdings_moves.length} 条异动</div>
-                  : <div className="text-dim text-[12px]">未设持仓/自选。设置后,你的票有事永远第一时间最高优先级出现。</div>}
-              </Panel>
-              <Panel title="事件流 · 按节点">
-                <EventStream nodes={d.news_by_node} />
-              </Panel>
-              <Panel title="个股事件 · 公告/龙虎榜">
-                <Events events={d.stock_events} />
-              </Panel>
             </div>
           </div>
         )}
         {view === "heatmap" && (
-          <div className="flex-1 p-4 overflow-auto"><HeatmapView h={d.heatmap} /></div>
+          <div className="flex-1 p-4 overflow-auto space-y-4">
+            <HeatmapView h={isUS ? d.us?.heatmap : d.heatmap} />
+            {isUS && d.us && (
+              <div className="border hairline rounded bg-surface p-3">
+                <div className="text-[12px] text-muted mb-2">美股个股行情(收盘/涨跌/6M/52W位/市值/PE)</div>
+                <UsBoardView b={{ us_session_date: d.us.us_session_date, items: d.us.board.items, n_ok: d.us.board.n_ok }} />
+              </div>
+            )}
+          </div>
         )}
         {view === "news" && (
-          <div className="flex-1 p-4 overflow-auto"><NewsView nodes={d.news_by_node} /></div>
-        )}
-        {view === "us" && (
-          <div className="flex-1 p-4 overflow-auto"><UsBoardView b={d.us_board} /></div>
+          <div className="flex-1 p-4 overflow-auto"><NewsView nodes={isUS ? usNewsNodes : d.news_by_node} /></div>
         )}
         {view === "research" && (
-          <div className="flex-1 p-4 overflow-auto"><ResearchView r={d.research} /></div>
+          <div className="flex-1 p-4 overflow-auto">
+            {isUS ? <UsResearchView items={d.us?.research} /> : <ResearchView r={d.research} />}
+          </div>
         )}
         {view === "letters" && (
           <div className="flex-1 p-4 overflow-auto"><LettersView r={d.research} /></div>

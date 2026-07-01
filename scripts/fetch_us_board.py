@@ -48,7 +48,8 @@ def fetch() -> dict:
         s = close[t].dropna() if t in close else None
         row: dict = {"ticker": t, "name": name, "sector": sector,
                      "close": None, "pct": None, "ret_6m": None, "pos_52w": None,
-                     "market_cap": None, "pe": None}
+                     "market_cap": None, "pe": None, "rev_growth": None, "gross_margin": None,
+                     "target_mean": None, "rec_key": None, "n_analysts": None}
         if s is not None and len(s) >= 2:
             last = float(s.iloc[-1])
             row["close"] = round(last, 2)
@@ -66,6 +67,14 @@ def fetch() -> dict:
                 row["market_cap"] = round(mc / 1e9, 1) if mc else None
                 pe = info.get("trailingPE")
                 row["pe"] = round(float(pe), 1) if pe else None
+                rg = info.get("revenueGrowth")  # 营收同比(小数)
+                row["rev_growth"] = round(rg * 100, 1) if rg is not None else None
+                gm = info.get("grossMargins")
+                row["gross_margin"] = round(gm * 100, 1) if gm is not None else None
+                tm = info.get("targetMeanPrice")
+                row["target_mean"] = round(float(tm), 2) if tm else None
+                row["rec_key"] = info.get("recommendationKey")  # strong_buy/buy/hold/...
+                row["n_analysts"] = info.get("numberOfAnalystOpinions")
             except Exception:  # noqa: BLE001 单票 info 取失败不阻塞其余
                 pass
         items.append(row)

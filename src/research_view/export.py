@@ -225,19 +225,20 @@ def build_dashboard(date_utc8: str) -> Path:
     except Exception as e:  # noqa: BLE001 健康汇总失败不应阻塞导出
         health = {"level": "yellow", "error": str(e)[:200], "sources": [], "tasks": [], "flags": []}
 
-    # 美股板块(台北 yfinance 产出→scp 到 exports/;领先指标外盘板块,非A股镜像)
-    us_board = None
-    ubp = EXPORT_DIR / f"us_board_{date_utc8}.json"
-    if ubp.exists():
+    # 美股一等公民(台北 build_us 产出完整 blob→scp 到 exports/):
+    # board/温度计/热力/新闻(B1)/研究(分析师)/报告(B3)。与 A股 同权,前端顶部一键切。
+    us = None
+    up = EXPORT_DIR / f"us_{date_utc8}.json"
+    if up.exists():
         try:
-            us_board = json.loads(ubp.read_text(encoding="utf-8"))
+            us = json.loads(up.read_text(encoding="utf-8"))
         except Exception:  # noqa: BLE001 美股文件损坏不阻塞导出
             pass
 
     dash = {"meta": ev["meta"], "report": report, "temperature": ev["temperature"],
             "news_by_node": ev["news_by_node"], "stock_events": ev["stock_events"],
             "heatmap": heatmap, "health": health, "research": research, "ledger": ledger,
-            "us_board": us_board}
+            "us": us}
     path = EXPORT_DIR / "dashboard.json"
     path.write_text(_dump(dash), encoding="utf-8")
     return path

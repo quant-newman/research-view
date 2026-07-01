@@ -18,12 +18,12 @@ echo "[premarket] 1/4 台北拉隔夜美股 + 美股板块 $DATE ..."
 if ! ./.venv-taipei/bin/python scripts/fetch_us_overnight.py "$DATE"; then
   echo "[premarket] ⚠ 隔夜美股拉取失败(Yahoo 抖动?),降级:盘前仅出国内部分"
 fi
-if ! ./.venv-taipei/bin/python scripts/fetch_us_board.py "$DATE"; then
-  echo "[premarket] ⚠ 美股板块拉取失败,美股页沿用上次数据"
+if ! ./.venv-taipei/bin/python scripts/build_us.py "$DATE"; then
+  echo "[premarket] ⚠ 美股板块构建失败,美股页沿用上次数据"
 fi
 
 echo "[premarket] 2/4 推美股文件到阿里云 ..."
-for f in "us_overnight_${DATE}.json" "us_board_${DATE}.json"; do
+for f in "us_overnight_${DATE}.json" "us_${DATE}.json"; do
   if [ -f "exports/$f" ]; then
     rsync -az "exports/$f" "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/" 2>&1 | grep -v "Warning: Permanently" || true
   fi
