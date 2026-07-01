@@ -4,6 +4,7 @@ import HeatmapView from "./Heatmap";
 import SystemView, { HealthDot } from "./System";
 import { ResearchView, LettersView } from "./Research";
 import { NewsView } from "./News";
+import { UsBoardView } from "./UsBoard";
 
 // A股红涨绿跌:正=红(up) 负=绿(down)
 const pctColor = (v: number) => (v > 0 ? "text-up" : v < 0 ? "text-down" : "text-muted");
@@ -262,6 +263,7 @@ const NAV = [
   { key: "report", label: "报告" },
   { key: "heatmap", label: "热力" },
   { key: "news", label: "新闻" },
+  { key: "us", label: "美股" },
   { key: "research", label: "研究" },
   { key: "letters", label: "信函" },
   { key: "system", label: "系统" },
@@ -278,7 +280,7 @@ export default function App() {
   if (err) return <div className="p-6 text-down">加载失败：{err}</div>;
   if (!d) return <div className="p-6 text-muted">加载中…</div>;
 
-  const enabled = new Set(["report", "heatmap", "news", "research", "letters", "system"]);
+  const enabled = new Set(["report", "heatmap", "news", "us", "research", "letters", "system"]);
 
   return (
     <div className="min-h-screen flex">
@@ -331,6 +333,9 @@ export default function App() {
         )}
         {view === "news" && (
           <div className="flex-1 p-4 overflow-auto"><NewsView nodes={d.news_by_node} /></div>
+        )}
+        {view === "us" && (
+          <div className="flex-1 p-4 overflow-auto"><UsBoardView b={d.us_board} /></div>
         )}
         {view === "research" && (
           <div className="flex-1 p-4 overflow-auto"><ResearchView r={d.research} /></div>

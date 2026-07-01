@@ -65,8 +65,15 @@ export interface Ledger {
   judgments: Judgment[]; alive: number; falsified: number; error_dist: Record<string, number>;
 }
 
+export interface UsBoardItem {
+  ticker: string; name: string; sector: string; close: number | null; pct: number | null;
+  ret_6m: number | null; pos_52w: number | null; market_cap: number | null; pe: number | null;
+}
+export interface UsBoard { us_session_date: string; items: UsBoardItem[]; n_ok: number; fetched_at: string; }
+
 export interface Dashboard {
   meta: Meta; report: Report | null; temperature: Temperature;
   news_by_node: NewsNode[]; stock_events: StockEvent[];
   heatmap?: Heatmap; health?: Health; research?: Research; ledger?: Ledger;
+  us_board?: UsBoard | null;
 }
