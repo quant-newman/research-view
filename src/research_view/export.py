@@ -176,6 +176,27 @@ def build_dashboard(date_utc8: str) -> Path:
                     "relevance": r[4], "core_views": r[5], "status": r[6]} for r in cur.fetchall()]
     research = {"reports": reports, "coverage": coverage, "letters": letters}
 
+    # 判断复盘账本(近30日已钉死判断 + 存活/证伪 + 错误类型分布)
+    with db.rv_conn() as conn, conn.cursor() as cur:
+        cur.execute("""
+            SELECT l.ledger_id, l.report_id, l.claim, l.condition, l.created_at_utc8::date,
+                   EXISTS(SELECT 1 FROM ledger a WHERE a.ref_ledger=l.ledger_id) AS falsified,
+                   (SELECT a.error_type FROM ledger a WHERE a.ref_ledger=l.ledger_id
+                    ORDER BY a.ledger_id LIMIT 1) AS error_type
+            FROM ledger l
+            WHERE l.kind='judgment' AND l.created_at_utc8 >= now() - interval '30 days'
+            ORDER BY l.ledger_id DESC""")
+        judgments = [{"id": r[0], "report_id": r[1], "claim": r[2], "condition": r[3],
+                      "date": str(r[4]), "falsified": r[5], "error_type": r[6]}
+                     for r in cur.fetchall()]
+    alive = sum(1 for j in judgments if not j["falsified"])
+    error_dist: dict[str, int] = {}
+    for j in judgments:
+        if j["falsified"] and j["error_type"]:
+            error_dist[j["error_type"]] = error_dist.get(j["error_type"], 0) + 1
+    ledger = {"judgments": judgments, "alive": alive,
+              "falsified": len(judgments) - alive, "error_dist": error_dist}
+
     from . import monitor
     try:
         health = monitor.health()
@@ -184,7 +205,7 @@ def build_dashboard(date_utc8: str) -> Path:
 
     dash = {"meta": ev["meta"], "report": report, "temperature": ev["temperature"],
             "news_by_node": ev["news_by_node"], "stock_events": ev["stock_events"],
-            "heatmap": heatmap, "health": health, "research": research}
+            "heatmap": heatmap, "health": health, "research": research, "ledger": ledger}
     path = EXPORT_DIR / "dashboard.json"
     path.write_text(json.dumps(dash, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
     return path
