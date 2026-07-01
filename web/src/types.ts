@@ -81,7 +81,7 @@ export interface UsResearchItem {
   rec_key: string | null; n_analysts: number | null; pe: number | null;
 }
 export interface UsNewsItem {
-  title: string; one_line: string; sentiment: string; src: string; url: string | null;
+  title: string; one_line: string; summary?: string | null; sentiment: string; src: string; url: string | null;
   sector: string; ticker: string;
 }
 export interface UsData {

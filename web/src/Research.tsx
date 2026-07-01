@@ -92,13 +92,16 @@ export function LettersView({ r }: { r: Research | undefined }) {
             {l.relevance != null && <span className={relColor(l.relevance)}>AI科技链相关 {l.relevance}/10</span>}
           </div>
           {Array.isArray(l.core_views) && l.core_views.length > 0 && (
-            <ul className="mt-2 space-y-1">
-              {l.core_views.slice(0, 3).map((v: string, j: number) => (
-                <li key={j} className="text-primary text-[14px] leading-snug flex gap-1.5">
-                  <span className="text-accent shrink-0">·</span><span>{v}</span>
-                </li>
-              ))}
-            </ul>
+            <div className="mt-2.5 border-t hairline pt-2">
+              <div className="text-accent text-[12px] mb-1.5">核心要点</div>
+              <ul className="space-y-1.5">
+                {l.core_views.map((v: string, j: number) => (
+                  <li key={j} className="text-primary text-[14px] leading-relaxed flex gap-1.5">
+                    <span className="text-accent shrink-0 mono">{j + 1}</span><span>{v}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </div>
       ))}

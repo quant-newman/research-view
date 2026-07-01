@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import statistics as st
 import sys
 from datetime import datetime
@@ -113,7 +114,13 @@ def _fetch_news_raw(tickers: list[str]) -> list[dict]:
                 v = c.get(k) if isinstance(c, dict) else None
                 if isinstance(v, dict) and v.get("url"):
                     url = v["url"]; break
-            raw.append({"title": title, "src": src or "Yahoo", "url": url, "from_ticker": t})
+            desc = ""
+            for k in ("summary", "description"):
+                v = c.get(k) if isinstance(c, dict) else None
+                if v:
+                    desc = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", str(v))).strip()[:600]
+                    break
+            raw.append({"title": title, "desc": desc, "src": src or "Yahoo", "url": url, "from_ticker": t})
     return raw[:45]  # 控量
 
 
@@ -124,14 +131,14 @@ def _b1_batch(raw: list[dict]) -> list[dict]:
     """一次调用把英文标题批量译为中文一句话+情绪。"""
     if not raw:
         return []
-    listing = "\n".join(f"{i}. {r['title']}" for i, r in enumerate(raw))
-    user = f"""下面是美股科技新闻英文标题(带序号)。逐条输出中文提炼,JSON:
-{{"items":[{{"i":序号,"one_line":"中文一句话概括≤40字,不加判断","sentiment":"利好|利空|中性|澄清"}}]}}
-标题:
+    listing = "\n".join(
+        f"{i}. 标题:{r['title']}" + (f"\n   摘要:{r['desc']}" if r["desc"] else "") for i, r in enumerate(raw))
+    user = f"""下面是美股科技新闻(英文标题+摘要,带序号)。逐条输出中文提炼,JSON:
+{{"items":[{{"i":序号,"one_line":"中文一句话概括≤40字","summary":"中文核心观点:基于标题和摘要挑2-3个重点/关键数字,≤120字,不看原文就懂;没摘要则据标题合理概括;只陈述不判断","sentiment":"利好|利空|中性|澄清"}}]}}
 {listing}
-只翻译概括,不许出现"看好/利好X"等判断词。"""
+只翻译概括,不许出现"看好/利好X/建议买入"等判断词,不许编造摘要没有的数字。"""
     try:
-        j = llm.chat_json(B1_SYS, user, timeout=120)
+        j = llm.chat_json(B1_SYS, user, timeout=150)
         m = {int(it["i"]): it for it in j.get("items", []) if "i" in it}
     except Exception as e:  # noqa: BLE001 B1失败降级:用原标题
         print(f"  ! 新闻B1失败,降级原标题: {str(e)[:80]}")
@@ -141,6 +148,7 @@ def _b1_batch(raw: list[dict]) -> list[dict]:
     for i, r in enumerate(raw):
         b = m.get(i, {})
         out.append({"title": r["title"], "one_line": b.get("one_line") or r["title"],
+                    "summary": (b.get("summary") or "")[:280] or None,
                     "sentiment": b.get("sentiment") or "中性", "src": r["src"], "url": r["url"],
                     "sector": sec_of.get(r["from_ticker"], "科技"), "ticker": r["from_ticker"]})
     return out

@@ -357,7 +357,7 @@ export default function App() {
     for (const n of d?.us?.news || []) {
       (m[n.sector] ||= { node_id: n.sector, chain: "美股", node: n.sector, scope: "美股", items: [] });
       m[n.sector].items.push({
-        title: n.title, one_line: n.one_line, sentiment: n.sentiment, event_type: "",
+        title: n.title, one_line: n.one_line, summary: n.summary, sentiment: n.sentiment, event_type: "",
         src: n.src, url: n.url, time: "", codes: [n.ticker], holding: false, watching: false,
       });
     }
