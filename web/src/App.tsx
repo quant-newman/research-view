@@ -209,6 +209,46 @@ function UsOvernightBoard({ us }: { us: NonNullable<Dashboard["report"]>["us_ove
   );
 }
 
+function LedgerPanel({ ledger }: { ledger: Dashboard["ledger"] }) {
+  if (!ledger || ledger.judgments.length === 0) {
+    return (
+      <div className="text-dim text-[12px] space-y-1">
+        <div>存活 0 · 证伪 0 — 账本待积累。</div>
+        <div className="text-[11px]">审定钉死判断:<span className="mono text-muted">manage_ledger.py pin &lt;report_id&gt; &lt;序号&gt;</span></div>
+      </div>
+    );
+  }
+  const ed = ledger.error_dist || {};
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-3 text-[12px]">
+        <span className="text-up">存活 {ledger.alive}</span>
+        <span className="text-down">证伪 {ledger.falsified}</span>
+        {Object.keys(ed).length > 0 && (
+          <span className="text-dim text-[11px]">
+            {Object.entries(ed).map(([k, v]) => `${k}${v}`).join(" · ")}
+          </span>
+        )}
+      </div>
+      <div className="space-y-1.5">
+        {ledger.judgments.slice(0, 8).map((j) => (
+          <div key={j.id} className="border hairline rounded px-2 py-1.5 text-[12px]">
+            <div className="flex items-center gap-2">
+              <span className={`px-1.5 py-0.5 rounded text-[10px] ${j.falsified ? "text-down bg-down/10" : "text-up bg-up/10"}`}>
+                {j.falsified ? `✗证伪${j.error_type ? `·${j.error_type}` : ""}` : "存活"}
+              </span>
+              <span className="mono text-dim text-[11px]">#{j.id}</span>
+              <span className="mono text-dim text-[11px] ml-auto">{j.date}</span>
+            </div>
+            <p className="text-primary mt-1 leading-snug">{j.claim}</p>
+            <p className="text-muted text-[11px] mt-0.5"><span className="text-down">证伪:</span>{j.condition}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="border hairline rounded bg-surface">
@@ -270,7 +310,7 @@ export default function App() {
                 </Panel>
               )}
               <Panel title="判断复盘账本 · 近30日">
-                <div className="text-dim text-[12px]">存活 — · 证伪 — · 错误类型分布(账本积累中)</div>
+                <LedgerPanel ledger={d.ledger} />
               </Panel>
               <Panel title="我的持仓 / 自选动态">
                 {d.report?.holdings_moves?.length

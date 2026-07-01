@@ -56,8 +56,16 @@ export interface FundLetter {
 }
 export interface Research { reports: ResearchReport[]; coverage: Coverage[]; letters: FundLetter[]; }
 
+export interface Judgment {
+  id: number; report_id: string; claim: string; condition: string;
+  date: string; falsified: boolean; error_type: string | null;
+}
+export interface Ledger {
+  judgments: Judgment[]; alive: number; falsified: number; error_dist: Record<string, number>;
+}
+
 export interface Dashboard {
   meta: Meta; report: Report | null; temperature: Temperature;
   news_by_node: NewsNode[]; stock_events: StockEvent[];
-  heatmap?: Heatmap; health?: Health; research?: Research;
+  heatmap?: Heatmap; health?: Health; research?: Research; ledger?: Ledger;
 }
