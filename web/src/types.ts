@@ -41,8 +41,19 @@ export interface Health {
   level: string; sources: HealthSource[]; tasks: HealthTask[]; flags: HealthFlag[];
 }
 
+export interface ResearchReport {
+  date: string; code: string; name: string; org: string; rating: string;
+  title: string; tp: number | null; pe: number | null; node_ids: string[];
+}
+export interface Coverage { name: string; n: number; latest: string; }
+export interface FundLetter {
+  fund_name: string; period: string | null; stance: string | null;
+  strategy: string | null; relevance: number | null; core_views: any; status: string;
+}
+export interface Research { reports: ResearchReport[]; coverage: Coverage[]; letters: FundLetter[]; }
+
 export interface Dashboard {
   meta: Meta; report: Report | null; temperature: Temperature;
   news_by_node: NewsNode[]; stock_events: StockEvent[];
-  heatmap?: Heatmap; health?: Health;
+  heatmap?: Heatmap; health?: Health; research?: Research;
 }

@@ -138,6 +138,22 @@ def build_dashboard(date_utc8: str) -> Path:
               for r in cur.fetchall()]
     heatmap = {"nodes": hn, "stocks": hs}
 
+    # 研究库(卖方研报)+ 基金信函
+    with db.rv_conn() as conn, conn.cursor() as cur:
+        cur.execute("""SELECT report_date,code,name,org_name,rating,title,tp,pe,node_ids
+            FROM research_report ORDER BY report_date DESC NULLS LAST LIMIT 80""")
+        reports = [{"date": str(r[0]), "code": r[1], "name": r[2], "org": r[3], "rating": r[4],
+                    "title": r[5], "tp": (float(r[6]) if r[6] and 0 < float(r[6]) < 2000 else None),
+                    "pe": fnum(r[7]), "node_ids": r[8] or []} for r in cur.fetchall()]
+        cur.execute("""SELECT name, count(*) c, max(report_date) FROM research_report
+            GROUP BY name ORDER BY c DESC LIMIT 20""")
+        coverage = [{"name": r[0], "n": r[1], "latest": str(r[2])} for r in cur.fetchall()]
+        cur.execute("""SELECT fund_name,period,stance,strategy,relevance,core_views,status
+            FROM fund_letter ORDER BY created_at DESC LIMIT 40""")
+        letters = [{"fund_name": r[0], "period": r[1], "stance": r[2], "strategy": r[3],
+                    "relevance": r[4], "core_views": r[5], "status": r[6]} for r in cur.fetchall()]
+    research = {"reports": reports, "coverage": coverage, "letters": letters}
+
     from . import monitor
     try:
         health = monitor.health()
@@ -146,7 +162,7 @@ def build_dashboard(date_utc8: str) -> Path:
 
     dash = {"meta": ev["meta"], "report": report, "temperature": ev["temperature"],
             "news_by_node": ev["news_by_node"], "stock_events": ev["stock_events"],
-            "heatmap": heatmap, "health": health}
+            "heatmap": heatmap, "health": health, "research": research}
     path = EXPORT_DIR / "dashboard.json"
     path.write_text(json.dumps(dash, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
     return path

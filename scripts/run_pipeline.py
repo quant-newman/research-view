@@ -14,7 +14,7 @@ from zoneinfo import ZoneInfo
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 from research_view import config, db, export, monitor  # noqa: E402
-from research_view.collect import announcements, heatmap, news  # noqa: E402
+from research_view.collect import announcements, heatmap, news, research  # noqa: E402
 from research_view.funnel import run_funnel  # noqa: E402
 from research_view.structure import run_structure  # noqa: E402
 
@@ -33,6 +33,7 @@ def main() -> None:
     step("structure_b1", run_structure)
     step("stock_events", announcements.collect_events)
     step("heatmap", heatmap.compute)
+    step("research", lambda: research.collect_reports(30))
 
     # 数据质量校验
     with db.rv_conn() as conn, conn.cursor() as cur:
