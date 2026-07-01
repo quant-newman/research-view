@@ -146,6 +146,11 @@ def build_dashboard(date_utc8: str) -> Path:
             WHERE report_date=to_date(%s,'YYYYMMDD') ORDER BY generated_at DESC LIMIT 1""",
             (date_utc8,))
         row = cur.fetchone()
+        if row is None:  # 跨天早盘前当日报告还没生成 → 回退显示最近一份(不让报告页空白)
+            cur.execute("""SELECT report_id,session,data_cutoff,headline,top3,sectors,
+                falsification,holdings_moves,generated_at FROM daily_report
+                ORDER BY report_date DESC, generated_at DESC LIMIT 1""")
+            row = cur.fetchone()
         report = None
         if row:
             report = {"report_id": row[0], "session": row[1], "data_cutoff": row[2],
