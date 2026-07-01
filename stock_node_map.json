@@ -1,0 +1,1962 @@
+[
+  {
+    "code": "300308",
+    "name": "中际旭创",
+    "chain": "光通信",
+    "node": "光模块成品",
+    "node_id": "optical::光模块成品",
+    "tier": "龙一",
+    "purity": "",
+    "judgment": "800G龙头、扣非+264%,已万亿、贵"
+  },
+  {
+    "code": "300502",
+    "name": "新易盛",
+    "chain": "光通信",
+    "node": "光模块成品",
+    "node_id": "optical::光模块成品",
+    "tier": "龙一",
+    "purity": "",
+    "judgment": "反超Coherent、便宜些,但增收不增利(汇兑)"
+  },
+  {
+    "code": "000988",
+    "name": "华工科技",
+    "chain": "光通信",
+    "node": "光模块成品",
+    "node_id": "optical::光模块成品",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "全自研硅光到模块,二线最强"
+  },
+  {
+    "code": "002281",
+    "name": "光迅科技",
+    "chain": "光通信",
+    "node": "光模块成品",
+    "node_id": "optical::光模块成品",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "IDM全链条但1.6T吃力、毛利低"
+  },
+  {
+    "code": "603083",
+    "name": "剑桥科技",
+    "chain": "光通信",
+    "node": "光模块成品",
+    "node_id": "optical::光模块成品",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "二三线,弹性大"
+  },
+  {
+    "code": "301205",
+    "name": "联特科技",
+    "chain": "光通信",
+    "node": "光模块成品",
+    "node_id": "optical::光模块成品",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "二三线"
+  },
+  {
+    "code": "002902",
+    "name": "铭普光磁",
+    "chain": "光通信",
+    "node": "光模块成品",
+    "node_id": "optical::光模块成品",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "二三线"
+  },
+  {
+    "code": "688498",
+    "name": "源杰科技",
+    "chain": "光通信",
+    "node": "光芯片",
+    "node_id": "optical::光芯片",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "净利+3212%但477-955倍PE、客户集中71%,估值最极端"
+  },
+  {
+    "code": "688048",
+    "name": "长光华芯",
+    "chain": "光通信",
+    "node": "光芯片",
+    "node_id": "optical::光芯片",
+    "tier": "龙二",
+    "purity": "⭐",
+    "judgment": "200G EML领先、Q1净利+160%"
+  },
+  {
+    "code": "688313",
+    "name": "仕佳光子",
+    "chain": "光通信",
+    "node": "光芯片",
+    "node_id": "optical::光芯片",
+    "tier": "龙三",
+    "purity": "⭐",
+    "judgment": "独供英伟达1.6T AWG,有源+无源全品类"
+  },
+  {
+    "code": "300394",
+    "name": "天孚通信",
+    "chain": "光通信",
+    "node": "光器件/CPO封装",
+    "node_id": "optical::光器件/CPO封装",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "英伟达硅光引擎直供、卖铲子穿越CPO,但138倍TTM+FAU被玻璃桥威胁"
+  },
+  {
+    "code": "300570",
+    "name": "太辰光",
+    "chain": "光通信",
+    "node": "光器件/CPO封装",
+    "node_id": "optical::光器件/CPO封装",
+    "tier": "龙二",
+    "purity": "⭐",
+    "judgment": "CPO弹性大、市值小,但纯FAU受玻璃桥冲击直接"
+  },
+  {
+    "code": "300620",
+    "name": "光库科技",
+    "chain": "光通信",
+    "node": "光器件/CPO封装",
+    "node_id": "optical::光器件/CPO封装",
+    "tier": "龙二",
+    "purity": "⭐",
+    "judgment": "薄膜铌酸锂(3.2T潜在路线)"
+  },
+  {
+    "code": "688195",
+    "name": "腾景科技",
+    "chain": "光通信",
+    "node": "光器件/CPO封装",
+    "node_id": "optical::光器件/CPO封装",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "配套元件"
+  },
+  {
+    "code": "688167",
+    "name": "炬光科技",
+    "chain": "光通信",
+    "node": "光器件/CPO封装",
+    "node_id": "optical::光器件/CPO封装",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "配套元件"
+  },
+  {
+    "code": "688110",
+    "name": "长芯博创",
+    "chain": "光通信",
+    "node": "光器件/CPO封装",
+    "node_id": "optical::光器件/CPO封装",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "从成品挪入此处更准"
+  },
+  {
+    "code": "601869",
+    "name": "长飞光纤",
+    "chain": "光通信",
+    "node": "光纤光缆",
+    "node_id": "optical::光纤光缆",
+    "tier": "龙一",
+    "purity": "",
+    "judgment": "年内涨13倍、CPO增光纤用量受益,但主业传统"
+  },
+  {
+    "code": "600487",
+    "name": "亨通光电",
+    "chain": "光通信",
+    "node": "光纤光缆",
+    "node_id": "optical::光纤光缆",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "主业传统、被CPO概念裹挟"
+  },
+  {
+    "code": "600522",
+    "name": "中天科技",
+    "chain": "光通信",
+    "node": "光纤光缆",
+    "node_id": "optical::光纤光缆",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "主业传统、被CPO概念裹挟"
+  },
+  {
+    "code": "600105",
+    "name": "永鼎股份",
+    "chain": "光通信",
+    "node": "光纤光缆",
+    "node_id": "optical::光纤光缆",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "曾18涨停、弹性票"
+  },
+  {
+    "code": "002491",
+    "name": "通鼎互联",
+    "chain": "光通信",
+    "node": "光纤光缆",
+    "node_id": "optical::光纤光缆",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "弹性票"
+  },
+  {
+    "code": "000063",
+    "name": "中兴通讯",
+    "chain": "光通信",
+    "node": "通信设备",
+    "node_id": "optical::通信设备",
+    "tier": "龙一",
+    "purity": "",
+    "judgment": "算力网络、相对稳"
+  },
+  {
+    "code": "000938",
+    "name": "紫光股份",
+    "chain": "光通信",
+    "node": "通信设备",
+    "node_id": "optical::通信设备",
+    "tier": "龙一",
+    "purity": "",
+    "judgment": "AI网络设备"
+  },
+  {
+    "code": "301165",
+    "name": "锐捷网络",
+    "chain": "光通信",
+    "node": "通信设备",
+    "node_id": "optical::通信设备",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "AI网络"
+  },
+  {
+    "code": "688702",
+    "name": "盛科通信",
+    "chain": "光通信",
+    "node": "通信设备",
+    "node_id": "optical::通信设备",
+    "tier": "龙二",
+    "purity": "⭐",
+    "judgment": "交换芯片稀缺标的"
+  },
+  {
+    "code": "301191",
+    "name": "菲菱科思",
+    "chain": "光通信",
+    "node": "通信设备",
+    "node_id": "optical::通信设备",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "代工/配套"
+  },
+  {
+    "code": "600498",
+    "name": "烽火通信",
+    "chain": "光通信",
+    "node": "通信设备",
+    "node_id": "optical::通信设备",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "光纤+传输"
+  },
+  {
+    "code": "688205",
+    "name": "德科立",
+    "chain": "光通信",
+    "node": "通信设备",
+    "node_id": "optical::通信设备",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "细分"
+  },
+  {
+    "code": "688041",
+    "name": "海光信息",
+    "chain": "半导体",
+    "node": "AI算力芯片",
+    "node_id": "semiconductor::AI算力芯片",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "订单排到2027、扣非+35%,266倍贵"
+  },
+  {
+    "code": "688256",
+    "name": "寒武纪",
+    "chain": "半导体",
+    "node": "AI算力芯片",
+    "node_id": "semiconductor::AI算力芯片",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "扣非+238%但305倍PE(26E154倍)、情绪极端"
+  },
+  {
+    "code": "688795",
+    "name": "摩尔线程",
+    "chain": "半导体",
+    "node": "AI算力芯片",
+    "node_id": "semiconductor::AI算力芯片",
+    "tier": "龙二",
+    "purity": "⭐",
+    "judgment": "上市即千亿、弹性大、估值高"
+  },
+  {
+    "code": "688802",
+    "name": "沐曦股份",
+    "chain": "半导体",
+    "node": "AI算力芯片",
+    "node_id": "semiconductor::AI算力芯片",
+    "tier": "龙二",
+    "purity": "⭐",
+    "judgment": "新锐、估值高"
+  },
+  {
+    "code": "688047",
+    "name": "龙芯中科",
+    "chain": "半导体",
+    "node": "AI算力芯片",
+    "node_id": "semiconductor::AI算力芯片",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "信创、体量小"
+  },
+  {
+    "code": "300474",
+    "name": "景嘉微",
+    "chain": "半导体",
+    "node": "AI算力芯片",
+    "node_id": "semiconductor::AI算力芯片",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "体量小"
+  },
+  {
+    "code": "688981",
+    "name": "中芯国际",
+    "chain": "半导体",
+    "node": "晶圆代工",
+    "node_id": "semiconductor::晶圆代工",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "国产制造基石、重资产高折旧"
+  },
+  {
+    "code": "688347",
+    "name": "华虹公司",
+    "chain": "半导体",
+    "node": "晶圆代工",
+    "node_id": "semiconductor::晶圆代工",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "功率/模拟、二线代工"
+  },
+  {
+    "code": "002371",
+    "name": "北方华创",
+    "chain": "半导体",
+    "node": "半导体设备",
+    "node_id": "semiconductor::半导体设备",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "压舱石、订单到2027、扣非真兑现"
+  },
+  {
+    "code": "688012",
+    "name": "中微公司",
+    "chain": "半导体",
+    "node": "半导体设备",
+    "node_id": "semiconductor::半导体设备",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "TSV独一份、110倍(26E93)、扣非+60%"
+  },
+  {
+    "code": "688072",
+    "name": "拓荆科技",
+    "chain": "半导体",
+    "node": "半导体设备",
+    "node_id": "semiconductor::半导体设备",
+    "tier": "龙二",
+    "purity": "⭐",
+    "judgment": "PE95≈26E,估值没透支、安全边际强"
+  },
+  {
+    "code": "688120",
+    "name": "华海清科",
+    "chain": "半导体",
+    "node": "半导体设备",
+    "node_id": "semiconductor::半导体设备",
+    "tier": "龙二",
+    "purity": "⭐",
+    "judgment": "减薄+先进封装"
+  },
+  {
+    "code": "688082",
+    "name": "盛美上海",
+    "chain": "半导体",
+    "node": "半导体设备",
+    "node_id": "semiconductor::半导体设备",
+    "tier": "龙二",
+    "purity": "⭐",
+    "judgment": "HBM产线标配"
+  },
+  {
+    "code": "300604",
+    "name": "长川科技",
+    "chain": "半导体",
+    "node": "半导体设备",
+    "node_id": "semiconductor::半导体设备",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "扣非翻倍、PE108透支"
+  },
+  {
+    "code": "688200",
+    "name": "华峰测控",
+    "chain": "半导体",
+    "node": "半导体设备",
+    "node_id": "semiconductor::半导体设备",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "模拟测试"
+  },
+  {
+    "code": "688361",
+    "name": "中科飞测",
+    "chain": "半导体",
+    "node": "半导体设备",
+    "node_id": "semiconductor::半导体设备",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "国产化<10%、还亏损"
+  },
+  {
+    "code": "300567",
+    "name": "精测电子",
+    "chain": "半导体",
+    "node": "半导体设备",
+    "node_id": "semiconductor::半导体设备",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "面板转半导体"
+  },
+  {
+    "code": "688037",
+    "name": "芯源微",
+    "chain": "半导体",
+    "node": "半导体设备",
+    "node_id": "semiconductor::半导体设备",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "细分"
+  },
+  {
+    "code": "688147",
+    "name": "微导纳米",
+    "chain": "半导体",
+    "node": "半导体设备",
+    "node_id": "semiconductor::半导体设备",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "细分"
+  },
+  {
+    "code": "688627",
+    "name": "精智达",
+    "chain": "半导体",
+    "node": "半导体设备",
+    "node_id": "semiconductor::半导体设备",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "HBM测试、贴韩国扩产"
+  },
+  {
+    "code": "688409",
+    "name": "富创精密",
+    "chain": "半导体",
+    "node": "设备零部件",
+    "node_id": "semiconductor::设备零部件",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "半导体设备上游"
+  },
+  {
+    "code": "300260",
+    "name": "新莱应材",
+    "chain": "半导体",
+    "node": "设备零部件",
+    "node_id": "semiconductor::设备零部件",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "工艺介质"
+  },
+  {
+    "code": "688596",
+    "name": "正帆科技",
+    "chain": "半导体",
+    "node": "设备零部件",
+    "node_id": "semiconductor::设备零部件",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "细分"
+  },
+  {
+    "code": "002409",
+    "name": "雅克科技",
+    "chain": "半导体",
+    "node": "半导体材料",
+    "node_id": "semiconductor::半导体材料",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "HBM4独家锁2031、51倍+商誉21亿雷"
+  },
+  {
+    "code": "688279",
+    "name": "江丰电子",
+    "chain": "半导体",
+    "node": "半导体材料",
+    "node_id": "semiconductor::半导体材料",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "HBM铜靶用量3-4倍、多客户"
+  },
+  {
+    "code": "688268",
+    "name": "华特气体",
+    "chain": "半导体",
+    "node": "半导体材料",
+    "node_id": "semiconductor::半导体材料",
+    "tier": "龙二",
+    "purity": "⭐",
+    "judgment": "三家通吃、15年长协"
+  },
+  {
+    "code": "688019",
+    "name": "安集科技",
+    "chain": "半导体",
+    "node": "半导体材料",
+    "node_id": "semiconductor::半导体材料",
+    "tier": "龙二",
+    "purity": "⭐",
+    "judgment": "CMP耗材"
+  },
+  {
+    "code": "300054",
+    "name": "鼎龙股份",
+    "chain": "半导体",
+    "node": "半导体材料",
+    "node_id": "semiconductor::半导体材料",
+    "tier": "龙二",
+    "purity": "⭐",
+    "judgment": "全产线标配CMP材料"
+  },
+  {
+    "code": "688126",
+    "name": "沪硅产业",
+    "chain": "半导体",
+    "node": "半导体材料",
+    "node_id": "semiconductor::半导体材料",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "制造基础耗材"
+  },
+  {
+    "code": "605358",
+    "name": "立昂微",
+    "chain": "半导体",
+    "node": "半导体材料",
+    "node_id": "semiconductor::半导体材料",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "硅片"
+  },
+  {
+    "code": "688300",
+    "name": "联瑞新材",
+    "chain": "半导体",
+    "node": "半导体材料",
+    "node_id": "semiconductor::半导体材料",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "进三星HBM4"
+  },
+  {
+    "code": "600584",
+    "name": "长电科技",
+    "chain": "半导体",
+    "node": "先进封测",
+    "node_id": "semiconductor::先进封测",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "2.5D/3D/HBM全覆盖"
+  },
+  {
+    "code": "002156",
+    "name": "通富微电",
+    "chain": "半导体",
+    "node": "先进封测",
+    "node_id": "semiconductor::先进封测",
+    "tier": "龙二",
+    "purity": "⭐",
+    "judgment": "绑AMD、扣非+64%"
+  },
+  {
+    "code": "002185",
+    "name": "华天科技",
+    "chain": "半导体",
+    "node": "先进封测",
+    "node_id": "semiconductor::先进封测",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "周期回暖"
+  },
+  {
+    "code": "000021",
+    "name": "深科技",
+    "chain": "半导体",
+    "node": "先进封测",
+    "node_id": "semiconductor::先进封测",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "承接长鑫超50%委外、EMS主体仅17.5%封测"
+  },
+  {
+    "code": "603005",
+    "name": "晶方科技",
+    "chain": "半导体",
+    "node": "先进封测",
+    "node_id": "semiconductor::先进封测",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "车载CIS真、CPO/650e是画饼"
+  },
+  {
+    "code": "603986",
+    "name": "兆易创新",
+    "chain": "半导体",
+    "node": "存储",
+    "node_id": "semiconductor::存储",
+    "tier": "龙一",
+    "purity": "",
+    "judgment": "周期高位、韩国扩产是中期反方"
+  },
+  {
+    "code": "688525",
+    "name": "佰维存储",
+    "chain": "半导体",
+    "node": "存储",
+    "node_id": "semiconductor::存储",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "端侧AI、周期弹性大"
+  },
+  {
+    "code": "301308",
+    "name": "江波龙",
+    "chain": "半导体",
+    "node": "存储",
+    "node_id": "semiconductor::存储",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "供头部云厂SSD"
+  },
+  {
+    "code": "300223",
+    "name": "北京君正",
+    "chain": "半导体",
+    "node": "存储",
+    "node_id": "semiconductor::存储",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "体量小"
+  },
+  {
+    "code": "688110",
+    "name": "东芯股份",
+    "chain": "半导体",
+    "node": "存储",
+    "node_id": "semiconductor::存储",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "体量小"
+  },
+  {
+    "code": "688008",
+    "name": "澜起科技",
+    "chain": "半导体",
+    "node": "接口/IP芯片",
+    "node_id": "semiconductor::接口/IP芯片",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "卖铲子成长股、红旗最干净、50-64倍"
+  },
+  {
+    "code": "688521",
+    "name": "芯原股份",
+    "chain": "半导体",
+    "node": "接口/IP芯片",
+    "node_id": "semiconductor::接口/IP芯片",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "芯片设计服务、Chiplet"
+  },
+  {
+    "code": "688123",
+    "name": "聚辰股份",
+    "chain": "半导体",
+    "node": "接口/IP芯片",
+    "node_id": "semiconductor::接口/IP芯片",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "配套DDR5"
+  },
+  {
+    "code": "603501",
+    "name": "韦尔股份",
+    "chain": "半导体",
+    "node": "芯片设计",
+    "node_id": "semiconductor::芯片设计",
+    "tier": "龙一",
+    "purity": "",
+    "judgment": "手机/车载/AI视觉"
+  },
+  {
+    "code": "002049",
+    "name": "紫光国微",
+    "chain": "半导体",
+    "node": "芯片设计",
+    "node_id": "semiconductor::芯片设计",
+    "tier": "龙一",
+    "purity": "",
+    "judgment": "军工+安全芯片"
+  },
+  {
+    "code": "300661",
+    "name": "圣邦股份",
+    "chain": "半导体",
+    "node": "芯片设计",
+    "node_id": "semiconductor::芯片设计",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "国产模拟"
+  },
+  {
+    "code": "688536",
+    "name": "思瑞浦",
+    "chain": "半导体",
+    "node": "芯片设计",
+    "node_id": "semiconductor::芯片设计",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "国产模拟"
+  },
+  {
+    "code": "688052",
+    "name": "纳芯微",
+    "chain": "半导体",
+    "node": "芯片设计",
+    "node_id": "semiconductor::芯片设计",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "800V隔离、贴AI供电"
+  },
+  {
+    "code": "688385",
+    "name": "复旦微电",
+    "chain": "半导体",
+    "node": "芯片设计",
+    "node_id": "semiconductor::芯片设计",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "FPGA"
+  },
+  {
+    "code": "603893",
+    "name": "瑞芯微",
+    "chain": "半导体",
+    "node": "芯片设计",
+    "node_id": "semiconductor::芯片设计",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "贴边缘AI"
+  },
+  {
+    "code": "688099",
+    "name": "晶晨股份",
+    "chain": "半导体",
+    "node": "芯片设计",
+    "node_id": "semiconductor::芯片设计",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "边缘AI"
+  },
+  {
+    "code": "688608",
+    "name": "恒玄科技",
+    "chain": "半导体",
+    "node": "芯片设计",
+    "node_id": "semiconductor::芯片设计",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "端侧"
+  },
+  {
+    "code": "688018",
+    "name": "乐鑫科技",
+    "chain": "半导体",
+    "node": "芯片设计",
+    "node_id": "semiconductor::芯片设计",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "IoT"
+  },
+  {
+    "code": "300782",
+    "name": "卓胜微",
+    "chain": "半导体",
+    "node": "芯片设计",
+    "node_id": "semiconductor::芯片设计",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "射频主业内卷+光EIC送样中(第二曲线未兑现),PIC画饼"
+  },
+  {
+    "code": "600460",
+    "name": "士兰微",
+    "chain": "半导体",
+    "node": "功率/化合物",
+    "node_id": "semiconductor::功率/化合物",
+    "tier": "龙一",
+    "purity": "",
+    "judgment": "通用功率+AI小增量、涨价周期"
+  },
+  {
+    "code": "688396",
+    "name": "华润微",
+    "chain": "半导体",
+    "node": "功率/化合物",
+    "node_id": "semiconductor::功率/化合物",
+    "tier": "龙一",
+    "purity": "",
+    "judgment": "MOSFET国产第一、涨价周期"
+  },
+  {
+    "code": "603290",
+    "name": "斯达半导",
+    "chain": "半导体",
+    "node": "功率/化合物",
+    "node_id": "semiconductor::功率/化合物",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "贴AI 800V SiC"
+  },
+  {
+    "code": "688187",
+    "name": "时代电气",
+    "chain": "半导体",
+    "node": "功率/化合物",
+    "node_id": "semiconductor::功率/化合物",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "轨交/电网"
+  },
+  {
+    "code": "688234",
+    "name": "天岳先进",
+    "chain": "半导体",
+    "node": "功率/化合物",
+    "node_id": "semiconductor::功率/化合物",
+    "tier": "龙二",
+    "purity": "⭐",
+    "judgment": "导电型SiC衬底、贴800V"
+  },
+  {
+    "code": "600703",
+    "name": "三安光电",
+    "chain": "半导体",
+    "node": "功率/化合物",
+    "node_id": "semiconductor::功率/化合物",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "GaN/SiC"
+  },
+  {
+    "code": "300373",
+    "name": "扬杰科技",
+    "chain": "半导体",
+    "node": "功率/化合物",
+    "node_id": "semiconductor::功率/化合物",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "跟随涨价"
+  },
+  {
+    "code": "605111",
+    "name": "新洁能",
+    "chain": "半导体",
+    "node": "功率/化合物",
+    "node_id": "semiconductor::功率/化合物",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "AI才6%、扣非负增长、最内卷"
+  },
+  {
+    "code": "301269",
+    "name": "华大九天",
+    "chain": "半导体",
+    "node": "EDA",
+    "node_id": "semiconductor::EDA",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "全流程"
+  },
+  {
+    "code": "688206",
+    "name": "概伦电子",
+    "chain": "半导体",
+    "node": "EDA",
+    "node_id": "semiconductor::EDA",
+    "tier": "龙二",
+    "purity": "⭐",
+    "judgment": "细分"
+  },
+  {
+    "code": "301095",
+    "name": "广立微",
+    "chain": "半导体",
+    "node": "EDA",
+    "node_id": "semiconductor::EDA",
+    "tier": "龙二",
+    "purity": "⭐",
+    "judgment": "细分"
+  },
+  {
+    "code": "688008",
+    "name": "澜起科技",
+    "chain": "半导体",
+    "node": "存储-内存接口",
+    "node_id": "semiconductor::存储-内存接口",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "DDR5+HBM配套,接口芯片全球双寡头,受益AI存储"
+  },
+  {
+    "code": "603986",
+    "name": "兆易创新",
+    "chain": "半导体",
+    "node": "存储-主控/模组",
+    "node_id": "semiconductor::存储-主控/模组",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "NOR全球前三+利基DRAM国内第一,绑长鑫,Q1营收+119%净利+522%"
+  },
+  {
+    "code": "301308",
+    "name": "江波龙",
+    "chain": "半导体",
+    "node": "存储-主控/模组",
+    "node_id": "semiconductor::存储-主控/模组",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "自研主控8000万颗部署,企业级SSD,25年净利预增150-210%"
+  },
+  {
+    "code": "688525",
+    "name": "佰维存储",
+    "chain": "半导体",
+    "node": "存储-主控/模组",
+    "node_id": "semiconductor::存储-主控/模组",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "ePOP独供Apple Watch,AI服务器内存占比40%,年内涨幅居前"
+  },
+  {
+    "code": "001309",
+    "name": "德明利",
+    "chain": "半导体",
+    "node": "存储-主控/模组",
+    "node_id": "semiconductor::存储-主控/模组",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "涨价弹性3.2,25年营收破百亿,主控自研"
+  },
+  {
+    "code": "300223",
+    "name": "北京君正",
+    "chain": "半导体",
+    "node": "存储-利基/细分",
+    "node_id": "semiconductor::存储-利基/细分",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "车载存储绑一线车厂,DRAM全球第二"
+  },
+  {
+    "code": "688110",
+    "name": "东芯股份",
+    "chain": "半导体",
+    "node": "存储-利基/细分",
+    "node_id": "semiconductor::存储-利基/细分",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "中小容量NAND/NOR/DRAM全覆盖,车规认证齐"
+  },
+  {
+    "code": "688766",
+    "name": "普冉股份",
+    "chain": "半导体",
+    "node": "存储-利基/细分",
+    "node_id": "semiconductor::存储-利基/细分",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "EEPROM进数据中心/汽车,年内涨幅超100%"
+  },
+  {
+    "code": "300475",
+    "name": "香农芯创",
+    "chain": "半导体",
+    "node": "存储-HBM/分销",
+    "node_id": "semiconductor::存储-HBM/分销",
+    "tier": "龙一",
+    "purity": "",
+    "judgment": "深度绑定HBM,自有海普存储企业级DDR5/eSSD量产"
+  },
+  {
+    "code": "001287",
+    "name": "中电港",
+    "chain": "半导体",
+    "node": "存储-HBM/分销",
+    "node_id": "semiconductor::存储-HBM/分销",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "代理Micron/长江存储,英伟达中国授权分销"
+  },
+  {
+    "code": "002436",
+    "name": "兴森科技",
+    "chain": "半导体",
+    "node": "CoWoS载板-ABF/FCBGA",
+    "node_id": "semiconductor::CoWoS载板-ABF/FCBGA",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "大陆唯一高层ABF量产,华为70%高端FCBGA锁定,过英伟达认证"
+  },
+  {
+    "code": "002916",
+    "name": "深南电路",
+    "chain": "半导体",
+    "node": "CoWoS载板-ABF/FCBGA",
+    "node_id": "semiconductor::CoWoS载板-ABF/FCBGA",
+    "tier": "龙一",
+    "purity": "",
+    "judgment": "ABF 16层批量出货20层认证中,BT载板成熟,广州厂爬坡"
+  },
+  {
+    "code": "300476",
+    "name": "胜宏科技",
+    "chain": "半导体",
+    "node": "CoWoS载板-ABF/FCBGA",
+    "node_id": "semiconductor::CoWoS载板-ABF/FCBGA",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "ABF 2026试产,初期布局宽松线宽领域"
+  },
+  {
+    "code": "002938",
+    "name": "鹏鼎控股",
+    "chain": "半导体",
+    "node": "CoWoS载板-ABF/FCBGA",
+    "node_id": "semiconductor::CoWoS载板-ABF/FCBGA",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "旗下礼鼎半导体ABF载板已量产交付"
+  },
+  {
+    "code": "600183",
+    "name": "生益科技",
+    "chain": "半导体",
+    "node": "CoWoS载板-ABF膜材",
+    "node_id": "semiconductor::CoWoS载板-ABF膜材",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "类ABF积层膜客户验证阶段,与终端协同开发"
+  },
+  {
+    "code": "603186",
+    "name": "华正新材",
+    "chain": "半导体",
+    "node": "CoWoS载板-ABF膜材",
+    "node_id": "semiconductor::CoWoS载板-ABF膜材",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "CBF积层膜可部分替代ABF,过兴森打样,算力芯片适配"
+  },
+  {
+    "code": "603002",
+    "name": "宏昌电子",
+    "chain": "半导体",
+    "node": "CoWoS载板-ABF膜材",
+    "node_id": "semiconductor::CoWoS载板-ABF膜材",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "半导体树脂膜项目,年产172.8万㎡直接配套ABF"
+  },
+  {
+    "code": "688146",
+    "name": "中船特气",
+    "chain": "半导体",
+    "node": "电子特气-含氟蚀刻",
+    "node_id": "semiconductor::电子特气-含氟蚀刻",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "2000吨/年全球第一,深绑长江/长鑫存储,六氟化钨出口价年内+118%"
+  },
+  {
+    "code": "600378",
+    "name": "昊华科技",
+    "chain": "半导体",
+    "node": "电子特气-含氟蚀刻",
+    "node_id": "semiconductor::电子特气-含氟蚀刻",
+    "tier": "龙一",
+    "purity": "",
+    "judgment": "NF3/WF6/六氟丁二烯产能前列,央企供应链稳,收入规模行业最大"
+  },
+  {
+    "code": "300346",
+    "name": "南大光电",
+    "chain": "半导体",
+    "node": "电子特气-含氟蚀刻",
+    "node_id": "semiconductor::电子特气-含氟蚀刻",
+    "tier": "龙二",
+    "purity": "⭐",
+    "judgment": "子公司飞源气体含氟特气,MO源/光刻胶多材料,过台积电中芯认证"
+  },
+  {
+    "code": "688268",
+    "name": "华特气体",
+    "chain": "半导体",
+    "node": "电子特气-光刻气",
+    "node_id": "semiconductor::电子特气-光刻气",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "国产特气拓荒者,认证资质天花板,客户台积电/中芯/长存/美光"
+  },
+  {
+    "code": "002549",
+    "name": "凯美特气",
+    "chain": "半导体",
+    "node": "电子特气-光刻气",
+    "node_id": "semiconductor::电子特气-光刻气",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "聚焦光刻气+稀有特气,精准卡位存储高端制程增量"
+  },
+  {
+    "code": "688507",
+    "name": "中巨芯",
+    "chain": "半导体",
+    "node": "电子特气-材料一体化",
+    "node_id": "semiconductor::电子特气-材料一体化",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "5N5六氟化钨600吨量产,过中芯华虹认证,气体+化学品一站配套"
+  },
+  {
+    "code": "688106",
+    "name": "金宏气体",
+    "chain": "半导体",
+    "node": "电子特气-大宗/氦气",
+    "node_id": "semiconductor::电子特气-大宗/氦气",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "绑长江/长鑫存储,新疆BOG提氦项目,高纯氦自主保供"
+  },
+  {
+    "code": "688548",
+    "name": "广钢气体",
+    "chain": "半导体",
+    "node": "电子特气-大宗/氦气",
+    "node_id": "semiconductor::电子特气-大宗/氦气",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "高纯氦保供破卡脖子,半导体大宗气体"
+  },
+  {
+    "code": "688596",
+    "name": "正帆科技",
+    "chain": "半导体",
+    "node": "电子特气-气械一体",
+    "node_id": "semiconductor::电子特气-气械一体",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "已在你原表设备零部件;此处标注特气一体化服务属性"
+  },
+  {
+    "code": "002971",
+    "name": "和远气体",
+    "chain": "半导体",
+    "node": "电子特气-大宗/综合",
+    "node_id": "semiconductor::电子特气-大宗/综合",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "布局电子大宗气体,近期涨停活跃(6/14复盘和远7天5板)"
+  },
+  {
+    "code": "601138",
+    "name": "工业富联",
+    "chain": "算力配套",
+    "node": "服务器整机",
+    "node_id": "compute_infra::服务器整机",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "扣非+109%、PE才20倍,全场最不透支"
+  },
+  {
+    "code": "000977",
+    "name": "浪潮信息",
+    "chain": "算力配套",
+    "node": "服务器整机",
+    "node_id": "compute_infra::服务器整机",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "唯一英伟达GB300全系认证、液冷整机龙头"
+  },
+  {
+    "code": "603019",
+    "name": "中科曙光",
+    "chain": "算力配套",
+    "node": "服务器整机",
+    "node_id": "compute_infra::服务器整机",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "CPU+DCU+液冷全栈、绑海光"
+  },
+  {
+    "code": "000938",
+    "name": "紫光股份",
+    "chain": "算力配套",
+    "node": "服务器整机",
+    "node_id": "compute_infra::服务器整机",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "AI网络(与通信设备重叠)"
+  },
+  {
+    "code": "000034",
+    "name": "神州数码",
+    "chain": "算力配套",
+    "node": "服务器整机",
+    "node_id": "compute_infra::服务器整机",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "渠道+算力"
+  },
+  {
+    "code": "002261",
+    "name": "拓维信息",
+    "chain": "算力配套",
+    "node": "服务器整机",
+    "node_id": "compute_infra::服务器整机",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "昇腾生态"
+  },
+  {
+    "code": "300476",
+    "name": "胜宏科技",
+    "chain": "算力配套",
+    "node": "高速PCB",
+    "node_id": "compute_infra::高速PCB",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "正交背板、毛利45%+、谷歌TPU量产(原池子漏)"
+  },
+  {
+    "code": "002463",
+    "name": "沪电股份",
+    "chain": "算力配套",
+    "node": "高速PCB",
+    "node_id": "compute_infra::高速PCB",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "千亿、AI服务器主板"
+  },
+  {
+    "code": "002916",
+    "name": "深南电路",
+    "chain": "算力配套",
+    "node": "高速PCB",
+    "node_id": "compute_infra::高速PCB",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "AI服务器"
+  },
+  {
+    "code": "002384",
+    "name": "东山精密",
+    "chain": "算力配套",
+    "node": "高速PCB",
+    "node_id": "compute_infra::高速PCB",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "商誉48亿、200倍TTM、散户涌入"
+  },
+  {
+    "code": "688183",
+    "name": "生益电子",
+    "chain": "算力配套",
+    "node": "高速PCB",
+    "node_id": "compute_infra::高速PCB",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "生益科技子公司"
+  },
+  {
+    "code": "002938",
+    "name": "鹏鼎控股",
+    "chain": "算力配套",
+    "node": "高速PCB",
+    "node_id": "compute_infra::高速PCB",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "消费+算力"
+  },
+  {
+    "code": "600183",
+    "name": "生益科技",
+    "chain": "算力配套",
+    "node": "覆铜板/基材",
+    "node_id": "compute_infra::覆铜板/基材",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "扣非+93%、定价权枢纽、贴AI高速板"
+  },
+  {
+    "code": "600176",
+    "name": "中国巨石",
+    "chain": "算力配套",
+    "node": "覆铜板/基材",
+    "node_id": "compute_infra::覆铜板/基材",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "扣非+94%、16-18倍便宜、周期股+PTFE隐忧"
+  },
+  {
+    "code": "603256",
+    "name": "宏和科技",
+    "chain": "算力配套",
+    "node": "覆铜板/基材",
+    "node_id": "compute_infra::覆铜板/基材",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "高端电子布、正在炒"
+  },
+  {
+    "code": "301526",
+    "name": "国际复材",
+    "chain": "算力配套",
+    "node": "覆铜板/基材",
+    "node_id": "compute_infra::覆铜板/基材",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "+412%含低基数反弹、已涨近3倍"
+  },
+  {
+    "code": "002851",
+    "name": "麦格米特",
+    "chain": "算力配套",
+    "node": "AI电源/供电",
+    "node_id": "compute_infra::AI电源/供电",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "GB200/300、NVL72占20%,但扣非-68%、赌2027"
+  },
+  {
+    "code": "02577.HK",
+    "name": "英诺赛科",
+    "chain": "算力配套",
+    "node": "AI电源/供电",
+    "node_id": "compute_infra::AI电源/供电",
+    "tier": "龙二",
+    "purity": "⭐",
+    "judgment": "已供谷歌、港股、AI才占8%"
+  },
+  {
+    "code": "002335",
+    "name": "科华数据",
+    "chain": "算力配套",
+    "node": "AI电源/供电",
+    "node_id": "compute_infra::AI电源/供电",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "数据中心电源"
+  },
+  {
+    "code": "300870",
+    "name": "欧陆通",
+    "chain": "算力配套",
+    "node": "AI电源/供电",
+    "node_id": "compute_infra::AI电源/供电",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "全球第12"
+  },
+  {
+    "code": "002364",
+    "name": "中恒电气",
+    "chain": "算力配套",
+    "node": "AI电源/供电",
+    "node_id": "compute_infra::AI电源/供电",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "电力电子"
+  },
+  {
+    "code": "688676",
+    "name": "金盘科技",
+    "chain": "算力配套",
+    "node": "AI电源/供电",
+    "node_id": "compute_infra::AI电源/供电",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "数据中心配电"
+  },
+  {
+    "code": "002028",
+    "name": "思源电气",
+    "chain": "算力配套",
+    "node": "AI电源/供电",
+    "node_id": "compute_infra::AI电源/供电",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "配电"
+  },
+  {
+    "code": "002837",
+    "name": "英维克",
+    "chain": "算力配套",
+    "node": "液冷/散热",
+    "node_id": "compute_infra::液冷/散热",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "英伟达供应链、冷板+浸没双路线、占比破20%"
+  },
+  {
+    "code": "301018",
+    "name": "申菱环境",
+    "chain": "算力配套",
+    "node": "液冷/散热",
+    "node_id": "compute_infra::液冷/散热",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "绑华为字节"
+  },
+  {
+    "code": "300499",
+    "name": "高澜股份",
+    "chain": "算力配套",
+    "node": "液冷/散热",
+    "node_id": "compute_infra::液冷/散热",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "绑华为字节"
+  },
+  {
+    "code": "600160",
+    "name": "巨化股份",
+    "chain": "算力配套",
+    "node": "液冷/散热",
+    "node_id": "compute_infra::液冷/散热",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "国产替代3M冷却液"
+  },
+  {
+    "code": "300990",
+    "name": "同飞股份",
+    "chain": "算力配套",
+    "node": "液冷/散热",
+    "node_id": "compute_infra::液冷/散热",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "延伸数据中心"
+  },
+  {
+    "code": "300602",
+    "name": "飞荣达",
+    "chain": "算力配套",
+    "node": "液冷/散热",
+    "node_id": "compute_infra::液冷/散热",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "导热"
+  },
+  {
+    "code": "300684",
+    "name": "中石科技",
+    "chain": "算力配套",
+    "node": "液冷/散热",
+    "node_id": "compute_infra::液冷/散热",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "英伟达液冷板"
+  },
+  {
+    "code": "002179",
+    "name": "中航光电",
+    "chain": "算力配套",
+    "node": "液冷/散热",
+    "node_id": "compute_infra::液冷/散热",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "破海外垄断"
+  },
+  {
+    "code": "002484",
+    "name": "江海股份",
+    "chain": "算力配套",
+    "node": "其他被动元件",
+    "node_id": "compute_infra::其他被动元件",
+    "tier": "龙一",
+    "purity": "",
+    "judgment": "进英伟达链(备电)"
+  },
+  {
+    "code": "603989",
+    "name": "艾华集团",
+    "chain": "算力配套",
+    "node": "其他被动元件",
+    "node_id": "compute_infra::其他被动元件",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "数据中心"
+  },
+  {
+    "code": "002475",
+    "name": "立讯精密",
+    "chain": "算力配套",
+    "node": "连接器/铜缆",
+    "node_id": "compute_infra::连接器/铜缆",
+    "tier": "龙一",
+    "purity": "",
+    "judgment": "高速铜连接、AI服务器"
+  },
+  {
+    "code": "688668",
+    "name": "鼎通科技",
+    "chain": "算力配套",
+    "node": "连接器/铜缆",
+    "node_id": "compute_infra::连接器/铜缆",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "224G"
+  },
+  {
+    "code": "300913",
+    "name": "兆龙互连",
+    "chain": "算力配套",
+    "node": "连接器/铜缆",
+    "node_id": "compute_infra::连接器/铜缆",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "铜连接"
+  },
+  {
+    "code": "688629",
+    "name": "华丰科技",
+    "chain": "算力配套",
+    "node": "连接器/铜缆",
+    "node_id": "compute_infra::连接器/铜缆",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "国产"
+  },
+  {
+    "code": "300285",
+    "name": "国瓷材料",
+    "chain": "MLCC",
+    "node": "上游材料",
+    "node_id": "mlcc::上游材料",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "钛酸钡粉体最卡脖子(成本35-45%)、卖铲子、打破海外垄断"
+  },
+  {
+    "code": "605376",
+    "name": "博迁新材",
+    "chain": "MLCC",
+    "node": "上游材料",
+    "node_id": "mlcc::上游材料",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "内电极镍粉、三星电机核心供应商、AI超细镍粉放量、Q1+49%"
+  },
+  {
+    "code": "002859",
+    "name": "洁美科技",
+    "chain": "MLCC",
+    "node": "制程辅材",
+    "node_id": "mlcc::制程辅材",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "卖铲人、打入三星村田、扩产就受益、Q1+30%"
+  },
+  {
+    "code": "601208",
+    "name": "东材科技",
+    "chain": "MLCC",
+    "node": "制程辅材",
+    "node_id": "mlcc::制程辅材",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "辅材配套"
+  },
+  {
+    "code": "300408",
+    "name": "三环集团",
+    "chain": "MLCC",
+    "node": "中游制造",
+    "node_id": "mlcc::中游制造",
+    "tier": "龙一",
+    "purity": "",
+    "judgment": "全产业链一体化(粉体自给)、贴AI服务器、高容相对优"
+  },
+  {
+    "code": "000636",
+    "name": "风华高科",
+    "chain": "MLCC",
+    "node": "中游制造",
+    "node_id": "mlcc::中游制造",
+    "tier": "龙一",
+    "purity": "",
+    "judgment": "中低端为主、已涨2倍、英伟达认证被自己否认"
+  },
+  {
+    "code": "301566",
+    "name": "达利凯普",
+    "chain": "MLCC",
+    "node": "中游制造",
+    "node_id": "mlcc::中游制造",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "高频瓷介、通信基站/毫米波、高端细分"
+  },
+  {
+    "code": "688556",
+    "name": "昀冢科技",
+    "chain": "MLCC",
+    "node": "中游制造",
+    "node_id": "mlcc::中游制造",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "0805高容量产"
+  },
+  {
+    "code": "603678",
+    "name": "火炬电子",
+    "chain": "MLCC",
+    "node": "军工高可靠",
+    "node_id": "mlcc::军工高可靠",
+    "tier": "龙一",
+    "purity": "",
+    "judgment": "军工高可靠、和AI关系小、另一条逻辑"
+  },
+  {
+    "code": "603267",
+    "name": "鸿远电子",
+    "chain": "MLCC",
+    "node": "军工高可靠",
+    "node_id": "mlcc::军工高可靠",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "军工、Q1+74%、非AI"
+  },
+  {
+    "code": "300726",
+    "name": "宏达电子",
+    "chain": "MLCC",
+    "node": "军工高可靠",
+    "node_id": "mlcc::军工高可靠",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "军工、Q1+70%、非AI"
+  },
+  {
+    "code": "301013",
+    "name": "利和兴",
+    "chain": "MLCC",
+    "node": "设备",
+    "node_id": "mlcc::设备",
+    "tier": "龙一",
+    "purity": "",
+    "judgment": "卖铲子、设备稀缺"
+  },
+  {
+    "code": "002975",
+    "name": "博杰股份",
+    "chain": "MLCC",
+    "node": "设备",
+    "node_id": "mlcc::设备",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "卖铲子"
+  },
+  {
+    "code": "300346",
+    "name": "南大光电",
+    "chain": "光刻胶",
+    "node": "半导体光刻胶",
+    "node_id": "photoresist::半导体光刻胶",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "国产化率最低(<5%)、最卡脖子、特气前驱体双布局"
+  },
+  {
+    "code": "603650",
+    "name": "彤程新材",
+    "chain": "光刻胶",
+    "node": "半导体光刻胶",
+    "node_id": "photoresist::半导体光刻胶",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "国产光刻胶核心、北京科华、贴先进制程"
+  },
+  {
+    "code": "300236",
+    "name": "上海新阳",
+    "chain": "光刻胶",
+    "node": "半导体光刻胶",
+    "node_id": "photoresist::半导体光刻胶",
+    "tier": "龙二",
+    "purity": "⭐",
+    "judgment": "光刻胶+电镀液、国产突破"
+  },
+  {
+    "code": "300655",
+    "name": "晶瑞电材",
+    "chain": "光刻胶",
+    "node": "半导体光刻胶",
+    "node_id": "photoresist::半导体光刻胶",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "i线/KrF、材料平台"
+  },
+  {
+    "code": "603306",
+    "name": "华懋科技",
+    "chain": "光刻胶",
+    "node": "半导体光刻胶",
+    "node_id": "photoresist::半导体光刻胶",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "上游单体、间接"
+  },
+  {
+    "code": "300576",
+    "name": "容大感光",
+    "chain": "光刻胶",
+    "node": "面板/PCB光刻胶",
+    "node_id": "photoresist::面板/PCB光刻胶",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "PCB感光材料"
+  },
+  {
+    "code": "300398",
+    "name": "飞凯材料",
+    "chain": "光刻胶",
+    "node": "面板/PCB光刻胶",
+    "node_id": "photoresist::面板/PCB光刻胶",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "与康宁有供货关系"
+  },
+  {
+    "code": "002050",
+    "name": "三花智控",
+    "chain": "机器人",
+    "node": "整机/本体",
+    "node_id": "robotics::整机/本体",
+    "tier": "龙一",
+    "purity": "",
+    "judgment": "特斯拉Optimus链"
+  },
+  {
+    "code": "601689",
+    "name": "拓普集团",
+    "chain": "机器人",
+    "node": "整机/本体",
+    "node_id": "robotics::整机/本体",
+    "tier": "龙一",
+    "purity": "",
+    "judgment": "Optimus链"
+  },
+  {
+    "code": "300124",
+    "name": "汇川技术",
+    "chain": "机器人",
+    "node": "整机/本体",
+    "node_id": "robotics::整机/本体",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "运动控制平台(与伺服重叠)"
+  },
+  {
+    "code": "300115",
+    "name": "长盈精密",
+    "chain": "机器人",
+    "node": "整机/本体",
+    "node_id": "robotics::整机/本体",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "结构件"
+  },
+  {
+    "code": "688017",
+    "name": "绿的谐波",
+    "chain": "机器人",
+    "node": "减速器",
+    "node_id": "robotics::减速器",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "机器人关节核心"
+  },
+  {
+    "code": "002472",
+    "name": "双环传动",
+    "chain": "机器人",
+    "node": "减速器",
+    "node_id": "robotics::减速器",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "国产替代"
+  },
+  {
+    "code": "002896",
+    "name": "中大力德",
+    "chain": "机器人",
+    "node": "减速器",
+    "node_id": "robotics::减速器",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "国产"
+  },
+  {
+    "code": "300124",
+    "name": "汇川技术",
+    "chain": "机器人",
+    "node": "伺服/电机",
+    "node_id": "robotics::伺服/电机",
+    "tier": "龙一",
+    "purity": "",
+    "judgment": "(与整机重叠)"
+  },
+  {
+    "code": "603728",
+    "name": "鸣志电器",
+    "chain": "机器人",
+    "node": "伺服/电机",
+    "node_id": "robotics::伺服/电机",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "灵巧手电机"
+  },
+  {
+    "code": "300660",
+    "name": "江苏雷利",
+    "chain": "机器人",
+    "node": "伺服/电机",
+    "node_id": "robotics::伺服/电机",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "灵巧手"
+  },
+  {
+    "code": "603662",
+    "name": "柯力传感",
+    "chain": "机器人",
+    "node": "传感器",
+    "node_id": "robotics::传感器",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "六维力觉"
+  },
+  {
+    "code": "301413",
+    "name": "安培龙",
+    "chain": "机器人",
+    "node": "传感器",
+    "node_id": "robotics::传感器",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "触觉早期"
+  },
+  {
+    "code": "300354",
+    "name": "东华测试",
+    "chain": "机器人",
+    "node": "传感器",
+    "node_id": "robotics::传感器",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "传感"
+  },
+  {
+    "code": "601100",
+    "name": "恒立液压",
+    "chain": "机器人",
+    "node": "丝杠/传动",
+    "node_id": "robotics::丝杠/传动",
+    "tier": "龙一",
+    "purity": "",
+    "judgment": "线性执行器"
+  },
+  {
+    "code": "300580",
+    "name": "贝斯特",
+    "chain": "机器人",
+    "node": "丝杠/传动",
+    "node_id": "robotics::丝杠/传动",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "传动"
+  },
+  {
+    "code": "603667",
+    "name": "五洲新春",
+    "chain": "机器人",
+    "node": "丝杠/传动",
+    "node_id": "robotics::丝杠/传动",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "国产突破"
+  },
+  {
+    "code": "688322",
+    "name": "奥比中光",
+    "chain": "机器人",
+    "node": "视觉/大脑(交叉)",
+    "node_id": "robotics::视觉/大脑(交叉)",
+    "tier": "龙一",
+    "purity": "",
+    "judgment": "机器人眼睛"
+  },
+  {
+    "code": "09660.HK",
+    "name": "地平线",
+    "chain": "机器人",
+    "node": "视觉/大脑(交叉)",
+    "node_id": "robotics::视觉/大脑(交叉)",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "机器人大脑(港股)"
+  }
+]

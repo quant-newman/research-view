@@ -1,0 +1,252 @@
+{
+  "光模块": [
+    "optical::光模块成品"
+  ],
+  "800G": [
+    "optical::光模块成品"
+  ],
+  "1.6T": [
+    "optical::光模块成品"
+  ],
+  "CPO": [
+    "optical::光器件/CPO封装",
+    "semiconductor::先进封测"
+  ],
+  "硅光": [
+    "optical::光芯片",
+    "optical::光模块成品"
+  ],
+  "光芯片": [
+    "optical::光芯片"
+  ],
+  "光器件": [
+    "optical::光器件/CPO封装"
+  ],
+  "光纤": [
+    "optical::光纤光缆"
+  ],
+  "光缆": [
+    "optical::光纤光缆"
+  ],
+  "海缆": [
+    "optical::光纤光缆"
+  ],
+  "交换机": [
+    "optical::通信设备"
+  ],
+  "数通": [
+    "optical::通信设备",
+    "optical::光模块成品"
+  ],
+  "算力芯片": [
+    "semiconductor::AI算力芯片"
+  ],
+  "GPU": [
+    "semiconductor::AI算力芯片"
+  ],
+  "DCU": [
+    "semiconductor::AI算力芯片"
+  ],
+  "国产算力": [
+    "semiconductor::AI算力芯片"
+  ],
+  "晶圆代工": [
+    "semiconductor::晶圆代工"
+  ],
+  "先进制程": [
+    "semiconductor::晶圆代工"
+  ],
+  "半导体设备": [
+    "semiconductor::半导体设备"
+  ],
+  "刻蚀": [
+    "semiconductor::半导体设备"
+  ],
+  "薄膜沉积": [
+    "semiconductor::半导体设备"
+  ],
+  "量测": [
+    "semiconductor::半导体设备"
+  ],
+  "光刻机": [
+    "semiconductor::半导体设备"
+  ],
+  "测试设备": [
+    "semiconductor::半导体设备"
+  ],
+  "零部件": [
+    "semiconductor::设备零部件"
+  ],
+  "半导体材料": [
+    "semiconductor::半导体材料"
+  ],
+  "靶材": [
+    "semiconductor::半导体材料"
+  ],
+  "CMP": [
+    "semiconductor::半导体材料"
+  ],
+  "抛光": [
+    "semiconductor::半导体材料"
+  ],
+  "封测": [
+    "semiconductor::先进封测"
+  ],
+  "先进封装": [
+    "semiconductor::先进封测",
+    "semiconductor::CoWoS载板-ABF/FCBGA"
+  ],
+  "存储": [
+    "semiconductor::存储",
+    "semiconductor::存储-主控/模组"
+  ],
+  "DRAM": [
+    "semiconductor::存储-内存接口",
+    "semiconductor::存储-主控/模组"
+  ],
+  "NAND": [
+    "semiconductor::存储-主控/模组"
+  ],
+  "HBM": [
+    "semiconductor::存储-HBM/分销",
+    "semiconductor::CoWoS载板-ABF/FCBGA"
+  ],
+  "内存接口": [
+    "semiconductor::存储-内存接口"
+  ],
+  "存储涨价": [
+    "semiconductor::存储-主控/模组",
+    "semiconductor::存储-HBM/分销"
+  ],
+  "NOR": [
+    "semiconductor::存储-利基/细分"
+  ],
+  "利基存储": [
+    "semiconductor::存储-利基/细分"
+  ],
+  "接口芯片": [
+    "semiconductor::接口/IP芯片"
+  ],
+  "芯片设计": [
+    "semiconductor::芯片设计"
+  ],
+  "模拟芯片": [
+    "semiconductor::芯片设计"
+  ],
+  "功率半导体": [
+    "semiconductor::功率/化合物"
+  ],
+  "碳化硅": [
+    "semiconductor::功率/化合物"
+  ],
+  "IGBT": [
+    "semiconductor::功率/化合物"
+  ],
+  "EDA": [
+    "semiconductor::EDA"
+  ],
+  "ABF": [
+    "semiconductor::CoWoS载板-ABF/FCBGA",
+    "semiconductor::CoWoS载板-ABF膜材"
+  ],
+  "载板": [
+    "semiconductor::CoWoS载板-ABF/FCBGA"
+  ],
+  "FCBGA": [
+    "semiconductor::CoWoS载板-ABF/FCBGA"
+  ],
+  "CoWoS": [
+    "semiconductor::CoWoS载板-ABF/FCBGA",
+    "semiconductor::先进封测"
+  ],
+  "电子特气": [
+    "semiconductor::电子特气-含氟蚀刻",
+    "semiconductor::电子特气-光刻气"
+  ],
+  "六氟化钨": [
+    "semiconductor::电子特气-含氟蚀刻"
+  ],
+  "三氟化氮": [
+    "semiconductor::电子特气-含氟蚀刻"
+  ],
+  "光刻气": [
+    "semiconductor::电子特气-光刻气"
+  ],
+  "氦气": [
+    "semiconductor::电子特气-大宗/氦气"
+  ],
+  "服务器": [
+    "compute_infra::服务器整机"
+  ],
+  "AI服务器": [
+    "compute_infra::服务器整机"
+  ],
+  "PCB": [
+    "compute_infra::高速PCB"
+  ],
+  "高速PCB": [
+    "compute_infra::高速PCB"
+  ],
+  "覆铜板": [
+    "compute_infra::覆铜板/基材"
+  ],
+  "电源": [
+    "compute_infra::AI电源/供电"
+  ],
+  "供电": [
+    "compute_infra::AI电源/供电"
+  ],
+  "液冷": [
+    "compute_infra::液冷/散热"
+  ],
+  "散热": [
+    "compute_infra::液冷/散热"
+  ],
+  "连接器": [
+    "compute_infra::连接器/铜缆"
+  ],
+  "铜缆": [
+    "compute_infra::连接器/铜缆"
+  ],
+  "被动元件": [
+    "compute_infra::其他被动元件"
+  ],
+  "MLCC": [
+    "mlcc::中游制造",
+    "mlcc::上游材料"
+  ],
+  "陶瓷电容": [
+    "mlcc::中游制造"
+  ],
+  "光刻胶": [
+    "photoresist::半导体光刻胶",
+    "photoresist::面板/PCB光刻胶"
+  ],
+  "机器人": [
+    "robotics::整机/本体"
+  ],
+  "人形机器人": [
+    "robotics::整机/本体"
+  ],
+  "具身智能": [
+    "robotics::整机/本体"
+  ],
+  "减速器": [
+    "robotics::减速器"
+  ],
+  "谐波": [
+    "robotics::减速器"
+  ],
+  "伺服": [
+    "robotics::伺服/电机"
+  ],
+  "丝杠": [
+    "robotics::丝杠/传动"
+  ],
+  "力传感器": [
+    "robotics::传感器"
+  ],
+  "传感器": [
+    "robotics::传感器"
+  ]
+}
