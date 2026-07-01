@@ -30,11 +30,12 @@ function Badge({ text, cls }: { text: string; cls: string }) {
 
 function StatusBar({ d, onHealth }: { d: Dashboard; onHealth: () => void }) {
   const t = d.temperature;
+  const sessionLabel = d.report?.session === "premarket" ? "盘前" : "盘后";
   return (
     <div className="flex items-center gap-4 px-4 h-11 border-b hairline bg-surface text-[12px]">
       <div className="flex items-center gap-2">
         <span className="w-2 h-2 rounded-full bg-accent inline-block" />
-        <span className="font-semibold">盘后</span>
+        <span className="font-semibold">{sessionLabel}</span>
         <span className="text-dim">·</span>
         <span className="text-muted">{d.report?.data_cutoff || d.meta.date}</span>
       </div>
@@ -188,6 +189,25 @@ function Events({ events }: { events: StockEvent[] }) {
   );
 }
 
+function UsOvernightBoard({ us }: { us: NonNullable<Dashboard["report"]>["us_overnight"] }) {
+  if (!us) return null;
+  return (
+    <div className="space-y-1">
+      <div className="text-[11px] text-dim mb-1">美东 {us.us_session_date} 收盘 · 隔夜外盘参照(红涨绿跌)</div>
+      {us.items.map((it) => (
+        <div key={it.ticker} className="flex items-center gap-2 text-[12px]">
+          <span className="text-primary w-24 shrink-0 truncate">{it.name}</span>
+          <span className="mono text-dim text-[11px] w-12 shrink-0">{it.ticker}</span>
+          <span className={`mono w-16 shrink-0 text-right ${pctColor(it.pct ?? 0)}`}>
+            {it.pct === null ? "—" : `${it.pct > 0 ? "+" : ""}${it.pct}%`}
+          </span>
+          <span className="text-dim text-[11px] truncate">{it.mapping}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="border hairline rounded bg-surface">
@@ -243,6 +263,11 @@ export default function App() {
           <div className="flex-1 grid grid-cols-[1.6fr_1fr] gap-4 p-4 overflow-auto">
             <div><DailyReport d={d} /></div>
             <div className="space-y-4">
+              {d.report?.us_overnight && (
+                <Panel title="隔夜美股科技链 · 盘前">
+                  <UsOvernightBoard us={d.report.us_overnight} />
+                </Panel>
+              )}
               <Panel title="判断复盘账本 · 近30日">
                 <div className="text-dim text-[12px]">存活 — · 证伪 — · 错误类型分布(账本积累中)</div>
               </Panel>

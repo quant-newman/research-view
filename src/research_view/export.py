@@ -132,6 +132,14 @@ def build_dashboard(date_utc8: str) -> Path:
                       "headline": row[3], "top3": row[4], "sectors": row[5],
                       "falsification": row[6], "holdings_moves": row[7],
                       "generated_at": str(row[8])}
+            # 盘前报告附隔夜美股科技链(台北 yfinance 产出,scp 到本机 exports/),供前端小面板
+            if row[1] == "premarket":
+                us_path = EXPORT_DIR / f"us_overnight_{date_utc8}.json"
+                if us_path.exists():
+                    try:
+                        report["us_overnight"] = json.loads(us_path.read_text(encoding="utf-8"))
+                    except Exception:  # noqa: BLE001 美股文件损坏不阻塞导出
+                        pass
     # 热力图(节点四象限 + 个股散点)。数值列 Decimal → float,否则前端拿到字符串画不出点。
     def fnum(v):
         return float(v) if v is not None else None

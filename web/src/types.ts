@@ -7,10 +7,13 @@ export interface Headline { fact: string; user_judgment: string; confidence: str
 export interface Top3Item { change: string; evidence: string; node_ids: string[]; related_stocks: string[]; }
 export interface Sector { chain: string; status: string; }
 export interface Falsification { claim: string; condition: string; draft_by: string; }
+export interface UsItem { ticker: string; name: string; mapping: string; close: number | null; pct: number | null; }
+export interface UsOvernight { us_session_date: string; items: UsItem[]; n_ok: number; fetched_at: string; }
 export interface Report {
   report_id: string; session: string; data_cutoff: string;
   headline: Headline; top3: Top3Item[]; sectors: Sector[];
   falsification: Falsification[]; holdings_moves: any[]; generated_at: string;
+  us_overnight?: UsOvernight;
 }
 export interface NewsItem {
   title: string; one_line: string; sentiment: string; src: string;
