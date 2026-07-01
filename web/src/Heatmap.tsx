@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as echarts from "echarts";
 import type { Heatmap, HeatNode, HeatStock } from "./types";
+import { useOpenStock } from "./stockCtx";
 
 const QUAD_COLOR: Record<string, string> = {
   核心主线: "#F6465D", 潜在补涨: "#F0B90B", 等待验证: "#4A9EFF", 风险区: "#5A6474", 数据不足: "#232B36",
@@ -144,6 +145,7 @@ function NodeTable({ nodes, onSelect, selected }: { nodes: HeatNode[]; onSelect:
 }
 
 function StockPanel({ node, stocks, onClose }: { node: HeatNode; stocks: HeatStock[]; onClose: () => void }) {
+  const openStock = useOpenStock();
   const num = (v: number | null) => (v == null ? "—" : Number.isInteger(v) ? v : v.toFixed(1));
   const pctCls = (v: number | null) => (v == null ? "text-dim" : v > 0 ? "text-up" : v < 0 ? "text-down" : "text-muted");
   const sorted = [...stocks].sort((a, b) => (b.ret_6m ?? -1e9) - (a.ret_6m ?? -1e9));
@@ -168,7 +170,8 @@ function StockPanel({ node, stocks, onClose }: { node: HeatNode; stocks: HeatSto
             </tr></thead>
             <tbody>
               {sorted.map((s) => (
-                <tr key={s.code} className="border-t hairline">
+                <tr key={s.code} onClick={() => openStock({ code: s.code, name: s.name })}
+                    className="border-t hairline cursor-pointer hover:bg-elevated/40">
                   <td className="py-1 text-primary">{s.name}</td>
                   <td className="text-dim text-[13px]">{s.code}</td>
                   <td className={`text-right ${pctCls(s.ret_6m)}`}>{num(s.ret_6m)}</td>

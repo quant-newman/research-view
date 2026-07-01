@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Hotspot, HotspotItem } from "./types";
+import { useOpenStock } from "./stockCtx";
 
 const trendCls: Record<string, string> = {
   升温: "text-up bg-up/10", 降温: "text-down bg-down/10", 持平: "text-muted bg-muted/10",
@@ -8,6 +9,7 @@ const pctCls = (v: number | null | undefined) => (v == null ? "text-dim" : v > 0
 
 function Card({ it, rank }: { it: HotspotItem; rank: number }) {
   const [open, setOpen] = useState(rank <= 2);
+  const openStock = useOpenStock();
   return (
     <div className="border hairline rounded bg-surface">
       <div className="flex items-start gap-3 px-3 py-2.5">
@@ -27,7 +29,7 @@ function Card({ it, rank }: { it: HotspotItem; rank: number }) {
           </div>
           {it.stocks?.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-1.5">
-              {it.stocks.slice(0, 6).map((s) => <span key={s} className="text-[12px] text-muted bg-elevated/60 px-1.5 py-0.5 rounded">{s}</span>)}
+              {it.stocks.slice(0, 6).map((s) => <button key={s} onClick={() => openStock({ name: s })} className="text-[12px] text-muted bg-elevated/60 px-1.5 py-0.5 rounded hover:text-accent">{s}</button>)}
             </div>
           )}
           {it.news?.length > 0 && (

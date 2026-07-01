@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { NewsNode, NewsItem } from "./types";
+import { useOpenStock } from "./stockCtx";
 
 const sentColor: Record<string, string> = {
   利好: "text-up bg-up/10", 利空: "text-down bg-down/10",
@@ -25,6 +26,7 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
 }
 
 function NewsRow({ n }: { n: Flat }) {
+  const open = useOpenStock();
   const mine = n.holding || n.watching;
   return (
     <div className={`border rounded px-3 py-2 ${mine ? "border-accent/40 bg-accent/5" : "hairline bg-surface"}`}>
@@ -35,7 +37,7 @@ function NewsRow({ n }: { n: Flat }) {
           {n.summary && <p className="text-muted text-[14px] leading-relaxed mt-1">{n.summary}</p>}
           <div className="flex flex-wrap items-center gap-2 mt-1 text-[13px] text-dim">
             <span className="text-muted">{n.chain}/{n.node}</span>
-            {n.codes?.slice(0, 4).map((c) => <span key={c} className="mono text-muted">{c}</span>)}
+            {n.codes?.slice(0, 4).map((c) => <button key={c} onClick={() => open({ code: c })} className="mono text-muted hover:text-accent">{c}</button>)}
             {n.holding && <span className="text-accent">持仓</span>}
             {n.watching && <span className="text-info">自选</span>}
             <span className="ml-auto text-muted">{n.src}</span>

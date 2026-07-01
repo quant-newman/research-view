@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { UsBoard, UsBoardItem } from "./types";
+import { useOpenStock } from "./stockCtx";
 
 // 全站红涨绿跌硬约束(美股在本 A股 工具里也沿用,与隔夜面板一致)
 const pctColor = (v: number | null) => (v == null ? "text-dim" : v > 0 ? "text-up" : v < 0 ? "text-down" : "text-muted");
@@ -34,8 +35,9 @@ const HEAD = (
 );
 
 function Row({ it }: { it: UsBoardItem }) {
+  const open = useOpenStock();
   return (
-    <tr className="border-t hairline">
+    <tr onClick={() => open({ code: it.ticker, name: it.name })} className="border-t hairline cursor-pointer hover:bg-elevated/40">
       <td className="py-1 text-primary">{it.name}</td>
       <td className="mono text-dim text-[13px]">{it.ticker}</td>
       <td className="text-right mono text-muted">{it.close ?? "—"}</td>

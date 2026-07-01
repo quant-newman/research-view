@@ -7,6 +7,8 @@ import { NewsView } from "./News";
 import { UsBoardView } from "./UsBoard";
 import { UsResearchView } from "./UsResearch";
 import { HotspotView } from "./Hotspot";
+import { StockDetail } from "./StockDetail";
+import { StockCtx, type StockSel } from "./stockCtx";
 
 type Market = "A" | "US";
 
@@ -309,6 +311,7 @@ export default function App() {
   const [err, setErr] = useState("");
   const [view, setView] = useState("report");
   const [market, setMarket] = useState<Market>("A");
+  const [stock, setStock] = useState<StockSel | null>(null);
   useEffect(() => {
     fetch("/data/dashboard.json").then((r) => r.json()).then(setD).catch((e) => setErr(String(e)));
   }, []);
@@ -353,7 +356,9 @@ export default function App() {
   const enabled = new Set(["report", "hotspot", "heatmap", "news", "research", "letters", "system"]);
 
   return (
+    <StockCtx.Provider value={setStock}>
     <div className="min-h-screen flex">
+      {stock && <StockDetail sel={stock} market={market} d={d} onClose={() => setStock(null)} />}
       {/* 左侧窄导航 */}
       <nav className="w-16 shrink-0 border-r hairline bg-surface flex flex-col items-center py-4 gap-4 text-[12px] text-dim">
         <div className="text-accent font-bold text-[15px]">RV</div>
@@ -449,5 +454,6 @@ export default function App() {
         )}
       </div>
     </div>
+    </StockCtx.Provider>
   );
 }

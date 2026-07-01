@@ -1,4 +1,5 @@
 import type { Research } from "./types";
+import { useOpenStock } from "./stockCtx";
 
 // 评级色:偏多=红(A股涨色) 偏空=绿 中性=灰
 const ratingColor = (r: string) => {
@@ -8,6 +9,7 @@ const ratingColor = (r: string) => {
 };
 
 export function ResearchView({ r }: { r: Research | undefined }) {
+  const open = useOpenStock();
   if (!r) return <div className="text-muted p-4">暂无研报</div>;
   return (
     <div className="grid grid-cols-[1.7fr_1fr] gap-4">
@@ -20,7 +22,7 @@ export function ResearchView({ r }: { r: Research | undefined }) {
             <div key={i} className="px-3 py-2 hover:bg-elevated/40">
               <div className="flex items-center gap-2 text-[14px]">
                 <span className="mono text-dim">{rp.date}</span>
-                <span className="text-primary font-medium">{rp.name}</span>
+                <button onClick={() => open({ code: rp.code, name: rp.name })} className="text-primary font-medium hover:text-accent">{rp.name}</button>
                 {rp.scope === "核心池"
                   ? <span className="px-1 rounded text-[12px] text-accent bg-accent/10">核心</span>
                   : <span className="px-1 rounded text-[12px] text-muted bg-muted/10">泛科技{rp.industry ? `·${rp.industry}` : ""}</span>}

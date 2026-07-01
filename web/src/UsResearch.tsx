@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { UsResearchItem } from "./types";
+import { useOpenStock } from "./stockCtx";
 
 const recColor = (r: string | null) => {
   if (!r) return "text-muted bg-muted/10";
@@ -12,6 +13,7 @@ const recLabel: Record<string, string> = {
 };
 
 export function UsResearchView({ items }: { items: UsResearchItem[] | undefined }) {
+  const open = useOpenStock();
   const [sort, setSort] = useState<"upside" | "n_analysts">("upside");
   const rows = useMemo(
     () => [...(items || [])].sort((a, b) => ((b[sort] ?? -1e9) as number) - ((a[sort] ?? -1e9) as number)),
@@ -41,7 +43,7 @@ export function UsResearchView({ items }: { items: UsResearchItem[] | undefined 
         </thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={r.code} className="border-t hairline">
+            <tr key={r.code} onClick={() => open({ code: r.code, name: r.name })} className="border-t hairline cursor-pointer hover:bg-elevated/40">
               <td className="py-1 text-primary">{r.name}</td>
               <td className="mono text-dim text-[13px]">{r.code}</td>
               <td className="text-muted text-[13px]">{r.sector}</td>
