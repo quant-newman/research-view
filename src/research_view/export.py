@@ -77,7 +77,7 @@ def build_export(date_utc8: str) -> Path:
         cur.execute("""
             SELECT rn.news_id, rn.src, rn.title, rn.one_line, rn.sentiment,
                    rn.event_type, rn.url, rn.matched_codes, rn.matched_node_ids,
-                   rn.matched_tech_codes, rn.tech_industries, rn.pub_time
+                   rn.matched_tech_codes, rn.tech_industries, rn.pub_time, rn.summary
             FROM raw_news rn
             WHERE rn.relevant AND (rn.is_chain_relevant IS NOT false
                   OR array_length(rn.matched_codes,1) > 0 OR array_length(rn.matched_tech_codes,1) > 0)
@@ -101,8 +101,8 @@ def build_export(date_utc8: str) -> Path:
 
     # 按节点分组新闻;核心链节点在前,泛科技行业组在后
     by_node: dict[str, dict] = {}
-    for nid, src, title, one_line, sent, etype, url, codes, node_ids, tech_codes, tech_inds, pub_time in news:
-        item = {"title": title, "one_line": one_line, "sentiment": sent, "event_type": etype,
+    for nid, src, title, one_line, sent, etype, url, codes, node_ids, tech_codes, tech_inds, pub_time, summary in news:
+        item = {"title": title, "one_line": one_line, "summary": summary, "sentiment": sent, "event_type": etype,
                 "src": src, "url": url, "time": str(pub_time), "codes": codes or [], **flags(codes)}
         if node_ids:  # 命中核心链节点
             for node_id in node_ids:

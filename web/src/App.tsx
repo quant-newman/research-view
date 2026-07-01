@@ -191,10 +191,13 @@ function EventStream({ nodes }: { nodes: Dashboard["news_by_node"] }) {
           </div>
           <div className="space-y-1">
             {g.items.slice(0, 4).map((n: NewsItem, i) => (
-              <div key={i} className="flex items-start gap-2 text-[14px] leading-snug">
-                <Badge text={n.sentiment} cls={sentColor[n.sentiment] || "text-muted"} />
-                <span className="text-primary flex-1">{n.one_line || n.title}</span>
-                <span className="text-dim text-[13px] shrink-0">{n.src}</span>
+              <div key={i} className="text-[14px] leading-snug">
+                <div className="flex items-start gap-2">
+                  <Badge text={n.sentiment} cls={sentColor[n.sentiment] || "text-muted"} />
+                  <span className="text-primary flex-1 font-medium">{n.one_line || n.title}</span>
+                  <span className="text-dim text-[13px] shrink-0">{n.src}</span>
+                </div>
+                {n.summary && <p className="text-muted text-[13px] leading-relaxed mt-0.5 ml-1">{n.summary}</p>}
               </div>
             ))}
           </div>

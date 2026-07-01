@@ -5,10 +5,25 @@
 from __future__ import annotations
 
 import hashlib
+import html
+import re
 
 import tushare as ts
 
 from .. import config, db
+
+_TAG = re.compile(r"<[^>]+>")
+_WS = re.compile(r"\s+")
+
+
+def _clean_html(s: str, limit: int = 2500) -> str | None:
+    """去 HTML 标签/实体/多余空白,截断。major_news 正文是新浪等的 HTML,B1 只需纯文本。"""
+    if not s:
+        return None
+    t = _TAG.sub(" ", s)
+    t = html.unescape(t)
+    t = _WS.sub(" ", t).strip()
+    return t[:limit] or None
 
 
 def _news_id(url: str | None, title: str, pub_time: str) -> tuple[str, str]:
@@ -19,11 +34,12 @@ def _news_id(url: str | None, title: str, pub_time: str) -> tuple[str, str]:
 
 
 def fetch_major_news(date_utc8: str) -> int:
-    """抓某日 major_news 落库。date_utc8 = 'YYYYMMDD'。返回新增/更新条数。"""
+    """抓某日 major_news 落库(含正文,供 B1 提炼核心观点)。返回新增/更新条数。"""
     pro = ts.pro_api(config.tushare_token())
     start = f"{date_utc8} 00:00:00"
     end = f"{date_utc8} 23:59:59"
-    df = pro.major_news(start_date=start, end_date=end)
+    # 显式要 content 字段(默认不返回正文)
+    df = pro.major_news(src="", start_date=start, end_date=end, fields="title,content,pub_time,src,url")
     rows = []
     for _, r in df.iterrows():
         title = str(r.get("title") or "").strip()
@@ -32,8 +48,7 @@ def fetch_major_news(date_utc8: str) -> int:
         pub = str(r.get("pub_time") or "").strip()
         url = r.get("url")
         nid, chash = _news_id(url, title, pub)
-        content = r.get("content")
-        content = str(content).strip() if content is not None and str(content).strip() else None
+        content = _clean_html(str(r.get("content") or ""))
         rows.append((nid, str(r.get("src") or ""), title, pub, url, content, chash))
 
     if not rows:
@@ -42,7 +57,8 @@ def fetch_major_news(date_utc8: str) -> int:
         cur.executemany(
             """INSERT INTO raw_news(news_id,src,title,pub_time,url,content,content_hash)
                VALUES(%s,%s,%s,%s,%s,%s,%s)
-               ON CONFLICT(news_id) DO UPDATE SET title=EXCLUDED.title,src=EXCLUDED.src""",
+               ON CONFLICT(news_id) DO UPDATE SET title=EXCLUDED.title,src=EXCLUDED.src,
+                 content=COALESCE(EXCLUDED.content, raw_news.content)""",
             rows,
         )
     return len(rows)

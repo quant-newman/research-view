@@ -58,7 +58,7 @@ _NEWS_WHERE = """rn.relevant AND rn.one_line IS NOT NULL
 
 
 def _fetch_news(cur, limit: int):
-    cur.execute(f"""SELECT rn.one_line, rn.sentiment, rn.src, rn.matched_codes,
+    cur.execute(f"""SELECT COALESCE(rn.summary, rn.one_line), rn.sentiment, rn.src, rn.matched_codes,
                rn.matched_node_ids, rn.tech_industries
         FROM raw_news rn WHERE {_NEWS_WHERE}
         ORDER BY rn.pub_time DESC LIMIT {int(limit)}""")

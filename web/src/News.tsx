@@ -31,7 +31,8 @@ function NewsRow({ n }: { n: Flat }) {
       <div className="flex items-start gap-2">
         <span className={`px-1.5 py-0.5 rounded text-[13px] shrink-0 ${sentColor[n.sentiment] || "text-muted"}`}>{n.sentiment}</span>
         <div className="flex-1 min-w-0">
-          <p className="text-primary text-[15px] leading-snug">{n.one_line || n.title}</p>
+          <p className="text-primary text-[15px] leading-snug font-medium">{n.one_line || n.title}</p>
+          {n.summary && <p className="text-muted text-[14px] leading-relaxed mt-1">{n.summary}</p>}
           <div className="flex flex-wrap items-center gap-2 mt-1 text-[13px] text-dim">
             <span className="text-muted">{n.chain}/{n.node}</span>
             {n.codes?.slice(0, 4).map((c) => <span key={c} className="mono text-muted">{c}</span>)}

@@ -16,7 +16,7 @@ export interface Report {
   us_overnight?: UsOvernight;
 }
 export interface NewsItem {
-  title: string; one_line: string; sentiment: string; event_type?: string; src: string;
+  title: string; one_line: string; summary?: string | null; sentiment: string; event_type?: string; src: string;
   url: string | null; time?: string; codes: string[]; holding: boolean; watching: boolean;
 }
 export interface NewsNode { node_id: string; chain: string; node: string; scope?: string; items: NewsItem[]; }
