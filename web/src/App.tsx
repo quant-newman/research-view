@@ -6,6 +6,7 @@ import { ResearchView, LettersView } from "./Research";
 import { NewsView } from "./News";
 import { UsBoardView } from "./UsBoard";
 import { UsResearchView } from "./UsResearch";
+import { HotspotView } from "./Hotspot";
 
 type Market = "A" | "US";
 
@@ -295,6 +296,7 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
 
 const NAV = [
   { key: "report", label: "报告" },
+  { key: "hotspot", label: "热点" },
   { key: "heatmap", label: "热力" },
   { key: "news", label: "新闻" },
   { key: "research", label: "研究" },
@@ -324,11 +326,31 @@ export default function App() {
     return Object.values(m).sort((a, b) => b.items.length - a.items.length);
   }, [d]);
 
+  // 美股热点(客户端按板块新闻量 + 板块涨跌,US 无龙虎榜)
+  const usHotspot = useMemo(() => {
+    const us = d?.us;
+    if (!us?.news?.length) return null;
+    const bySec: Record<string, { news: string[]; count: number }> = {};
+    for (const n of us.news) {
+      (bySec[n.sector] ||= { news: [], count: 0 });
+      bySec[n.sector].count++;
+      if (bySec[n.sector].news.length < 3) bySec[n.sector].news.push(n.one_line);
+    }
+    const ret1d: Record<string, number | null> = {};
+    for (const nd of us.heatmap?.nodes || []) ret1d[nd.node] = nd.ret_1d ?? null;
+    const items = Object.entries(bySec).map(([sec, v]) => ({
+      node_id: sec, chain: "美股", node: sec, heat: v.count, trend: "持平",
+      reason: `${v.count} 条相关新闻`, news_today: v.count, ret_1d: ret1d[sec] ?? null,
+      lhb: 0, stocks: [] as string[], news: v.news,
+    })).sort((a, b) => b.heat - a.heat).slice(0, 10);
+    return { headline: "美股科技新闻热度(按板块新闻量)", items };
+  }, [d]);
+
   if (err) return <div className="p-6 text-down">加载失败：{err}</div>;
   if (!d) return <div className="p-6 text-muted">加载中…</div>;
 
   const isUS = market === "US";
-  const enabled = new Set(["report", "heatmap", "news", "research", "letters", "system"]);
+  const enabled = new Set(["report", "hotspot", "heatmap", "news", "research", "letters", "system"]);
 
   return (
     <div className="min-h-screen flex">
@@ -396,6 +418,9 @@ export default function App() {
               )}
             </div>
           </div>
+        )}
+        {view === "hotspot" && (
+          <div className="flex-1 p-5 overflow-auto"><HotspotView hotspot={isUS ? usHotspot : d.hotspot} /></div>
         )}
         {view === "heatmap" && (
           <div className="flex-1 p-5 overflow-auto space-y-4">

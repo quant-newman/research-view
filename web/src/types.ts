@@ -95,9 +95,16 @@ export interface UsData {
   indices: UsBoardItem[];
 }
 
+export interface HotspotItem {
+  node_id: string; chain: string; node: string; heat: number; trend: string; reason?: string;
+  news_today: number; news_prior?: number; pos?: number; neg?: number;
+  ret_1d?: number | null; lhb?: number; stocks: string[]; news: string[];
+}
+export interface Hotspot { headline: string; items: HotspotItem[]; }
+
 export interface Dashboard {
   meta: Meta; report: Report | null; temperature: Temperature;
   news_by_node: NewsNode[]; stock_events: StockEvent[];
   heatmap?: Heatmap; health?: Health; research?: Research; ledger?: Ledger;
-  us?: UsData | null;
+  us?: UsData | null; hotspot?: Hotspot | null;
 }

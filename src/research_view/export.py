@@ -231,6 +231,16 @@ def build_dashboard(date_utc8: str) -> Path:
     ledger = {"judgments": judgments, "alive": alive,
               "falsified": len(judgments) - alive, "error_dist": error_dist}
 
+    # 今日热点/主题热度榜(当日无则回退最近一份)
+    with db.rv_conn() as conn, conn.cursor() as cur:
+        cur.execute("SELECT headline, items FROM hotspot_daily WHERE report_date=to_date(%s,'YYYYMMDD')",
+                    (date_utc8,))
+        hrow = cur.fetchone()
+        if hrow is None:
+            cur.execute("SELECT headline, items FROM hotspot_daily ORDER BY report_date DESC LIMIT 1")
+            hrow = cur.fetchone()
+    hotspot = {"headline": hrow[0], "items": hrow[1]} if hrow else None
+
     from . import monitor
     try:
         health = monitor.health()
@@ -250,7 +260,7 @@ def build_dashboard(date_utc8: str) -> Path:
     dash = {"meta": ev["meta"], "report": report, "temperature": ev["temperature"],
             "news_by_node": ev["news_by_node"], "stock_events": ev["stock_events"],
             "heatmap": heatmap, "health": health, "research": research, "ledger": ledger,
-            "us": us}
+            "us": us, "hotspot": hotspot}
     path = EXPORT_DIR / "dashboard.json"
     path.write_text(_dump(dash), encoding="utf-8")
     return path
