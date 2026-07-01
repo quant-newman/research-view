@@ -6,14 +6,27 @@ const QUAD_COLOR: Record<string, string> = {
   核心主线: "#F6465D", 潜在补涨: "#F0B90B", 等待验证: "#4A9EFF", 风险区: "#5A6474", 数据不足: "#232B36",
 };
 
+type WinKey = "ret_1d" | "ret_1w" | "ret_1m" | "ret_3m" | "ret_6m";
+const WINS: [WinKey, string][] = [
+  ["ret_1d", "1天"], ["ret_1w", "1周"], ["ret_1m", "1月"], ["ret_3m", "3月"], ["ret_6m", "6月"],
+];
+const WIN_LABEL: Record<WinKey, string> = Object.fromEntries(WINS) as Record<WinKey, string>;
+
 const nz = (v: any): number | null => (v == null || v === "" ? null : Number(v));
+
+// 象限按选中窗口涨幅(X)× 营收同比(Y)相对池内中位切分,前端动态重算
+function quadOf(x: number | null, y: number | null, xm: number, ym: number): string {
+  if (x == null || y == null) return "数据不足";
+  const strong = x >= xm, deliver = y >= ym;
+  return strong && deliver ? "核心主线" : !strong && deliver ? "等待验证" : strong ? "潜在补涨" : "风险区";
+}
 
 function median(xs: (number | null)[]) {
   const a = xs.filter((v): v is number => v != null && !Number.isNaN(v)).sort((x, y) => x - y);
   return a.length ? a[Math.floor(a.length / 2)] : 0;
 }
 
-function Scatter({ nodes, onSelect }: { nodes: HeatNode[]; onSelect: (id: string) => void }) {
+function Scatter({ nodes, win, onSelect }: { nodes: HeatNode[]; win: WinKey; onSelect: (id: string) => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const selRef = useRef(onSelect);
   selRef.current = onSelect;
@@ -21,11 +34,12 @@ function Scatter({ nodes, onSelect }: { nodes: HeatNode[]; onSelect: (id: string
     if (!ref.current) return;
     const chart = echarts.init(ref.current, undefined, { renderer: "canvas" });
     const pts = nodes
-      .map((n) => ({ ...n, ret_6m: nz(n.ret_6m), or_yoy: nz(n.or_yoy), total_mv: nz(n.total_mv) }))
-      .filter((n) => n.ret_6m != null && n.or_yoy != null);
-    const xSplit = median(pts.map((n) => n.ret_6m));
-    const ySplit = median(pts.map((n) => n.or_yoy));
+      .map((n) => ({ ...n, x: nz((n as any)[win]), y: nz(n.or_yoy), total_mv: nz(n.total_mv) }))
+      .filter((n) => n.x != null && n.y != null);
+    const xSplit = median(pts.map((n) => n.x));
+    const ySplit = median(pts.map((n) => n.y));
     const maxMv = Math.max(...pts.map((n) => n.total_mv || 0), 1);
+    const label = WIN_LABEL[win];
     chart.setOption({
       backgroundColor: "transparent",
       grid: { left: 52, right: 20, top: 24, bottom: 44 },
@@ -33,11 +47,11 @@ function Scatter({ nodes, onSelect }: { nodes: HeatNode[]; onSelect: (id: string
         backgroundColor: "#1C2430", borderColor: "#232B36", textStyle: { color: "#E4E9F0", fontSize: 12 },
         formatter: (p: any) => {
           const n = p.data.n as HeatNode;
-          return `<b>${n.chain}/${n.node}</b> · ${n.n_stocks}只<br/>叙事(6M): ${n.ret_6m}%<br/>兑现(营收): ${n.or_yoy}%<br/>PE中位: ${n.pe} · 毛利: ${n.gross_margin}%<br/>象限: ${n.quadrant}<br/><span style="color:#8B95A5">点击看成分股</span>`;
+          return `<b>${n.chain}/${n.node}</b> · ${n.n_stocks}只<br/>叙事(${label}): ${p.data.value[0]}%<br/>兑现(营收): ${n.or_yoy}%<br/>PE中位: ${n.pe} · 毛利: ${n.gross_margin}%<br/>象限: ${p.data.q}<br/><span style="color:#8B95A5">点击看成分股</span>`;
         },
       },
       xAxis: {
-        name: "叙事强度 · 6M涨幅%", nameLocation: "middle", nameGap: 28,
+        name: `叙事强度 · ${label}涨幅%`, nameLocation: "middle", nameGap: 28,
         nameTextStyle: { color: "#8B95A5" }, axisLine: { lineStyle: { color: "#232B36" } },
         axisLabel: { color: "#5A6474" }, splitLine: { lineStyle: { color: "#161C24" } },
       },
@@ -49,9 +63,9 @@ function Scatter({ nodes, onSelect }: { nodes: HeatNode[]; onSelect: (id: string
       series: [{
         type: "scatter",
         symbolSize: (_val: any, params: any) => 8 + 34 * Math.sqrt((params?.data?.n?.total_mv || 0) / maxMv),
-        itemStyle: { color: (p: any) => QUAD_COLOR[p.data?.n?.quadrant] || "#5A6474", opacity: 0.82 },
+        itemStyle: { color: (p: any) => QUAD_COLOR[p.data?.q] || "#5A6474", opacity: 0.82 },
         emphasis: { itemStyle: { opacity: 1, borderColor: "#E4E9F0", borderWidth: 1 } },
-        data: pts.map((n) => ({ value: [n.ret_6m, n.or_yoy], n })),
+        data: pts.map((n) => ({ value: [n.x, n.y], n, q: quadOf(n.x, n.y, xSplit, ySplit) })),
         markLine: {
           silent: true, symbol: "none", lineStyle: { color: "#3A4452", type: "dashed" },
           data: [{ xAxis: xSplit }, { yAxis: ySplit }],
@@ -63,7 +77,7 @@ function Scatter({ nodes, onSelect }: { nodes: HeatNode[]; onSelect: (id: string
     const ro = new ResizeObserver(() => chart.resize());
     ro.observe(ref.current);
     return () => { ro.disconnect(); chart.dispose(); };
-  }, [nodes]);
+  }, [nodes, win]);
   return <div ref={ref} className="w-full h-[380px]" />;
 }
 
@@ -174,6 +188,7 @@ function StockPanel({ node, stocks, onClose }: { node: HeatNode; stocks: HeatSto
 
 export default function HeatmapView({ h }: { h: Heatmap | undefined }) {
   const [sel, setSel] = useState<string | null>(null);
+  const [win, setWin] = useState<WinKey>("ret_6m");
   if (!h) return <div className="text-muted p-4">暂无热力图数据</div>;
   const legend = [["核心主线", "叙事强+兑现好"], ["潜在补涨", "叙事强+兑现弱"],
                   ["等待验证", "叙事弱+兑现好"], ["风险区", "叙事弱+兑现弱"]];
@@ -193,7 +208,16 @@ export default function HeatmapView({ h }: { h: Heatmap | undefined }) {
             ))}
           </div>
         </div>
-        <div className="p-2"><Scatter nodes={h.nodes} onSelect={setSel} /></div>
+        <div className="flex items-center gap-2 px-3 py-1.5 border-b hairline text-[13px]">
+          <span className="text-dim">叙事窗口(X轴涨幅):</span>
+          {WINS.map(([k, l]) => (
+            <button key={k} onClick={() => setWin(k)}
+              className={`px-2 py-0.5 rounded border ${win === k ? "border-accent text-accent bg-accent/10" : "border-hairline text-muted hover:text-primary"}`}>
+              {l}
+            </button>
+          ))}
+        </div>
+        <div className="p-2"><Scatter nodes={h.nodes} win={win} onSelect={setSel} /></div>
       </div>
       {selNode && <StockPanel node={selNode} stocks={selStocks} onClose={() => setSel(null)} />}
       <div className="border hairline rounded bg-surface">

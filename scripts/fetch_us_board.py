@@ -47,15 +47,19 @@ def fetch() -> dict:
     for t, name, sector in US_UNIVERSE:
         s = close[t].dropna() if t in close else None
         row: dict = {"ticker": t, "name": name, "sector": sector,
-                     "close": None, "pct": None, "ret_6m": None, "pos_52w": None,
+                     "close": None, "pct": None, "ret_1w": None, "ret_1m": None,
+                     "ret_3m": None, "ret_6m": None, "pos_52w": None,
                      "market_cap": None, "pe": None, "rev_growth": None, "gross_margin": None,
                      "target_mean": None, "rec_key": None, "n_analysts": None}
         if s is not None and len(s) >= 2:
             last = float(s.iloc[-1])
             row["close"] = round(last, 2)
-            row["pct"] = round((last / float(s.iloc[-2]) - 1) * 100, 2)
-            if len(s) >= 126:  # ~6 月
-                row["ret_6m"] = round((last / float(s.iloc[-126]) - 1) * 100, 1)
+            row["pct"] = round((last / float(s.iloc[-2]) - 1) * 100, 2)  # 1天
+
+            def _wret(n):  # n 个交易日前
+                return round((last / float(s.iloc[-1 - n]) - 1) * 100, 1) if len(s) > n else None
+            row["ret_1w"], row["ret_1m"] = _wret(5), _wret(21)
+            row["ret_3m"], row["ret_6m"] = _wret(63), _wret(126)
             hi, lo = float(s.max()), float(s.min())
             if hi > lo:
                 row["pos_52w"] = round((last - lo) / (hi - lo) * 100, 0)

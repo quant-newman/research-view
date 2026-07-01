@@ -29,12 +29,14 @@ export interface HeatNode {
   total_mv: number | null; ret_1m: number | null; ret_6m: number | null;
   or_yoy: number | null; gross_margin: number | null; pe: number | null;
   ps: number | null; quadrant: string;
+  ret_1d?: number | null; ret_1w?: number | null; ret_3m?: number | null;
 }
 export interface HeatStock {
   code: string; name: string; total_mv: number | null; pe: number | null;
   ps: number | null; ret_1m: number | null; ret_6m: number | null;
   or_yoy: number | null; gross_margin: number | null; pe_pct: number | null;
   node_ids?: string[];
+  ret_1d?: number | null; ret_1w?: number | null; ret_3m?: number | null;
 }
 export interface Heatmap { nodes: HeatNode[]; stocks: HeatStock[]; }
 

@@ -171,19 +171,22 @@ def build_dashboard(date_utc8: str) -> Path:
 
     with db.rv_conn() as conn, conn.cursor() as cur:
         cur.execute("""SELECT node_id,chain,node,n_stocks,total_mv,ret_1m,ret_6m,
-            or_yoy,gross_margin,pe,ps,quadrant FROM heatmap_node ORDER BY total_mv DESC NULLS LAST""")
+            or_yoy,gross_margin,pe,ps,quadrant,ret_1d,ret_1w,ret_3m
+            FROM heatmap_node ORDER BY total_mv DESC NULLS LAST""")
         hn = [{"node_id": r[0], "chain": r[1], "node": r[2], "n_stocks": r[3],
                "total_mv": fnum(r[4]), "ret_1m": fnum(r[5]), "ret_6m": fnum(r[6]),
                "or_yoy": fnum(r[7]), "gross_margin": fnum(r[8]), "pe": fnum(r[9]),
-               "ps": fnum(r[10]), "quadrant": r[11]} for r in cur.fetchall()]
+               "ps": fnum(r[10]), "quadrant": r[11],
+               "ret_1d": fnum(r[12]), "ret_1w": fnum(r[13]), "ret_3m": fnum(r[14])} for r in cur.fetchall()]
         # 个股→节点映射(供前端点气泡看成分股)
         cur.execute("SELECT code, array_agg(node_id) FROM stock_node GROUP BY code")
         code_nodes = dict(cur.fetchall())
-        cur.execute("""SELECT code,name,total_mv,pe,ps,ret_1m,ret_6m,or_yoy,gross_margin,pe_pct
-            FROM heatmap_stock ORDER BY total_mv DESC NULLS LAST""")
+        cur.execute("""SELECT code,name,total_mv,pe,ps,ret_1m,ret_6m,or_yoy,gross_margin,pe_pct,
+            ret_1d,ret_1w,ret_3m FROM heatmap_stock ORDER BY total_mv DESC NULLS LAST""")
         hs = [{"code": r[0], "name": r[1], "total_mv": fnum(r[2]), "pe": fnum(r[3]),
                "ps": fnum(r[4]), "ret_1m": fnum(r[5]), "ret_6m": fnum(r[6]),
                "or_yoy": fnum(r[7]), "gross_margin": fnum(r[8]), "pe_pct": fnum(r[9]),
+               "ret_1d": fnum(r[10]), "ret_1w": fnum(r[11]), "ret_3m": fnum(r[12]),
                "node_ids": code_nodes.get(r[0], [])}
               for r in cur.fetchall()]
     heatmap = {"nodes": hn, "stocks": hs}

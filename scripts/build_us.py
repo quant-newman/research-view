@@ -50,7 +50,11 @@ def _heatmap(stocks: list[dict]) -> dict:
     for sec, items in by_sec.items():
         mv = sum(s["market_cap"] or 0 for s in items)
         nodes.append({"node_id": sec, "chain": "美股", "node": sec, "n_stocks": len(items),
-                      "ret_1m": None, "ret_6m": med([s["ret_6m"] for s in items]),
+                      "ret_1d": med([s["pct"] for s in items]),
+                      "ret_1w": med([s["ret_1w"] for s in items]),
+                      "ret_1m": med([s["ret_1m"] for s in items]),
+                      "ret_3m": med([s["ret_3m"] for s in items]),
+                      "ret_6m": med([s["ret_6m"] for s in items]),
                       "or_yoy": med([s["rev_growth"] for s in items]),
                       "total_mv": round(mv, 1) if mv else None,
                       "pe": med([s["pe"] for s in items]), "ps": None,
@@ -65,7 +69,8 @@ def _heatmap(stocks: list[dict]) -> dict:
             "潜在补涨" if x >= mx else
             "等待验证" if y >= my else "风险区")
     hs = [{"code": s["ticker"], "name": s["name"], "total_mv": s["market_cap"], "pe": s["pe"], "ps": None,
-           "ret_1m": None, "ret_6m": s["ret_6m"], "or_yoy": s["rev_growth"],
+           "ret_1d": s["pct"], "ret_1w": s["ret_1w"], "ret_1m": s["ret_1m"], "ret_3m": s["ret_3m"],
+           "ret_6m": s["ret_6m"], "or_yoy": s["rev_growth"],
            "gross_margin": s["gross_margin"], "pe_pct": None, "node_ids": [s["sector"]]} for s in stocks]
     return {"nodes": nodes, "stocks": hs}
 
