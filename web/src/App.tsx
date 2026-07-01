@@ -11,7 +11,7 @@ type Market = "A" | "US";
 
 function MarketToggle({ market, onMarket }: { market: Market; onMarket: (m: Market) => void }) {
   return (
-    <div className="flex rounded overflow-hidden border hairline text-[12px] shrink-0">
+    <div className="flex rounded overflow-hidden border hairline text-[13px] shrink-0">
       {(["A", "US"] as const).map((m) => (
         <button key={m} onClick={() => onMarket(m)}
           className={`px-2.5 py-0.5 ${market === m ? "bg-accent text-black font-semibold" : "text-muted hover:text-primary"}`}>
@@ -43,7 +43,7 @@ function Clock() {
 }
 
 function Badge({ text, cls }: { text: string; cls: string }) {
-  return <span className={`px-1.5 py-0.5 rounded text-[12px] ${cls}`}>{text}</span>;
+  return <span className={`px-1.5 py-0.5 rounded text-[13px] ${cls}`}>{text}</span>;
 }
 
 function StatusBar({ d, market, onMarket, onHealth }: { d: Dashboard; market: Market; onMarket: (m: Market) => void; onHealth: () => void }) {
@@ -53,7 +53,7 @@ function StatusBar({ d, market, onMarket, onHealth }: { d: Dashboard; market: Ma
   const at = d.temperature;
   const sessionLabel = d.report?.session === "premarket" ? "盘前" : "盘后";
   return (
-    <div className="flex items-center gap-4 px-4 h-11 border-b hairline bg-surface text-[13px]">
+    <div className="flex items-center gap-4 px-4 h-11 border-b hairline bg-surface text-[14px]">
       <MarketToggle market={market} onMarket={onMarket} />
       <div className="flex items-center gap-2">
         <span className={`w-2 h-2 rounded-full inline-block ${isUS ? "bg-info" : "bg-accent"}`} />
@@ -98,11 +98,11 @@ function DailyReport({ report }: { report: Report | null | undefined }) {
           <div className="w-0.5 h-4 bg-accent" />
           <h2 className="font-semibold">今日主线</h2>
           <span className={`w-2 h-2 rounded-full ${confDot[r.headline.confidence] || "bg-muted"}`} />
-          <span className="text-dim text-[12px]">置信度 {r.headline.confidence}</span>
+          <span className="text-dim text-[13px]">置信度 {r.headline.confidence}</span>
         </div>
-        <p className="text-[14px] leading-relaxed text-primary">{r.headline.fact}</p>
+        <p className="text-[15px] leading-relaxed text-primary">{r.headline.fact}</p>
         <div className="mt-2 border border-accent/50 rounded bg-accent/5 px-3 py-2">
-          <span className="text-accent text-[12px]">我的判断（人填 · 模型不越位）</span>
+          <span className="text-accent text-[13px]">我的判断（人填 · 模型不越位）</span>
           <input
             className="w-full bg-transparent outline-none text-primary mt-1 placeholder:text-dim"
             placeholder="在此写下你的判断……（模型永远留白这一栏）"
@@ -123,7 +123,7 @@ function DailyReport({ report }: { report: Report | null | undefined }) {
                 <span className="mono text-accent">{i + 1}</span>
                 <div className="flex-1">
                   <p className="text-primary">{it.change}</p>
-                  <div className="flex flex-wrap items-center gap-2 mt-1 text-[12px]">
+                  <div className="flex flex-wrap items-center gap-2 mt-1 text-[13px]">
                     <span className="text-info">{it.evidence}</span>
                     {it.node_ids.map((n) => (
                       <span key={n} className="text-dim">▸{n}</span>
@@ -147,7 +147,7 @@ function DailyReport({ report }: { report: Report | null | undefined }) {
         </div>
         <div className="space-y-1">
           {r.sectors.map((s, i) => (
-            <div key={i} className="flex gap-2 text-[13px]">
+            <div key={i} className="flex gap-2 text-[14px]">
               <span className="text-muted w-16 shrink-0">{s.chain}</span>
               <span className="text-dim">{s.status}</span>
             </div>
@@ -164,8 +164,8 @@ function DailyReport({ report }: { report: Report | null | undefined }) {
         <div className="space-y-2">
           {r.falsification.map((f, i) => (
             <div key={i} className="border hairline rounded px-3 py-2">
-              <p className="text-primary text-[13px]">{f.claim}</p>
-              <p className="text-muted text-[12px] mt-1">
+              <p className="text-primary text-[14px]">{f.claim}</p>
+              <p className="text-muted text-[13px] mt-1">
                 <span className="text-down">证伪条件：</span>{f.condition}
               </p>
               <div className="mt-1 flex gap-2">
@@ -185,16 +185,16 @@ function EventStream({ nodes }: { nodes: Dashboard["news_by_node"] }) {
     <div className="space-y-3">
       {nodes.slice(0, 10).map((g) => (
         <div key={g.node_id}>
-          <div className="flex items-center gap-2 text-[12px] text-muted mb-1">
+          <div className="flex items-center gap-2 text-[13px] text-muted mb-1">
             <span className="text-primary">{g.chain}/{g.node}</span>
             <span className="text-dim">({g.items.length})</span>
           </div>
           <div className="space-y-1">
             {g.items.slice(0, 4).map((n: NewsItem, i) => (
-              <div key={i} className="flex items-start gap-2 text-[13px] leading-snug">
+              <div key={i} className="flex items-start gap-2 text-[14px] leading-snug">
                 <Badge text={n.sentiment} cls={sentColor[n.sentiment] || "text-muted"} />
                 <span className="text-primary flex-1">{n.one_line || n.title}</span>
-                <span className="text-dim text-[12px] shrink-0">{n.src}</span>
+                <span className="text-dim text-[13px] shrink-0">{n.src}</span>
               </div>
             ))}
           </div>
@@ -208,14 +208,14 @@ function Events({ events }: { events: StockEvent[] }) {
   return (
     <div className="space-y-1">
       {events.map((e, i) => (
-        <div key={i} className="flex items-center gap-2 text-[13px]">
+        <div key={i} className="flex items-center gap-2 text-[14px]">
           <Badge text={e.event_type} cls="bg-elevated text-muted" />
           <span className={e.direction === "利好" ? "text-up" : e.direction === "利空" ? "text-down" : "text-muted"}>
             {e.direction}
           </span>
           <span className="mono text-muted">{e.code}</span>
           <span className="text-dim flex-1 truncate">{e.summary}</span>
-          <span className="mono text-dim text-[12px]">{e.date}</span>
+          <span className="mono text-dim text-[13px]">{e.date}</span>
         </div>
       ))}
     </div>
@@ -226,15 +226,15 @@ function UsOvernightBoard({ us }: { us: NonNullable<Dashboard["report"]>["us_ove
   if (!us) return null;
   return (
     <div className="space-y-1">
-      <div className="text-[12px] text-dim mb-1">美东 {us.us_session_date} 收盘 · 隔夜外盘参照(红涨绿跌)</div>
+      <div className="text-[13px] text-dim mb-1">美东 {us.us_session_date} 收盘 · 隔夜外盘参照(红涨绿跌)</div>
       {us.items.map((it) => (
-        <div key={it.ticker} className="flex items-center gap-2 text-[13px]">
+        <div key={it.ticker} className="flex items-center gap-2 text-[14px]">
           <span className="text-primary w-24 shrink-0 truncate">{it.name}</span>
-          <span className="mono text-dim text-[12px] w-12 shrink-0">{it.ticker}</span>
+          <span className="mono text-dim text-[13px] w-12 shrink-0">{it.ticker}</span>
           <span className={`mono w-16 shrink-0 text-right ${pctColor(it.pct ?? 0)}`}>
             {it.pct === null ? "—" : `${it.pct > 0 ? "+" : ""}${it.pct}%`}
           </span>
-          <span className="text-dim text-[12px] truncate">{it.mapping}</span>
+          <span className="text-dim text-[13px] truncate">{it.mapping}</span>
         </div>
       ))}
     </div>
@@ -244,36 +244,36 @@ function UsOvernightBoard({ us }: { us: NonNullable<Dashboard["report"]>["us_ove
 function LedgerPanel({ ledger }: { ledger: Dashboard["ledger"] }) {
   if (!ledger || ledger.judgments.length === 0) {
     return (
-      <div className="text-dim text-[13px] space-y-1">
+      <div className="text-dim text-[14px] space-y-1">
         <div>存活 0 · 证伪 0 — 账本待积累。</div>
-        <div className="text-[12px]">审定钉死判断:<span className="mono text-muted">manage_ledger.py pin &lt;report_id&gt; &lt;序号&gt;</span></div>
+        <div className="text-[13px]">审定钉死判断:<span className="mono text-muted">manage_ledger.py pin &lt;report_id&gt; &lt;序号&gt;</span></div>
       </div>
     );
   }
   const ed = ledger.error_dist || {};
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-3 text-[13px]">
+      <div className="flex items-center gap-3 text-[14px]">
         <span className="text-up">存活 {ledger.alive}</span>
         <span className="text-down">证伪 {ledger.falsified}</span>
         {Object.keys(ed).length > 0 && (
-          <span className="text-dim text-[12px]">
+          <span className="text-dim text-[13px]">
             {Object.entries(ed).map(([k, v]) => `${k}${v}`).join(" · ")}
           </span>
         )}
       </div>
       <div className="space-y-1.5">
         {ledger.judgments.slice(0, 8).map((j) => (
-          <div key={j.id} className="border hairline rounded px-2 py-1.5 text-[13px]">
+          <div key={j.id} className="border hairline rounded px-2 py-1.5 text-[14px]">
             <div className="flex items-center gap-2">
-              <span className={`px-1.5 py-0.5 rounded text-[11px] ${j.falsified ? "text-down bg-down/10" : "text-up bg-up/10"}`}>
+              <span className={`px-1.5 py-0.5 rounded text-[12px] ${j.falsified ? "text-down bg-down/10" : "text-up bg-up/10"}`}>
                 {j.falsified ? `✗证伪${j.error_type ? `·${j.error_type}` : ""}` : "存活"}
               </span>
-              <span className="mono text-dim text-[12px]">#{j.id}</span>
-              <span className="mono text-dim text-[12px] ml-auto">{j.date}</span>
+              <span className="mono text-dim text-[13px]">#{j.id}</span>
+              <span className="mono text-dim text-[13px] ml-auto">{j.date}</span>
             </div>
             <p className="text-primary mt-1 leading-snug">{j.claim}</p>
-            <p className="text-muted text-[12px] mt-0.5"><span className="text-down">证伪:</span>{j.condition}</p>
+            <p className="text-muted text-[13px] mt-0.5"><span className="text-down">证伪:</span>{j.condition}</p>
           </div>
         ))}
       </div>
@@ -284,7 +284,7 @@ function LedgerPanel({ ledger }: { ledger: Dashboard["ledger"] }) {
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="border hairline rounded bg-surface">
-      <div className="px-3 py-2 border-b hairline text-[12px] text-muted uppercase tracking-wide">{title}</div>
+      <div className="px-3 py-2 border-b hairline text-[13px] text-muted uppercase tracking-wide">{title}</div>
       <div className="p-3">{children}</div>
     </div>
   );
@@ -330,8 +330,8 @@ export default function App() {
   return (
     <div className="min-h-screen flex">
       {/* 左侧窄导航 */}
-      <nav className="w-16 shrink-0 border-r hairline bg-surface flex flex-col items-center py-4 gap-4 text-[11px] text-dim">
-        <div className="text-accent font-bold text-[14px]">RV</div>
+      <nav className="w-16 shrink-0 border-r hairline bg-surface flex flex-col items-center py-4 gap-4 text-[12px] text-dim">
+        <div className="text-accent font-bold text-[15px]">RV</div>
         {NAV.map((n) => {
           const on = view === n.key;
           const ok = enabled.has(n.key);
@@ -359,9 +359,9 @@ export default function App() {
                   <Panel title="美股指数">
                     <div className="space-y-1">
                       {(d.us?.indices || []).map((i) => (
-                        <div key={i.ticker} className="flex items-center gap-2 text-[14px]">
+                        <div key={i.ticker} className="flex items-center gap-2 text-[15px]">
                           <span className="text-primary flex-1">{i.name}</span>
-                          <span className="mono text-dim text-[12px]">{i.ticker}</span>
+                          <span className="mono text-dim text-[13px]">{i.ticker}</span>
                           <span className={`mono ${pctColor(i.pct ?? 0)}`}>{i.pct == null ? "—" : `${i.pct > 0 ? "+" : ""}${i.pct}%`}</span>
                         </div>
                       ))}
@@ -380,8 +380,8 @@ export default function App() {
                   </Panel>
                   <Panel title="我的持仓 / 自选动态">
                     {d.report?.holdings_moves?.length
-                      ? <div className="text-primary text-[14px]">{d.report.holdings_moves.length} 条异动</div>
-                      : <div className="text-dim text-[14px]">未设持仓/自选。设置后,你的票有事永远第一时间最高优先级出现。</div>}
+                      ? <div className="text-primary text-[15px]">{d.report.holdings_moves.length} 条异动</div>
+                      : <div className="text-dim text-[15px]">未设持仓/自选。设置后,你的票有事永远第一时间最高优先级出现。</div>}
                   </Panel>
                   <Panel title="事件流 · 按节点">
                     <EventStream nodes={d.news_by_node} />
@@ -399,7 +399,7 @@ export default function App() {
             <HeatmapView h={isUS ? d.us?.heatmap : d.heatmap} />
             {isUS && d.us && (
               <div className="border hairline rounded bg-surface p-3">
-                <div className="text-[13px] text-muted mb-2">美股个股行情(收盘/涨跌/6M/52W位/市值/PE)</div>
+                <div className="text-[14px] text-muted mb-2">美股个股行情(收盘/涨跌/6M/52W位/市值/PE)</div>
                 <UsBoardView b={{ us_session_date: d.us.us_session_date, items: d.us.board.items, n_ok: d.us.board.n_ok }} />
               </div>
             )}

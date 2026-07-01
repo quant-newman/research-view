@@ -7,20 +7,20 @@ const fmtPct = (v: number | null) => (v == null ? "—" : `${v > 0 ? "+" : ""}${
 const fmtMc = (v: number | null) => (v == null ? "—" : v >= 1000 ? `${(v / 1000).toFixed(2)}T` : `${Math.round(v)}B`);
 
 function Bar52({ p }: { p: number | null }) {
-  if (p == null) return <span className="text-dim text-[12px]">—</span>;
+  if (p == null) return <span className="text-dim text-[13px]">—</span>;
   return (
     <div className="flex items-center gap-1 justify-end">
       <div className="w-14 h-1.5 bg-elevated rounded relative">
         <div className="absolute top-0 h-1.5 w-1 bg-accent rounded" style={{ left: `calc(${p}% - 2px)` }} />
       </div>
-      <span className="text-dim text-[11px] w-6 text-right">{p}</span>
+      <span className="text-dim text-[12px] w-6 text-right">{p}</span>
     </div>
   );
 }
 
 const HEAD = (
   <thead>
-    <tr className="text-muted text-left text-[12px]">
+    <tr className="text-muted text-left text-[13px]">
       <th className="font-normal py-1">名称</th>
       <th className="font-normal">代码</th>
       <th className="font-normal text-right">收盘</th>
@@ -37,7 +37,7 @@ function Row({ it }: { it: UsBoardItem }) {
   return (
     <tr className="border-t hairline">
       <td className="py-1 text-primary">{it.name}</td>
-      <td className="mono text-dim text-[12px]">{it.ticker}</td>
+      <td className="mono text-dim text-[13px]">{it.ticker}</td>
       <td className="text-right mono text-muted">{it.close ?? "—"}</td>
       <td className={`text-right mono ${pctColor(it.pct)}`}>{fmtPct(it.pct)}</td>
       <td className={`text-right mono ${pctColor(it.ret_6m)}`}>{fmtPct(it.ret_6m)}</td>
@@ -64,7 +64,7 @@ export function UsBoardView({ b }: { b: UsBoard | null | undefined }) {
 
   if (!b || !items.length) {
     return (
-      <div className="text-muted p-4 text-[14px]">
+      <div className="text-muted p-4 text-[15px]">
         美股板块暂无数据。<span className="text-dim">台北侧 fetch_us_board 未跑或未同步(盘前 08:30 自动刷新)。</span>
       </div>
     );
@@ -73,9 +73,9 @@ export function UsBoardView({ b }: { b: UsBoard | null | undefined }) {
 
   return (
     <div className="space-y-3 max-w-4xl">
-      <div className="flex flex-wrap items-center gap-3 text-[13px]">
+      <div className="flex flex-wrap items-center gap-3 text-[14px]">
         <span className="text-muted">美东 {b.us_session_date} 收盘</span>
-        <span className="text-dim text-[12px]">领先指标外盘 · 红涨绿跌</span>
+        <span className="text-dim text-[13px]">领先指标外盘 · 红涨绿跌</span>
         <div className="ml-auto flex gap-3">
           {idx.map((i) => (
             <span key={i.ticker} className="flex items-center gap-1">
@@ -86,7 +86,7 @@ export function UsBoardView({ b }: { b: UsBoard | null | undefined }) {
         </div>
       </div>
 
-      <div className="flex gap-1 text-[12px]">
+      <div className="flex gap-1 text-[13px]">
         {([["sector", "按板块"], ["pct", "按涨跌"], ["ret_6m", "按6M动量"]] as const).map(([k, l]) => (
           <button key={k} onClick={() => setSort(k)}
             className={`px-2 py-0.5 rounded border ${sort === k ? "border-accent text-accent bg-accent/10" : "border-hairline text-muted hover:text-primary"}`}>
@@ -99,17 +99,17 @@ export function UsBoardView({ b }: { b: UsBoard | null | undefined }) {
         <div className="space-y-4">
           {groups.map(([sector, its]) => (
             <div key={sector}>
-              <div className="flex items-center gap-2 mb-1 text-[13px]">
+              <div className="flex items-center gap-2 mb-1 text-[14px]">
                 <span className="w-0.5 h-3.5 bg-accent" />
                 <span className="text-primary font-semibold">{sector}</span>
                 <span className="text-dim">({its.length})</span>
               </div>
-              <table className="w-full text-[13px]">{HEAD}<tbody>{its.map((it) => <Row key={it.ticker} it={it} />)}</tbody></table>
+              <table className="w-full text-[14px]">{HEAD}<tbody>{its.map((it) => <Row key={it.ticker} it={it} />)}</tbody></table>
             </div>
           ))}
         </div>
       ) : (
-        <table className="w-full text-[13px]">{HEAD}<tbody>{flat.map((it) => <Row key={it.ticker} it={it} />)}</tbody></table>
+        <table className="w-full text-[14px]">{HEAD}<tbody>{flat.map((it) => <Row key={it.ticker} it={it} />)}</tbody></table>
       )}
     </div>
   );
