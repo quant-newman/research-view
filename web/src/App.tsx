@@ -8,7 +8,7 @@ import { UsBoardView } from "./UsBoard";
 import { UsResearchView } from "./UsResearch";
 import { HotspotView } from "./Hotspot";
 import { StockDetail } from "./StockDetail";
-import { StockCtx, type StockSel } from "./stockCtx";
+import { StockCtx, useOpenStock, type StockSel } from "./stockCtx";
 
 type Market = "A" | "US";
 
@@ -31,6 +31,8 @@ const sentColor: Record<string, string> = {
   利好: "text-up bg-up/10", 利空: "text-down bg-down/10",
   中性: "text-muted bg-muted/10", 澄清: "text-info bg-info/10",
 };
+const sentDot: Record<string, string> = { 利好: "bg-up", 利空: "bg-down", 中性: "bg-muted", 澄清: "bg-info" };
+const sentTx: Record<string, string> = { 利好: "text-up", 利空: "text-down", 中性: "text-muted", 澄清: "text-info" };
 const confDot: Record<string, string> = { 高: "bg-up", 中: "bg-accent", 低: "bg-muted" };
 
 function Clock() {
@@ -184,23 +186,34 @@ function DailyReport({ report }: { report: Report | null | undefined }) {
 }
 
 function EventStream({ nodes }: { nodes: Dashboard["news_by_node"] }) {
+  const open = useOpenStock();
   return (
-    <div className="space-y-3">
-      {nodes.slice(0, 10).map((g) => (
+    <div className="space-y-5">
+      {nodes.slice(0, 8).map((g) => (
         <div key={g.node_id}>
-          <div className="flex items-center gap-2 text-[13px] text-muted mb-1">
-            <span className="text-primary">{g.chain}/{g.node}</span>
-            <span className="text-dim">({g.items.length})</span>
+          {/* 节点组标题 */}
+          <div className="flex items-center gap-2 mb-2.5">
+            <span className="w-0.5 h-3.5 bg-accent" />
+            <span className="text-primary text-[13px] font-semibold">{g.chain}/{g.node}</span>
+            <span className="text-dim text-[12px] mono">{g.items.length}</span>
           </div>
-          <div className="space-y-1">
-            {g.items.slice(0, 4).map((n: NewsItem, i) => (
-              <div key={i} className="text-[14px] leading-snug">
+          {/* 时间线式条目:左边线 + 分隔线 */}
+          <div className="border-l border-[#232B36] pl-3.5 ml-0.5 divide-y divide-[#232B36]">
+            {g.items.slice(0, 3).map((n: NewsItem, i) => (
+              <div key={i} className="py-3 first:pt-0 last:pb-0">
                 <div className="flex items-start gap-2">
-                  <Badge text={n.sentiment} cls={sentColor[n.sentiment] || "text-muted"} />
-                  <span className="text-primary flex-1 font-medium">{n.one_line || n.title}</span>
-                  <span className="text-dim text-[13px] shrink-0">{n.src}</span>
+                  <span className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${sentDot[n.sentiment] || "bg-muted"}`} />
+                  <p className="text-primary text-[14px] leading-snug font-medium flex-1">{n.one_line || n.title}</p>
                 </div>
-                {n.summary && <p className="text-muted text-[13px] leading-relaxed mt-0.5 ml-1">{n.summary}</p>}
+                {n.summary && <p className="text-muted text-[13px] leading-relaxed mt-1.5 ml-3.5">{n.summary}</p>}
+                <div className="flex items-center gap-2 mt-1.5 ml-3.5 text-[12px] text-dim">
+                  <span className={sentTx[n.sentiment] || "text-muted"}>{n.sentiment}</span>
+                  <span>·</span>
+                  <span>{n.src}</span>
+                  {(n.codes || []).slice(0, 3).map((c) => (
+                    <button key={c} onClick={() => open({ code: c })} className="mono hover:text-accent">{c}</button>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
@@ -210,18 +223,18 @@ function EventStream({ nodes }: { nodes: Dashboard["news_by_node"] }) {
   );
 }
 
+const dirDot = (d: string) => (d === "利好" ? "bg-up" : d === "利空" ? "bg-down" : "bg-muted");
 function Events({ events }: { events: StockEvent[] }) {
+  const open = useOpenStock();
   return (
-    <div className="space-y-1">
-      {events.map((e, i) => (
-        <div key={i} className="flex items-center gap-2 text-[14px]">
-          <Badge text={e.event_type} cls="bg-elevated text-muted" />
-          <span className={e.direction === "利好" ? "text-up" : e.direction === "利空" ? "text-down" : "text-muted"}>
-            {e.direction}
-          </span>
-          <span className="mono text-muted">{e.code}</span>
+    <div className="divide-y divide-[#232B36]">
+      {events.slice(0, 12).map((e, i) => (
+        <div key={i} className="flex items-center gap-2.5 py-2.5 text-[13px]">
+          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dirDot(e.direction)}`} />
+          <span className="text-muted shrink-0 w-14">{e.event_type}</span>
+          <button onClick={() => open({ code: e.code })} className="mono text-muted hover:text-accent shrink-0 w-14 text-left">{e.code}</button>
           <span className="text-dim flex-1 truncate">{e.summary}</span>
-          <span className="mono text-dim text-[13px]">{e.date}</span>
+          <span className="mono text-dim text-[12px] shrink-0">{e.date}</span>
         </div>
       ))}
     </div>
@@ -289,9 +302,11 @@ function LedgerPanel({ ledger }: { ledger: Dashboard["ledger"] }) {
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="border hairline rounded bg-surface">
-      <div className="px-3 py-2 border-b hairline text-[13px] text-muted uppercase tracking-wide">{title}</div>
-      <div className="p-3">{children}</div>
+    <div className="border hairline rounded-md bg-surface">
+      <div className="px-4 py-2.5 border-b hairline text-[12px] text-muted tracking-wide flex items-center gap-2">
+        <span className="w-1 h-1 rounded-full bg-accent/70" />{title}
+      </div>
+      <div className="p-4">{children}</div>
     </div>
   );
 }
@@ -378,9 +393,9 @@ export default function App() {
       <div className="flex-1 flex flex-col min-w-0">
         <StatusBar d={d} market={market} onMarket={setMarket} onHealth={() => setView("system")} />
         {view === "report" && (
-          <div className="flex-1 grid grid-cols-[1.6fr_1fr] gap-5 p-5 overflow-auto">
+          <div className="flex-1 grid grid-cols-[1.6fr_1fr] gap-6 p-6 overflow-auto">
             <div><DailyReport report={isUS ? d.us?.report : d.report} /></div>
-            <div className="space-y-4">
+            <div className="space-y-5">
               {isUS ? (
                 <>
                   <Panel title="美股新闻流 · 按板块">
