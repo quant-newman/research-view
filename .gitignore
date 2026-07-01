@@ -2,6 +2,8 @@
 *.sqlite
 *.db
 __pycache__/
+.venv/
+.venv-taipei/
 exports/
 webdata/*.json
 web/node_modules/
