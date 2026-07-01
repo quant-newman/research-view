@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Hotspot, HotspotItem } from "./types";
 import { useOpenStock } from "./stockCtx";
+import { MoreList } from "./ui";
 
 const trendCls: Record<string, string> = {
   升温: "text-up bg-up/10", 降温: "text-down bg-down/10", 持平: "text-muted bg-muted/10",
@@ -66,7 +67,9 @@ export function HotspotView({ hotspot }: { hotspot: Hotspot | null | undefined }
         <p className="text-dim text-[12px] mt-1">热度=统计(新闻量+龙虎榜+涨跌),归因由 DeepSeek 综合 · 只呈现事实不下判断</p>
       </div>
       <div className="space-y-2">
-        {hotspot.items.map((it, i) => <Card key={it.node_id + i} it={it} rank={i + 1} />)}
+        <MoreList items={hotspot.items} initial={6}>
+          {(it, i) => <Card key={it.node_id + i} it={it} rank={i + 1} />}
+        </MoreList>
       </div>
     </div>
   );

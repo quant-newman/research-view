@@ -58,7 +58,20 @@ export interface FundLetter {
   strategy: string | null; relevance: number | null; core_views: any; status: string;
   title?: string | null; url?: string | null; relevant_points?: any;
 }
-export interface Research { reports: ResearchReport[]; coverage: Coverage[]; letters: FundLetter[]; }
+export interface RatingChange {
+  code: string; name: string; scope?: string; n: number; rating_dir: string | null;
+  latest_rating: string | null; prior_rating: string | null;
+  latest_tp: number | null; prior_tp: number | null; tp_chg: number | null;
+  latest_org: string | null; latest_date: string;
+}
+export interface OrgView {
+  code: string; name: string; scope?: string; n: number; view: string | null;
+  latest_rating: string | null; latest_tp: number | null;
+}
+export interface ResearchDigest { changes: RatingChange[]; views: OrgView[]; }
+export interface Research {
+  reports: ResearchReport[]; coverage: Coverage[]; letters: FundLetter[]; digest?: ResearchDigest | null;
+}
 
 export interface Judgment {
   id: number; report_id: string; claim: string; condition: string;

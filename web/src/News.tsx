@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { NewsNode, NewsItem } from "./types";
 import { useOpenStock } from "./stockCtx";
+import { Section, MoreList } from "./ui";
 
 const sentColor: Record<string, string> = {
   利好: "text-up bg-up/10", 利空: "text-down bg-down/10",
@@ -50,96 +51,93 @@ function NewsRow({ n }: { n: Flat }) {
   );
 }
 
+const EVTS = ["公告", "政策", "涨跌异动", "研报", "外盘", "其他"];
+
 export function NewsView({ nodes }: { nodes: NewsNode[] }) {
   const [sent, setSent] = useState<Set<string>>(new Set());
+  const [evt, setEvt] = useState<Set<string>>(new Set());
   const [mineOnly, setMineOnly] = useState(false);
   const [scope, setScope] = useState<"all" | "核心链" | "泛科技">("all");
-  const [mode, setMode] = useState<"chain" | "time">("chain");
+  const [mode, setMode] = useState<"chain" | "event" | "time">("chain");
 
   const flat: Flat[] = useMemo(() =>
     nodes.flatMap((g) => g.items.map((it) => ({
       ...it, chain: g.chain, node: g.node, scope: g.scope || "核心链", gid: g.node_id,
     }))), [nodes]);
 
-  const toggleSent = (s: string) => {
-    const next = new Set(sent);
-    next.has(s) ? next.delete(s) : next.add(s);
-    setSent(next);
+  const toggle = (set: Set<string>, setter: (s: Set<string>) => void, v: string) => {
+    const next = new Set(set); next.has(v) ? next.delete(v) : next.add(v); setter(next);
   };
   const pass = (n: Flat) =>
     (sent.size === 0 || sent.has(n.sentiment)) &&
+    (evt.size === 0 || evt.has(n.event_type || "其他")) &&
     (!mineOnly || n.holding || n.watching) &&
     (scope === "all" || n.scope === scope);
 
-  // 去重后的扁平集合(同一条新闻可命中多个节点)
   const dedup = useMemo(() => {
-    const seen = new Set<string>();
-    const out: Flat[] = [];
-    for (const n of flat) {
-      const k = `${n.title}|${n.src}|${n.time}`;
-      if (seen.has(k)) continue;
-      seen.add(k); out.push(n);
-    }
+    const seen = new Set<string>(); const out: Flat[] = [];
+    for (const n of flat) { const k = `${n.title}|${n.src}|${n.time}`; if (!seen.has(k)) { seen.add(k); out.push(n); } }
     return out;
   }, [flat]);
 
   const dedupPassed = dedup.filter(pass);
   const mineCount = dedup.filter((n) => n.holding || n.watching).length;
+  const evtsPresent = EVTS.filter((e) => dedup.some((n) => (n.event_type || "其他") === e));
+
+  // 分组:按链(用 nodes)/ 按事件(event_type)
+  const groups = useMemo(() => {
+    if (mode === "chain") {
+      return nodes.map((g) => ({
+        key: g.node_id, title: `${g.chain}/${g.node}`, scope: g.scope || "核心链",
+        items: g.items.map((it) => ({ ...it, chain: g.chain, node: g.node, scope: g.scope || "核心链", gid: g.node_id } as Flat)).filter(pass),
+      })).filter((g) => g.items.length);
+    }
+    const m: Record<string, Flat[]> = {};
+    for (const n of dedupPassed) (m[n.event_type || "其他"] ||= []).push(n);
+    return EVTS.filter((e) => m[e]?.length).map((e) => ({ key: e, title: e, scope: undefined as any, items: m[e] }));
+  }, [mode, nodes, sent, evt, mineOnly, scope]);
+
   const timeSorted = [...dedupPassed].sort((a, b) => (b.time || "").localeCompare(a.time || ""));
 
   return (
     <div className="space-y-3">
       {/* 过滤条 */}
-      <div className="flex flex-wrap items-center gap-3 text-[14px]">
+      <div className="flex flex-wrap items-center gap-2.5 text-[14px]">
         <div className="flex items-center gap-1">
-          {SENTS.map((s) => <Chip key={s} on={sent.has(s)} onClick={() => toggleSent(s)}>{s}</Chip>)}
+          {SENTS.map((s) => <Chip key={s} on={sent.has(s)} onClick={() => toggle(sent, setSent, s)}>{s}</Chip>)}
         </div>
         <span className="text-dim">·</span>
-        <Chip on={mineOnly} onClick={() => setMineOnly(!mineOnly)}>只看持仓/自选{mineCount ? ` (${mineCount})` : ""}</Chip>
+        <div className="flex items-center gap-1">
+          {evtsPresent.map((e) => <Chip key={e} on={evt.has(e)} onClick={() => toggle(evt, setEvt, e)}>{e}</Chip>)}
+        </div>
         <span className="text-dim">·</span>
+        <Chip on={mineOnly} onClick={() => setMineOnly(!mineOnly)}>持仓/自选{mineCount ? ` (${mineCount})` : ""}</Chip>
         <div className="flex items-center gap-1">
           {(["all", "核心链", "泛科技"] as const).map((s) =>
-            <Chip key={s} on={scope === s} onClick={() => setScope(s)}>{s === "all" ? "全部范围" : s}</Chip>)}
+            <Chip key={s} on={scope === s} onClick={() => setScope(s)}>{s === "all" ? "全部" : s}</Chip>)}
         </div>
         <div className="ml-auto flex items-center gap-1">
-          <Chip on={mode === "chain"} onClick={() => setMode("chain")}>按链</Chip>
-          <Chip on={mode === "time"} onClick={() => setMode("time")}>最新</Chip>
+          {(["chain", "event", "time"] as const).map((mo) =>
+            <Chip key={mo} on={mode === mo} onClick={() => setMode(mo)}>{mo === "chain" ? "按链" : mo === "event" ? "按事件" : "最新"}</Chip>)}
         </div>
         <span className="text-dim mono">{dedupPassed.length} 条</span>
       </div>
 
-      {mineCount === 0 && (
-        <div className="text-dim text-[13px]">未设持仓/自选 — 设置后你的票有新闻会高亮置顶。</div>
-      )}
-
       {/* 内容 */}
       {mode === "time" ? (
         <div className="space-y-1.5">
-          {timeSorted.map((n, i) => <NewsRow key={i} n={n} />)}
+          <MoreList items={timeSorted} initial={20}>{(n, i) => <NewsRow key={i} n={n} />}</MoreList>
         </div>
       ) : (
-        <div className="space-y-4">
-          {nodes.map((g) => {
-            const items = g.items.filter((it) => pass({
-              ...it, chain: g.chain, node: g.node, scope: g.scope || "核心链", gid: g.node_id,
-            } as Flat));
-            if (!items.length) return null;
-            return (
-              <div key={g.node_id}>
-                <div className="flex items-center gap-2 mb-1.5 text-[14px]">
-                  <span className="w-0.5 h-3.5 bg-accent" />
-                  <span className="text-primary font-semibold">{g.chain}/{g.node}</span>
-                  <span className={`px-1.5 py-0.5 rounded text-[12px] ${g.scope === "泛科技" ? "text-muted bg-muted/10" : "text-accent bg-accent/10"}`}>{g.scope || "核心链"}</span>
-                  <span className="text-dim">({items.length})</span>
-                </div>
-                <div className="space-y-1.5">
-                  {items.map((it, i) => <NewsRow key={i} n={{
-                    ...it, chain: g.chain, node: g.node, scope: g.scope || "核心链", gid: g.node_id,
-                  } as Flat} />)}
-                </div>
+        <div className="space-y-3">
+          {groups.map((g, gi) => (
+            <Section key={g.key} title={g.title} count={g.items.length} defaultOpen={gi < 4}
+              right={g.scope ? <span className={`px-1.5 py-0.5 rounded text-[12px] ${g.scope === "泛科技" ? "text-muted bg-muted/10" : "text-accent bg-accent/10"}`}>{g.scope}</span> : undefined}>
+              <div className="space-y-1.5">
+                <MoreList items={g.items} initial={5}>{(it, i) => <NewsRow key={i} n={it} />}</MoreList>
               </div>
-            );
-          })}
+            </Section>
+          ))}
         </div>
       )}
     </div>

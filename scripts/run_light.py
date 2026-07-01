@@ -14,7 +14,7 @@ from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-from research_view import config, export, hotspots, monitor  # noqa: E402
+from research_view import config, export, hotspots, monitor, research_digest  # noqa: E402
 from research_view.collect import news, research  # noqa: E402
 from research_view.funnel import run_funnel  # noqa: E402
 from research_view.structure import run_structure  # noqa: E402
@@ -36,6 +36,7 @@ def main() -> None:
     step("funnel", run_funnel)
     step("structure_b1", run_structure)
     step("research", lambda: research.collect_reports(3))
+    step("research_digest", lambda: research_digest.persist(date))
     step("hotspots", lambda: {"n": hotspots.persist(date)})
     step("export_dashboard", lambda: str(export.build_dashboard(date)))
 

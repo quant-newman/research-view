@@ -208,7 +208,14 @@ def build_dashboard(date_utc8: str) -> Path:
         letters = [{"fund_name": r[0], "period": r[1], "stance": r[2], "strategy": r[3],
                     "relevance": r[4], "core_views": r[5], "status": r[6],
                     "title": r[7], "url": r[8], "relevant_points": r[9]} for r in cur.fetchall()]
-    research = {"reports": reports, "coverage": coverage, "letters": letters}
+        # 研报深化(评级变动榜 + 观点提炼;当日无回退最近)
+        cur.execute("SELECT changes, views FROM research_digest WHERE report_date=to_date(%s,'YYYYMMDD')", (date_utc8,))
+        drow = cur.fetchone()
+        if drow is None:
+            cur.execute("SELECT changes, views FROM research_digest ORDER BY report_date DESC LIMIT 1")
+            drow = cur.fetchone()
+    digest = {"changes": drow[0], "views": drow[1]} if drow else None
+    research = {"reports": reports, "coverage": coverage, "letters": letters, "digest": digest}
 
     # 判断复盘账本(近30日已钉死判断 + 存活/证伪 + 错误类型分布)
     with db.rv_conn() as conn, conn.cursor() as cur:
