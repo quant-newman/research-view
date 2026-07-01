@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background: #0A0E14;
+  color: #E4E9F0;
+  font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  font-size: 13px;
+}
+
+/* 数字/代码等宽,机构表格命脉 */
+.mono { font-family: "JetBrains Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+/* 极细分隔线 */
+.hairline { border-color: #232B36; }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #232B36; border-radius: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* 数据更新微妙高亮(Bloomberg 风,尊重 reduced-motion) */
+@keyframes flash { 0% { background: #1C2430; } 100% { background: transparent; } }
+.flash { animation: flash 0.8s ease-out; }
+@media (prefers-reduced-motion: reduce) { .flash { animation: none; } }

@@ -1,0 +1,1516 @@
+{
+  "meta": {
+    "date": "20260701",
+    "generated_at": "2026-07-01T20:27:06.143068+08:00",
+    "tz": "UTC+8",
+    "news_relevant": 82,
+    "events": 18
+  },
+  "report": {
+    "report_id": "20260701:afterhours",
+    "session": "afterhours",
+    "data_cutoff": "2026-07-01 20:20 UTC+8",
+    "headline": {
+      "fact": "MLCC涨价潮持续扩散，AI服务器用量暴涨13倍；寒武纪因风险公告大跌失守万亿市值，算力芯片板块重挫；存储芯片价格分化，SSD涨价但NAND现货下跌；先进封装产能紧张，日月光全力扩产；机器人产业订单与新品发布活跃。",
+      "confidence": "高",
+      "user_judgment": "<待填>"
+    },
+    "top3": [
+      {
+        "change": "MLCC涨价潮扩散：日韩MLCC再涨价，AI服务器用量暴涨13倍，产品紧缺全产业扩散。",
+        "evidence": "[来源:华尔街见闻]",
+        "node_ids": [
+          "MLCC/中游制造",
+          "MLCC/上游材料"
+        ],
+        "related_stocks": []
+      },
+      {
+        "change": "寒武纪因风险公告大跌失守万亿市值，A股算力芯片重挫，多只算力芯片股跌超5%。",
+        "evidence": "[来源:同花顺,新浪财经]",
+        "node_ids": [
+          "半导体/AI算力芯片"
+        ],
+        "related_stocks": [
+          "688256"
+        ]
+      },
+      {
+        "change": "存储芯片价格分化：SSD/256GB（SATA3）价格环比大幅上涨，但小容量DDR4/DDR3价格走高，NAND现货价持续下跌。",
+        "evidence": "[来源:同花顺]",
+        "node_ids": [
+          "半导体/存储",
+          "半导体/存储-主控/模组"
+        ],
+        "related_stocks": []
+      }
+    ],
+    "sectors": [
+      {
+        "chain": "光通信",
+        "status": "花旗上调新易盛目标价至701元，长飞光纤股东会讨论供需平衡，炬光科技澄清康宁Glass Bridge方案对CPO无实质影响。[来源:新浪财经]"
+      },
+      {
+        "chain": "半导体",
+        "status": "先进封装涨价潮蔓延，日月光全力扩产；三星HBM4E良率突破70%；寒武纪大跌失守万亿市值，算力芯片板块重挫；存储芯片价格分化，SSD涨价但NAND下跌；半导体设备龙头股价创历史新高。[来源:财联社,华尔街见闻,同花顺,新浪财经,凤凰财经]"
+      },
+      {
+        "chain": "机器人",
+        "status": "1-5月具身智能产业企业销售收入同比增长22.4%；加速进化推出具身开发IDE；麦迪科技联合发布康养机器人；机器人伴侣订单破1万台。[来源:同花顺,新浪财经]"
+      }
+    ],
+    "falsification": [
+      {
+        "claim": "MLCC涨价趋势将持续，AI服务器需求推动全产业紧缺。",
+        "draft_by": "deepseek",
+        "condition": "未来2周内，MLCC龙头国巨或日韩厂商发布涨价通知或产能满载公告，且AI服务器相关MLCC订单继续增长。"
+      },
+      {
+        "claim": "寒武纪市值跌破万亿后，国产算力板块情绪修复。",
+        "draft_by": "deepseek",
+        "condition": "未来1周内，寒武纪股价反弹收复万亿市值，且算力芯片板块指数（如芯片ETF）止跌回升。"
+      },
+      {
+        "claim": "存储芯片价格分化将收敛，SSD涨价趋势延续。",
+        "draft_by": "deepseek",
+        "condition": "未来2周内，SSD/256GB（SATA3）价格继续环比上涨，且NAND现货价止跌企稳。"
+      }
+    ],
+    "holdings_moves": [],
+    "generated_at": "2026-07-01 20:20:37.077994+08:00"
+  },
+  "temperature": {
+    "trade_date": "2026-07-01",
+    "pool_counted": 177,
+    "up": 55,
+    "down": 121,
+    "flat": 1,
+    "limit_up": 2,
+    "limit_down": 0,
+    "avg_pct": -1.63
+  },
+  "news_by_node": [
+    {
+      "node_id": "robotics::整机/本体",
+      "chain": "机器人",
+      "node": "整机/本体",
+      "items": [
+        {
+          "title": "优必选押注“机器人伴侣”，创始人周剑：家庭场景最具想象力，生态将决定公司能否立于不败之地",
+          "one_line": "优必选创始人周剑称家庭场景最具想象力，生态决定公司能否立于不败之地",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/wm/2026-07-01/doc-inifiaeu6294290.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "2026年中国机器人灵巧手驱动模块分析",
+          "one_line": "2026年中国机器人灵巧手驱动模块分析",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/stock/relnews/hk/2026-07-01/doc-inifiaew3046397.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "加速进化推出行业首款具身开发IDE“Booster Studio”，破解机器人开发高成本难题",
+          "one_line": "加速进化推出行业首款具身开发IDE“Booster Studio”，破解机器人开发高成本难题",
+          "sentiment": "利好",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/roll/2026-07-01/doc-inifiaew3033880.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "全球首款机器人老婆来了，彩礼12万，只卖成年人",
+          "one_line": "全球首款机器人老婆发布，售价12万，仅售成年人。",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/roll/2026-07-01/doc-inifiaen4129793.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "开源鸿蒙入局机器人，M-Robots不想再各自为战",
+          "one_line": "开源鸿蒙入局机器人，M-Robots不想再各自为战",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/cj/2026-07-01/doc-inifiaen4122369.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "99万的陪伴机器人，优必选不只是想单纯卖硬件",
+          "one_line": "99万的陪伴机器人，优必选不只是想单纯卖硬件",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/cj/2026-07-01/doc-inifiaeu6249715.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "优必选创始人周剑：情绪陪伴市场有4亿至5亿需求量仍未满足 机器人将成AI最核心交互终端",
+          "one_line": "优必选创始人称情绪陪伴市场有4亿至5亿需求量未满足，机器人将成AI核心交互终端",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/stock/t/2026-07-01/doc-inifiaew3016348.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "国内首个机器人学校开学，30台“学生”将接受系统化职业技能培训",
+          "one_line": "国内首个机器人学校开学，30台机器人将接受系统化职业技能培训",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/stock/t/2026-07-01/doc-inifiaeu6238460.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "募资7亿，术锐机器人获科创板受理",
+          "one_line": "术锐机器人获科创板受理，募资7亿元",
+          "sentiment": "利好",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/wm/2026-07-01/doc-inifiaew3024975.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "中国造！喀麦隆首台腔镜机器人落地",
+          "one_line": "喀麦隆首台腔镜机器人落地，由中国制造。",
+          "sentiment": "利好",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/wm/2026-07-01/doc-inifiaew3021296.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "宇信科技携手阿尔特、光轮智能  加速具身智能产业化全链路布局",
+          "one_line": "宇信科技携手阿尔特、光轮智能加速具身智能产业化全链路布局",
+          "sentiment": "利好",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/jjxw/2026-07-01/doc-inifhvwq4236522.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "京东加速餐饮具身智能机器人规模化落地",
+          "one_line": "京东加速餐饮具身智能机器人规模化落地",
+          "sentiment": "利好",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/roll/2026-07-01/doc-inifhvwy3131455.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "不做家务、只陪聊天，最高99万元的仿生机器人你会买吗？",
+          "one_line": "仿生机器人最高售价99万元，主打陪伴功能，不做家务。",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/wm/2026-07-01/doc-inifhvws1010654.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "国内首个！杭州机器人学校开学",
+          "one_line": "国内首个机器人学校在杭州开学",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/jjxw/2026-07-01/doc-inifhvwq4221519.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "2026年中国外骨骼机器人行业招投标分析 规模不断提升，发展前景广阔【组图】",
+          "one_line": "2026年中国外骨骼机器人行业招投标规模不断提升，发展前景广阔",
+          "sentiment": "利好",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/roll/2026-07-01/doc-inifhvwy3121535.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "从“背答案”到“会解题” 国内首个机器人学校开学了",
+          "one_line": "国内首个机器人学校开学，从背答案到会解题",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/jjxw/2026-07-01/doc-inifhvwy3093612.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "他山科技联合图灵奖得主萨顿共建“机器人幼儿园”，具身智能从“模仿时代”迈向“经验时代”",
+          "one_line": "他山科技联合图灵奖得主萨顿共建机器人幼儿园",
+          "sentiment": "利好",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/stock/t/2026-07-01/doc-inifhvws0982122.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "具身智能的Skill时刻！英伟达开源机器人技能库，Jim Fan：范式变了",
+          "one_line": "英伟达开源机器人技能库，Jim Fan称范式变了",
+          "sentiment": "中性",
+          "src": "华尔街见闻",
+          "url": "https://wallstreetcn.com/articles/3775958",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "让数据生出双翼，让模型拥有躯体！HaiBot X0具身机器人和DataWing数翼大模型新品发布会圆满落幕",
+          "one_line": "HaiBot X0具身机器人和DataWing数翼大模型新品发布会圆满落幕",
+          "sentiment": "中性",
+          "src": "同花顺",
+          "url": "http://field.10jqka.com.cn/20260701/c677867424.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "优必选CEO：珍惜做牛马的时光吧 20年后全是机器人干活",
+          "one_line": "优必选CEO称20年后全是机器人干活，珍惜做牛马的时光。",
+          "sentiment": "中性",
+          "src": "凤凰财经",
+          "url": "https://finance.ifeng.com/c/8uPJJOjiypu",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "1—5月我国具身智能产业企业销售收入同比增长22.4%",
+          "one_line": "1—5月我国具身智能产业企业销售收入同比增长22.4%",
+          "sentiment": "利好",
+          "src": "同花顺",
+          "url": "http://field.10jqka.com.cn/20260701/c677865081.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "麦迪科技亮相优必选全球发布会，联合发布优麦康养机器人",
+          "one_line": "麦迪科技亮相优必选全球发布会，联合发布优麦康养机器人",
+          "sentiment": "利好",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/stock/csjzbj/2026-07-01/doc-inifhvwq4159972.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "液冷、机器人被追问 三花智控股东会释放哪些信号？",
+          "one_line": "三花智控股东会回应液冷、机器人业务进展",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/roll/2026-07-01/doc-inifhvww6267471.shtml",
+          "codes": [
+            "002050"
+          ],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "深圳机器人谷：先长出“身体”，再补上“大脑”",
+          "one_line": "深圳机器人谷先发展硬件制造，再补齐软件智能。",
+          "sentiment": "中性",
+          "src": "财联社",
+          "url": "https://www.cls.cn/detail/2414072",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "深圳机器人谷：先长出“身体”，再补上“大脑”",
+          "one_line": "深圳机器人谷先发展硬件制造，再补齐软件智能。",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/jjxw/2026-07-01/doc-inifhvww6264558.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "大摩上调2026年中国人形机器人出货量，机器人主题类ETF选哪个？机器人ETF景顺(159559)备受资金关注",
+          "one_line": "大摩上调2026年中国人形机器人出货量，机器人ETF景顺(159559)受关注",
+          "sentiment": "利好",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/jjxw/2026-07-01/doc-inifhrqu1057341.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "创新医疗器械、外骨骼、手术机器人   融资租赁瞄准医疗装备产业",
+          "one_line": "融资租赁瞄准医疗装备产业，涉及创新医疗器械、外骨骼、手术机器人",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/jjxw/2026-07-01/doc-inifhrqy6387952.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "具身智能和移动机器人，为什么今年都在工厂上强度",
+          "one_line": "具身智能和移动机器人今年都在工厂上强度",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/jjxw/2026-07-01/doc-inifhrqy6368828.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "逐际动力、阿里云共建具身智能工程底座，FluxVLA Engine 上架 PAI",
+          "one_line": "逐际动力与阿里云共建具身智能工程底座，FluxVLA Engine上架PAI",
+          "sentiment": "中性",
+          "src": "同花顺",
+          "url": "http://field.10jqka.com.cn/20260701/c677863405.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "逐际动力、阿里云共建具身智能工程底座上架",
+          "one_line": "逐际动力与阿里云共建具身智能工程底座上架",
+          "sentiment": "中性",
+          "src": "同花顺",
+          "url": "http://field.10jqka.com.cn/20260701/c677863385.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "“机器人伴侣”订单破1万台！去年情感机器人相关专利申请量创新高",
+          "one_line": "“机器人伴侣”订单破1万台，去年情感机器人相关专利申请量创新高",
+          "sentiment": "利好",
+          "src": "同花顺",
+          "url": "http://field.10jqka.com.cn/20260701/c677863374.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "“机器人伴侣”订单破1万台！去年情感机器人相关专利申请量创新高",
+          "one_line": "“机器人伴侣”订单破1万台，去年情感机器人相关专利申请量创新高",
+          "sentiment": "利好",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/jjxw/2026-07-01/doc-inifhrqs4250813.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "通信、半导体设备、机器人大涨点评",
+          "one_line": "通信、半导体设备、机器人大涨点评",
+          "sentiment": "利好",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/roll/2026-07-01/doc-inifhrqu1013589.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "全国近九成具身智能产业企业集中在广东、北京、上海、浙江、江苏",
+          "one_line": "全国近九成具身智能产业企业集中在广东、北京、上海、浙江、江苏",
+          "sentiment": "中性",
+          "src": "同花顺",
+          "url": "http://field.10jqka.com.cn/20260701/c677862404.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "从“背答案”到“会解题”，国内首个机器人学校开学了",
+          "one_line": "国内首个机器人学校开学，从背答案到会解题",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/jjxw/2026-07-01/doc-inifhrqs4224880.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "从“背答案”到“会解题” 国内首个机器人学校开学了",
+          "one_line": "国内首个机器人学校开学，从背答案到会解题",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/roll/2026-07-01/doc-inifhrqs4216470.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "“赛博伴侣”来了！机器人不拼性能拼陪伴",
+          "one_line": "机器人不拼性能拼陪伴，“赛博伴侣”来了",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/jjxw/2026-07-01/doc-inifhrqy6330134.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "优必选正式发布消费级人形机器人，人形机器人量产进程显著提速，机器人ETF嘉实(159526)聚焦机器人全产业链",
+          "one_line": "优必选正式发布消费级人形机器人，人形机器人量产进程显著提速",
+          "sentiment": "利好",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/jjxw/2026-07-01/doc-inifhrqs4204323.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "超仿生人形机器人来了，超仿生人形机器人定价最高99万",
+          "one_line": "超仿生人形机器人发布，定价最高99万",
+          "sentiment": "中性",
+          "src": "同花顺",
+          "url": "http://field.10jqka.com.cn/20260701/c677861756.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "从“背答案”到“会解题” 国内首个机器人学校开学了",
+          "one_line": "国内首个机器人学校开学，从背答案到会解题",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/jjxw/2026-07-01/doc-inifhmie3173902.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "不做家务、只陪聊天，最高99万元的仿生机器人真要进家了",
+          "one_line": "仿生机器人最高售价99万元，主打陪伴功能，即将进入家庭市场。",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/roll/2026-07-01/doc-inifhmhw1095090.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "加速进化推出行业首款具身开发IDE“Booster Studio”，破解机器人开发高成本难题",
+          "one_line": "加速进化推出行业首款具身开发IDE“Booster Studio”，破解机器人开发高成本难题",
+          "sentiment": "利好",
+          "src": "同花顺",
+          "url": "http://field.10jqka.com.cn/20260701/c677860805.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "活力中国调研行 | 无人机播撒机器人作业：种地正变得很“酷”",
+          "one_line": "无人机播撒机器人作业：种地正变得很“酷”",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/jjxw/2026-07-01/doc-inifhmie3113884.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "超仿生人形机器人安全性如何？会落地哪里场景？优必选创始人这样说",
+          "one_line": "优必选创始人谈超仿生人形机器人安全性与落地场景",
+          "sentiment": "中性",
+          "src": "同花顺",
+          "url": "http://field.10jqka.com.cn/20260701/c677859107.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        }
+      ]
+    },
+    {
+      "node_id": "semiconductor::AI算力芯片",
+      "chain": "半导体",
+      "node": "AI算力芯片",
+      "items": [
+        {
+          "title": "寒武纪成科创板首只万亿元市值个股背后：国产AI芯片已进入新一轮竞争周期",
+          "one_line": "寒武纪成科创板首只万亿元市值个股，国产AI芯片进入新一轮竞争周期",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/jjxw/2026-07-01/doc-inifiaew3052515.shtml",
+          "codes": [
+            "688256"
+          ],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "美团开源万亿参数大模型 LongCat-2.0，五万卡国产算力全流程训练",
+          "one_line": "美团开源万亿参数大模型 LongCat-2.0，五万卡国产算力全流程训练",
+          "sentiment": "中性",
+          "src": "华尔街见闻",
+          "url": "https://wallstreetcn.com/articles/3775961",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "腾讯云：8月1日起取消“云原生构建-GPU”与“云原生开发-GPU”的免费额度",
+          "one_line": "腾讯云8月1日起取消云原生构建-GPU与云原生开发-GPU免费额度",
+          "sentiment": "利空",
+          "src": "同花顺",
+          "url": "http://field.10jqka.com.cn/20260701/c677870187.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "双创大涨后回调，寒武纪跌超6%！科创50ETF汇添富(588870)、创业板ETF汇添富(159247)双双跌近2%！7月迎中报业绩预告披露期",
+          "one_line": "双创大涨后回调，寒武纪跌超6%，科创50ETF和创业板ETF跌近2%",
+          "sentiment": "利空",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/jjxw/2026-07-01/doc-inifhvwq4196997.shtml",
+          "codes": [
+            "688256"
+          ],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "寒武纪跌超7%，A股算力芯片重挫，5300亿巨头蒸发超600亿，创新药逆势爆发",
+          "one_line": "寒武纪跌超7%，A股算力芯片重挫，5300亿巨头蒸发超600亿",
+          "sentiment": "利空",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/wm/2026-07-01/doc-inifhrqs4241975.shtml",
+          "codes": [
+            "688256"
+          ],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "机构：寒武纪市值破万亿，国产算力浪潮势不可挡",
+          "one_line": "机构称寒武纪市值破万亿，国产算力浪潮势不可挡",
+          "sentiment": "利好",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/jjxw/2026-07-01/doc-inifhrra3107835.shtml",
+          "codes": [
+            "688256"
+          ],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "京东方A：公司目标产品为大尺寸算力芯片先进封装所需的玻璃基载板尚未实现量产营收",
+          "one_line": "京东方A称目标产品为大尺寸算力芯片先进封装所需的玻璃基载板，尚未量产营收",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/jjxw/2026-07-01/doc-inifhrra3097409.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "一纸风险公告浇灭算力热度！寒武纪大跌失守万亿市值 多只算力芯片股跌超 5%",
+          "one_line": "寒武纪因风险公告大跌失守万亿市值，多只算力芯片股跌超5%",
+          "sentiment": "利空",
+          "src": "同花顺",
+          "url": "http://field.10jqka.com.cn/20260701/c677862516.shtml",
+          "codes": [
+            "688256"
+          ],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "券商观点|通信行业点评报告：迎接国产算力超节点大时代",
+          "one_line": "通信行业点评报告：迎接国产算力超节点大时代",
+          "sentiment": "利好",
+          "src": "同花顺",
+          "url": "http://field.10jqka.com.cn/20260701/c677862224.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "美团1.6万亿级模型训练突破，进一步验证国产算力！北方华创涨超9%，芯片ETF汇添富(516920)放量大涨近3%，近5日大举吸金1亿元！",
+          "one_line": "美团1.6万亿级模型训练突破，进一步验证国产算力，北方华创涨超9%，芯片ETF汇添富放量大涨近3%",
+          "sentiment": "利好",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/jjxw/2026-07-01/doc-inifhrqy6292929.shtml",
+          "codes": [
+            "002371"
+          ],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "寒武纪昨天提示风险后上午跌破万亿市值：国产算力稀缺性溢价叙事不能代表科技水平！海光、英伟达三方估值与研发投入对比！",
+          "one_line": "寒武纪提示风险后上午跌破万亿市值，国产算力稀缺性溢价叙事不能代表科技水平",
+          "sentiment": "利空",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/cj/2026-07-01/doc-inifhmhu4308201.shtml",
+          "codes": [
+            "688256"
+          ],
+          "holding": false,
+          "watching": false
+        }
+      ]
+    },
+    {
+      "node_id": "semiconductor::存储-主控/模组",
+      "chain": "半导体",
+      "node": "存储-主控/模组",
+      "items": [
+        {
+          "title": "最高赚183%，最低亏34%！公募半年业绩两重天，近200只基金翻倍，抱团江波龙、佰维存储",
+          "one_line": "公募半年业绩两重天，近200只基金翻倍，抱团江波龙、佰维存储",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/jjxw/2026-07-01/doc-inifiaew3072014.shtml",
+          "codes": [
+            "301308",
+            "688525"
+          ],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "欧美股指下挫，美股存储芯片盘前大跌，国际油价直线跳水，比特币跌至21个月新低，美联储加息预期大增",
+          "one_line": "欧美股指下挫，美股存储芯片盘前大跌，国际油价直线跳水，比特币跌至21个月新低",
+          "sentiment": "利空",
+          "src": "同花顺",
+          "url": "http://futures.10jqka.com.cn/20260701/c677871885.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "小容量DDR4/DDR3价格走高，NAND现货价持续下跌",
+          "one_line": "小容量DDR4/DDR3价格走高，NAND现货价持续下跌",
+          "sentiment": "中性",
+          "src": "同花顺",
+          "url": "http://field.10jqka.com.cn/20260701/c677871563.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "行业追踪|电子存储市场（6月25日-7月1日）：SSD/256GB（SATA3）价格环比大幅上涨",
+          "one_line": "SSD/256GB（SATA3）价格环比大幅上涨",
+          "sentiment": "利好",
+          "src": "同花顺",
+          "url": "http://field.10jqka.com.cn/20260701/c677870615.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "恒尚节能拟收购金胜电子切入存储赛道",
+          "one_line": "恒尚节能拟收购金胜电子切入存储赛道",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/roll/2026-07-01/doc-inifhvwq4167107.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "管理层优先考虑“价格和利润率”，NAND扩产有限，高盛再上调铠侠目标价",
+          "one_line": "高盛上调铠侠目标价，NAND扩产有限，管理层优先考虑价格和利润率",
+          "sentiment": "利好",
+          "src": "华尔街见闻",
+          "url": "https://wallstreetcn.com/articles/3775937",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        }
+      ]
+    },
+    {
+      "node_id": "semiconductor::存储",
+      "chain": "半导体",
+      "node": "存储",
+      "items": [
+        {
+          "title": "最高赚183%，最低亏34%！公募半年业绩两重天，近200只基金翻倍，抱团江波龙、佰维存储",
+          "one_line": "公募半年业绩两重天，近200只基金翻倍，抱团江波龙、佰维存储",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/jjxw/2026-07-01/doc-inifiaew3072014.shtml",
+          "codes": [
+            "301308",
+            "688525"
+          ],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "欧美股指下挫，美股存储芯片盘前大跌，国际油价直线跳水，比特币跌至21个月新低，美联储加息预期大增",
+          "one_line": "欧美股指下挫，美股存储芯片盘前大跌，国际油价直线跳水，比特币跌至21个月新低",
+          "sentiment": "利空",
+          "src": "同花顺",
+          "url": "http://futures.10jqka.com.cn/20260701/c677871885.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "行业追踪|电子存储市场（6月25日-7月1日）：SSD/256GB（SATA3）价格环比大幅上涨",
+          "one_line": "SSD/256GB（SATA3）价格环比大幅上涨",
+          "sentiment": "利好",
+          "src": "同花顺",
+          "url": "http://field.10jqka.com.cn/20260701/c677870615.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "恒尚节能拟收购金胜电子切入存储赛道",
+          "one_line": "恒尚节能拟收购金胜电子切入存储赛道",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/roll/2026-07-01/doc-inifhvwq4167107.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        }
+      ]
+    },
+    {
+      "node_id": "semiconductor::CoWoS载板-ABF/FCBGA",
+      "chain": "半导体",
+      "node": "CoWoS载板-ABF/FCBGA",
+      "items": [
+        {
+          "title": "半导体涨价潮蔓延至先进封装 日月光CEO：正全力以赴扩大产能",
+          "one_line": "半导体涨价潮蔓延至先进封装，日月光CEO称正全力以赴扩大产能",
+          "sentiment": "利好",
+          "src": "财联社",
+          "url": "https://www.cls.cn/detail/2414349",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "高能云科技：先进封装——后摩尔时代的“算力搭子”站上风口",
+          "one_line": "高能云科技：先进封装——后摩尔时代的“算力搭子”站上风口",
+          "sentiment": "利好",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/roll/2026-07-01/doc-inifhvww6289751.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "三星HBM4E良率突破70%，第七代AI内存开发进入稳定阶段",
+          "one_line": "三星HBM4E良率突破70%，第七代AI内存开发进入稳定阶段",
+          "sentiment": "利好",
+          "src": "华尔街见闻",
+          "url": "https://wallstreetcn.com/articles/3775933",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "京东方A：公司目标产品为大尺寸算力芯片先进封装所需的玻璃基载板尚未实现量产营收",
+          "one_line": "京东方A称目标产品为大尺寸算力芯片先进封装所需的玻璃基载板，尚未量产营收",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/jjxw/2026-07-01/doc-inifhrra3097409.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        }
+      ]
+    },
+    {
+      "node_id": "semiconductor::先进封测",
+      "chain": "半导体",
+      "node": "先进封测",
+      "items": [
+        {
+          "title": "半导体涨价潮蔓延至先进封装 日月光CEO：正全力以赴扩大产能",
+          "one_line": "半导体涨价潮蔓延至先进封装，日月光CEO称正全力以赴扩大产能",
+          "sentiment": "利好",
+          "src": "财联社",
+          "url": "https://www.cls.cn/detail/2414349",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "炬光科技：现阶段不认为康宁Glass Bridge方案会对公司的CPO业务产生实质性的负面影响",
+          "one_line": "炬光科技称康宁Glass Bridge方案不会对CPO业务产生实质负面影响",
+          "sentiment": "澄清",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/jjxw/2026-07-01/doc-inifhvwy3097604.shtml",
+          "codes": [
+            "688167"
+          ],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "高能云科技：先进封装——后摩尔时代的“算力搭子”站上风口",
+          "one_line": "高能云科技：先进封装——后摩尔时代的“算力搭子”站上风口",
+          "sentiment": "利好",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/roll/2026-07-01/doc-inifhvww6289751.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "京东方A：公司目标产品为大尺寸算力芯片先进封装所需的玻璃基载板尚未实现量产营收",
+          "one_line": "京东方A称目标产品为大尺寸算力芯片先进封装所需的玻璃基载板，尚未量产营收",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/jjxw/2026-07-01/doc-inifhrra3097409.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        }
+      ]
+    },
+    {
+      "node_id": "mlcc::中游制造",
+      "chain": "MLCC",
+      "node": "中游制造",
+      "items": [
+        {
+          "title": "中国产业叙事：三环集团",
+          "one_line": "中国产业叙事：三环集团",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/wm/2026-07-01/doc-inifhvwy3097293.shtml",
+          "codes": [
+            "300408"
+          ],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "MLCC龙头国巨涨价，代理商回应：属实",
+          "one_line": "MLCC龙头国巨涨价，代理商回应：属实",
+          "sentiment": "利好",
+          "src": "华尔街见闻",
+          "url": "https://wallstreetcn.com/articles/3775938",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "MLCC龙头又涨价了",
+          "one_line": "MLCC龙头又涨价了",
+          "sentiment": "利好",
+          "src": "同花顺",
+          "url": "http://field.10jqka.com.cn/20260701/c677862648.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "日韩MLCC再涨价：AI服务器用量暴涨13倍，产品紧缺正全产业扩散",
+          "one_line": "日韩MLCC再涨价：AI服务器用量暴涨13倍，产品紧缺正全产业扩散",
+          "sentiment": "利好",
+          "src": "华尔街见闻",
+          "url": "https://wallstreetcn.com/premium/articles/3775851?layout=wscn-layout",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        }
+      ]
+    },
+    {
+      "node_id": "mlcc::上游材料",
+      "chain": "MLCC",
+      "node": "上游材料",
+      "items": [
+        {
+          "title": "MLCC龙头国巨涨价，代理商回应：属实",
+          "one_line": "MLCC龙头国巨涨价，代理商回应：属实",
+          "sentiment": "利好",
+          "src": "华尔街见闻",
+          "url": "https://wallstreetcn.com/articles/3775938",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "MLCC龙头又涨价了",
+          "one_line": "MLCC龙头又涨价了",
+          "sentiment": "利好",
+          "src": "同花顺",
+          "url": "http://field.10jqka.com.cn/20260701/c677862648.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "日韩MLCC再涨价：AI服务器用量暴涨13倍，产品紧缺正全产业扩散",
+          "one_line": "日韩MLCC再涨价：AI服务器用量暴涨13倍，产品紧缺正全产业扩散",
+          "sentiment": "利好",
+          "src": "华尔街见闻",
+          "url": "https://wallstreetcn.com/premium/articles/3775851?layout=wscn-layout",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        }
+      ]
+    },
+    {
+      "node_id": "semiconductor::半导体设备",
+      "chain": "半导体",
+      "node": "半导体设备",
+      "items": [
+        {
+          "title": "通信、半导体设备、机器人大涨点评",
+          "one_line": "通信、半导体设备、机器人大涨点评",
+          "sentiment": "利好",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/roll/2026-07-01/doc-inifhrqu1013589.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "美团1.6万亿级模型训练突破，进一步验证国产算力！北方华创涨超9%，芯片ETF汇添富(516920)放量大涨近3%，近5日大举吸金1亿元！",
+          "one_line": "美团1.6万亿级模型训练突破，进一步验证国产算力，北方华创涨超9%，芯片ETF汇添富放量大涨近3%",
+          "sentiment": "利好",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/jjxw/2026-07-01/doc-inifhrqy6292929.shtml",
+          "codes": [
+            "002371"
+          ],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "两大半导体设备龙头，历史新高",
+          "one_line": "两大半导体设备龙头股价创历史新高",
+          "sentiment": "中性",
+          "src": "凤凰财经",
+          "url": "https://finance.ifeng.com/c/8uP5ASVttJe",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        }
+      ]
+    },
+    {
+      "node_id": "compute_infra::液冷/散热",
+      "chain": "算力配套",
+      "node": "液冷/散热",
+      "items": [
+        {
+          "title": "液冷风口下的飞龙股份：控股股东高位套现 液冷业务成色究竟如何？",
+          "one_line": "飞龙股份控股股东高位套现，液冷业务成色受质疑。",
+          "sentiment": "利空",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/stock/observe/2026-07-01/doc-inifiaen4120762.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "液冷、机器人被追问 三花智控股东会释放哪些信号？",
+          "one_line": "三花智控股东会回应液冷、机器人业务进展",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/roll/2026-07-01/doc-inifhvww6267471.shtml",
+          "codes": [
+            "002050"
+          ],
+          "holding": false,
+          "watching": false
+        }
+      ]
+    },
+    {
+      "node_id": "compute_infra::AI电源/供电",
+      "chain": "算力配套",
+      "node": "AI电源/供电",
+      "items": [
+        {
+          "title": "沪指涨超1%，券商爆发，算力硬件陷入调整，光伏逆变器大跌，阳光电源一度跌停",
+          "one_line": "沪指重返4100点，券商拉升，科创50再涨近2%，半导体产业链活跃，光伏逆变器齐跌，阳光电源一度跌停",
+          "sentiment": "中性",
+          "src": "华尔街见闻",
+          "url": "https://wallstreetcn.com/articles/3775921",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "国星光电：公司光耦产品已实现稳定量产，已进入工控、新能源电源等优质下游供应链",
+          "one_line": "公司光耦产品已实现稳定量产，进入工控、新能源电源等优质下游供应链",
+          "sentiment": "利好",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/jjxw/2026-07-01/doc-inifhrqs4210065.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        }
+      ]
+    },
+    {
+      "node_id": "semiconductor::半导体材料",
+      "chain": "半导体",
+      "node": "半导体材料",
+      "items": [
+        {
+          "title": "鼎龙股份市值突破千亿 武汉迎来第五家千亿市值企业",
+          "one_line": "鼎龙股份市值突破千亿，武汉迎来第五家千亿市值企业",
+          "sentiment": "利好",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/wm/2026-07-01/doc-inifhrqs4274395.shtml",
+          "codes": [
+            "300054"
+          ],
+          "holding": false,
+          "watching": false
+        },
+        {
+          "title": "韩国扩产计划持续发酵，半导体材料涨价逻辑走强，设备材料主线加速演绎",
+          "one_line": "韩国扩产计划持续发酵，半导体材料涨价逻辑走强，设备材料主线加速演绎",
+          "sentiment": "利好",
+          "src": "同花顺",
+          "url": "http://field.10jqka.com.cn/20260701/c677862925.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        }
+      ]
+    },
+    {
+      "node_id": "robotics::减速器",
+      "chain": "机器人",
+      "node": "减速器",
+      "items": [
+        {
+          "title": "丰立智能拟定增加码精密传动 计划新增44万台精密减速器产能",
+          "one_line": "丰立智能拟定增加码精密传动，计划新增44万台精密减速器产能",
+          "sentiment": "利好",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/roll/2026-07-01/doc-inifiaeq0932839.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        }
+      ]
+    },
+    {
+      "node_id": "compute_infra::其他被动元件",
+      "chain": "算力配套",
+      "node": "其他被动元件",
+      "items": [
+        {
+          "title": "【明日主题前瞻】被动元件大厂国巨上调全系列电容产品报价",
+          "one_line": "被动元件大厂国巨上调全系列电容产品报价",
+          "sentiment": "利好",
+          "src": "财联社",
+          "url": "https://www.cls.cn/detail/2414117",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        }
+      ]
+    },
+    {
+      "node_id": "optical::光器件/CPO封装",
+      "chain": "光通信",
+      "node": "光器件/CPO封装",
+      "items": [
+        {
+          "title": "炬光科技：现阶段不认为康宁Glass Bridge方案会对公司的CPO业务产生实质性的负面影响",
+          "one_line": "炬光科技称康宁Glass Bridge方案不会对CPO业务产生实质负面影响",
+          "sentiment": "澄清",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/jjxw/2026-07-01/doc-inifhvwy3097604.shtml",
+          "codes": [
+            "688167"
+          ],
+          "holding": false,
+          "watching": false
+        }
+      ]
+    },
+    {
+      "node_id": "optical::光纤光缆",
+      "chain": "光通信",
+      "node": "光纤光缆",
+      "items": [
+        {
+          "title": "直击长飞光纤股东会：供需平衡博弈，牵动本轮光纤短缺持续时间",
+          "one_line": "直击长飞光纤股东会：供需平衡博弈，牵动本轮光纤短缺持续时间",
+          "sentiment": "中性",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/roll/2026-07-01/doc-inifhvwq4181033.shtml",
+          "codes": [
+            "601869"
+          ],
+          "holding": false,
+          "watching": false
+        }
+      ]
+    },
+    {
+      "node_id": "compute_infra::高速PCB",
+      "chain": "算力配套",
+      "node": "高速PCB",
+      "items": [
+        {
+          "title": "原材料多轮涨价 PCB板块走弱",
+          "one_line": "原材料多轮涨价导致PCB板块走弱",
+          "sentiment": "利空",
+          "src": "同花顺",
+          "url": "http://field.10jqka.com.cn/20260701/c677863444.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        }
+      ]
+    },
+    {
+      "node_id": "semiconductor::存储-HBM/分销",
+      "chain": "半导体",
+      "node": "存储-HBM/分销",
+      "items": [
+        {
+          "title": "三星HBM4E良率突破70%，第七代AI内存开发进入稳定阶段",
+          "one_line": "三星HBM4E良率突破70%，第七代AI内存开发进入稳定阶段",
+          "sentiment": "利好",
+          "src": "华尔街见闻",
+          "url": "https://wallstreetcn.com/articles/3775933",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        }
+      ]
+    },
+    {
+      "node_id": "optical::光模块成品",
+      "chain": "光通信",
+      "node": "光模块成品",
+      "items": [
+        {
+          "title": "花旗上调新易盛目标价至701元！“卖水人”逻辑再获验证，科创创业人工智能ETF景顺(159142)一键打包产业龙头",
+          "one_line": "花旗上调新易盛目标价至701元，科创创业人工智能ETF景顺(159142)一键打包产业龙头",
+          "sentiment": "利好",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/jjxw/2026-07-01/doc-inifhrqu1020443.shtml",
+          "codes": [
+            "300502"
+          ],
+          "holding": false,
+          "watching": false
+        }
+      ]
+    },
+    {
+      "node_id": "compute_infra::服务器整机",
+      "chain": "算力配套",
+      "node": "服务器整机",
+      "items": [
+        {
+          "title": "日韩MLCC再涨价：AI服务器用量暴涨13倍，产品紧缺正全产业扩散",
+          "one_line": "日韩MLCC再涨价：AI服务器用量暴涨13倍，产品紧缺正全产业扩散",
+          "sentiment": "利好",
+          "src": "华尔街见闻",
+          "url": "https://wallstreetcn.com/premium/articles/3775851?layout=wscn-layout",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        }
+      ]
+    },
+    {
+      "node_id": "semiconductor::存储-内存接口",
+      "chain": "半导体",
+      "node": "存储-内存接口",
+      "items": [
+        {
+          "title": "个股异动 | 澜起科技盘中再创新高 市值逼近4000亿元关口",
+          "one_line": "澜起科技盘中再创新高，市值逼近4000亿元关口",
+          "sentiment": "利好",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/roll/2026-07-01/doc-inifhmhu4269195.shtml",
+          "codes": [
+            "688008"
+          ],
+          "holding": false,
+          "watching": false
+        }
+      ]
+    },
+    {
+      "node_id": "semiconductor::接口/IP芯片",
+      "chain": "半导体",
+      "node": "接口/IP芯片",
+      "items": [
+        {
+          "title": "个股异动 | 澜起科技盘中再创新高 市值逼近4000亿元关口",
+          "one_line": "澜起科技盘中再创新高，市值逼近4000亿元关口",
+          "sentiment": "利好",
+          "src": "新浪财经",
+          "url": "https://finance.sina.com.cn/roll/2026-07-01/doc-inifhmhu4269195.shtml",
+          "codes": [
+            "688008"
+          ],
+          "holding": false,
+          "watching": false
+        }
+      ]
+    },
+    {
+      "node_id": "compute_infra::覆铜板/基材",
+      "chain": "算力配套",
+      "node": "覆铜板/基材",
+      "items": [
+        {
+          "title": "今年以来涨近6倍！辟谣纳入英伟达、华为供应链，覆铜板牛股大幅受挫",
+          "one_line": "覆铜板牛股因辟谣纳入英伟达、华为供应链而大幅受挫",
+          "sentiment": "利空",
+          "src": "同花顺",
+          "url": "http://field.10jqka.com.cn/20260701/c677859703.shtml",
+          "codes": [],
+          "holding": false,
+          "watching": false
+        }
+      ]
+    }
+  ],
+  "stock_events": [
+    {
+      "code": "688627",
+      "event_type": "解禁",
+      "direction": "中性",
+      "date": "2026-07-20",
+      "summary": "解禁 2.560400% (首发原始股)",
+      "node_ids": [
+        "semiconductor::半导体设备"
+      ],
+      "holding": false,
+      "watching": false
+    },
+    {
+      "code": "688627",
+      "event_type": "解禁",
+      "direction": "中性",
+      "date": "2026-07-20",
+      "summary": "解禁 1.886100% (首发原始股)",
+      "node_ids": [
+        "semiconductor::半导体设备"
+      ],
+      "holding": false,
+      "watching": false
+    },
+    {
+      "code": "688627",
+      "event_type": "解禁",
+      "direction": "中性",
+      "date": "2026-07-20",
+      "summary": "解禁 18.564800% (首发原始股)",
+      "node_ids": [
+        "semiconductor::半导体设备"
+      ],
+      "holding": false,
+      "watching": false
+    },
+    {
+      "code": "688048",
+      "event_type": "龙虎榜",
+      "direction": "利好",
+      "date": "2026-06-30",
+      "summary": "龙虎榜·有价格涨跌幅限制的日收盘价格涨幅达到15%的前五只证券 净额14.06亿",
+      "node_ids": [
+        "optical::光芯片"
+      ],
+      "holding": false,
+      "watching": false
+    },
+    {
+      "code": "000021",
+      "event_type": "龙虎榜",
+      "direction": "利空",
+      "date": "2026-06-30",
+      "summary": "龙虎榜·连续三个交易日内，涨幅偏离值累计达到20%的证券 净额-7.41亿",
+      "node_ids": [
+        "semiconductor::先进封测"
+      ],
+      "holding": false,
+      "watching": false
+    },
+    {
+      "code": "000636",
+      "event_type": "龙虎榜",
+      "direction": "利好",
+      "date": "2026-06-30",
+      "summary": "龙虎榜·日跌幅偏离值达到7%的前5只证券 净额4.84亿",
+      "node_ids": [
+        "mlcc::中游制造"
+      ],
+      "holding": false,
+      "watching": false
+    },
+    {
+      "code": "000938",
+      "event_type": "龙虎榜",
+      "direction": "利好",
+      "date": "2026-06-30",
+      "summary": "龙虎榜·日涨幅偏离值达到7%的前5只证券 净额3.89亿",
+      "node_ids": [
+        "compute_infra::服务器整机",
+        "optical::通信设备"
+      ],
+      "holding": false,
+      "watching": false
+    },
+    {
+      "code": "002971",
+      "event_type": "龙虎榜",
+      "direction": "利空",
+      "date": "2026-06-30",
+      "summary": "龙虎榜·日跌幅偏离值达到7%的前5只证券 净额-0.91亿",
+      "node_ids": [
+        "semiconductor::电子特气-大宗/综合"
+      ],
+      "holding": false,
+      "watching": false
+    },
+    {
+      "code": "301165",
+      "event_type": "龙虎榜",
+      "direction": "利好",
+      "date": "2026-06-30",
+      "summary": "龙虎榜·日涨幅达到15%的前5只证券 净额3.15亿",
+      "node_ids": [
+        "optical::通信设备"
+      ],
+      "holding": false,
+      "watching": false
+    },
+    {
+      "code": "605111",
+      "event_type": "龙虎榜",
+      "direction": "利好",
+      "date": "2026-06-30",
+      "summary": "龙虎榜·非ST、*ST和S证券连续三个交易日内收盘价格涨幅偏离值累计达到20%的证券 净额2.17亿",
+      "node_ids": [
+        "semiconductor::功率/化合物"
+      ],
+      "holding": false,
+      "watching": false
+    },
+    {
+      "code": "600703",
+      "event_type": "增减持",
+      "direction": "利空",
+      "date": "2026-06-19",
+      "summary": "三安光电股份有限公司第五期员工持股计划 减持 2.775400%",
+      "node_ids": [
+        "semiconductor::功率/化合物"
+      ],
+      "holding": false,
+      "watching": false
+    },
+    {
+      "code": "688627",
+      "event_type": "增减持",
+      "direction": "利空",
+      "date": "2026-06-18",
+      "summary": "源创力清源及其一致行动人 减持 0.008100%",
+      "node_ids": [
+        "semiconductor::半导体设备"
+      ],
+      "holding": false,
+      "watching": false
+    },
+    {
+      "code": "600703",
+      "event_type": "增减持",
+      "direction": "利好",
+      "date": "2026-06-13",
+      "summary": "林志强 增持 0.020000%",
+      "node_ids": [
+        "semiconductor::功率/化合物"
+      ],
+      "holding": false,
+      "watching": false
+    },
+    {
+      "code": "688627",
+      "event_type": "增减持",
+      "direction": "利空",
+      "date": "2026-06-11",
+      "summary": "苏州新麟二期创业投资企业(有限合伙) 减持 0.347600%",
+      "node_ids": [
+        "semiconductor::半导体设备"
+      ],
+      "holding": false,
+      "watching": false
+    },
+    {
+      "code": "688627",
+      "event_type": "增减持",
+      "direction": "利空",
+      "date": "2026-06-11",
+      "summary": "上海力合清源创业投资合伙企业(有限合伙) 减持 0.232400%",
+      "node_ids": [
+        "semiconductor::半导体设备"
+      ],
+      "holding": false,
+      "watching": false
+    },
+    {
+      "code": "688627",
+      "event_type": "增减持",
+      "direction": "利空",
+      "date": "2026-06-11",
+      "summary": "深圳源创力清源创业投资合伙企业(有限合伙) 减持 0.378700%",
+      "node_ids": [
+        "semiconductor::半导体设备"
+      ],
+      "holding": false,
+      "watching": false
+    },
+    {
+      "code": "688627",
+      "event_type": "增减持",
+      "direction": "利空",
+      "date": "2026-06-11",
+      "summary": "常州清源天使创业投资合伙企业(有限合伙) 减持 0.320700%",
+      "node_ids": [
+        "semiconductor::半导体设备"
+      ],
+      "holding": false,
+      "watching": false
+    },
+    {
+      "code": "301526",
+      "event_type": "增减持",
+      "direction": "利空",
+      "date": "2026-06-04",
+      "summary": "上海信熹投资管理有限公司-云南云熹股权投资基金合伙企业(有限合伙) 减持 2.223600%",
+      "node_ids": [
+        "compute_infra::覆铜板/基材"
+      ],
+      "holding": false,
+      "watching": false
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+# research-view 前端容器(台北侧)。这台机服务多,用容器隔离。
+# 数据:阿里云每日同步 dashboard.json 到 ./data,挂载进容器,不用重建镜像。
+services:
+  web:
+    build: ./web
+    image: research-view-web:latest
+    container_name: research-view-web
+    restart: unless-stopped
+    ports:
+      - "8092:80"          # 宿主 8092(8090 已被 Crucible 占用)→ 容器 nginx 80
+    volumes:
+      - ./webdata:/usr/share/nginx/html/data:ro   # 前端实时数据(阿里云同步 dashboard.json 到此),只读挂载

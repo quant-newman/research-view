@@ -101,3 +101,26 @@ def build_export(date_utc8: str) -> Path:
     path = EXPORT_DIR / f"events_{date_utc8}.json"
     path.write_text(json.dumps(out, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
     return path
+
+
+def build_dashboard(date_utc8: str) -> Path:
+    """前端数据源:盘后报告 + 事件流 + 温度计 合并成一份 dashboard.json。"""
+    events = build_export(date_utc8)
+    ev = json.loads(events.read_text(encoding="utf-8"))
+    with db.rv_conn() as conn, conn.cursor() as cur:
+        cur.execute("""SELECT report_id,session,data_cutoff,headline,top3,sectors,
+            falsification,holdings_moves,generated_at FROM daily_report
+            WHERE report_date=to_date(%s,'YYYYMMDD') ORDER BY generated_at DESC LIMIT 1""",
+            (date_utc8,))
+        row = cur.fetchone()
+        report = None
+        if row:
+            report = {"report_id": row[0], "session": row[1], "data_cutoff": row[2],
+                      "headline": row[3], "top3": row[4], "sectors": row[5],
+                      "falsification": row[6], "holdings_moves": row[7],
+                      "generated_at": str(row[8])}
+    dash = {"meta": ev["meta"], "report": report, "temperature": ev["temperature"],
+            "news_by_node": ev["news_by_node"], "stock_events": ev["stock_events"]}
+    path = EXPORT_DIR / "dashboard.json"
+    path.write_text(json.dumps(dash, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
+    return path

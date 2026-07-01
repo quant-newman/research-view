@@ -1,0 +1,241 @@
+import { useEffect, useState } from "react";
+import type { Dashboard, NewsItem, StockEvent } from "./types";
+
+// A股红涨绿跌:正=红(up) 负=绿(down)
+const pctColor = (v: number) => (v > 0 ? "text-up" : v < 0 ? "text-down" : "text-muted");
+const sentColor: Record<string, string> = {
+  利好: "text-up bg-up/10", 利空: "text-down bg-down/10",
+  中性: "text-muted bg-muted/10", 澄清: "text-info bg-info/10",
+};
+const confDot: Record<string, string> = { 高: "bg-up", 中: "bg-accent", 低: "bg-muted" };
+
+function Clock() {
+  const [t, setT] = useState("");
+  useEffect(() => {
+    const f = () => {
+      const d = new Date(Date.now() + (8 * 60 + new Date().getTimezoneOffset()) * 60000);
+      setT(d.toTimeString().slice(0, 8));
+    };
+    f(); const id = setInterval(f, 1000); return () => clearInterval(id);
+  }, []);
+  return <span className="mono text-dim">{t} UTC+8</span>;
+}
+
+function Badge({ text, cls }: { text: string; cls: string }) {
+  return <span className={`px-1.5 py-0.5 rounded text-[11px] ${cls}`}>{text}</span>;
+}
+
+function StatusBar({ d }: { d: Dashboard }) {
+  const t = d.temperature;
+  return (
+    <div className="flex items-center gap-4 px-4 h-11 border-b hairline bg-surface text-[12px]">
+      <div className="flex items-center gap-2">
+        <span className="w-2 h-2 rounded-full bg-accent inline-block" />
+        <span className="font-semibold">盘后</span>
+        <span className="text-dim">·</span>
+        <span className="text-muted">{d.report?.data_cutoff || d.meta.date}</span>
+      </div>
+      <div className="mono text-muted flex gap-3">
+        <span>池 <span className="text-primary">{t.pool_counted}</span></span>
+        <span className="text-up">涨 {t.up}</span>
+        <span className="text-down">跌 {t.down}</span>
+        <span className="text-up">涨停 {t.limit_up}</span>
+        <span className={pctColor(t.avg_pct)}>均 {t.avg_pct}%</span>
+      </div>
+      <div className="ml-auto"><Clock /></div>
+    </div>
+  );
+}
+
+function DailyReport({ d }: { d: Dashboard }) {
+  const r = d.report;
+  if (!r) return <div className="text-muted p-4">今日暂无报告</div>;
+  return (
+    <div className="space-y-5">
+      {/* 今日主线 */}
+      <section>
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-0.5 h-4 bg-accent" />
+          <h2 className="font-semibold">今日主线</h2>
+          <span className={`w-2 h-2 rounded-full ${confDot[r.headline.confidence] || "bg-muted"}`} />
+          <span className="text-dim text-[11px]">置信度 {r.headline.confidence}</span>
+        </div>
+        <p className="text-[13px] leading-relaxed text-primary">{r.headline.fact}</p>
+        <div className="mt-2 border border-accent/50 rounded bg-accent/5 px-3 py-2">
+          <span className="text-accent text-[11px]">我的判断（人填 · 模型不越位）</span>
+          <input
+            className="w-full bg-transparent outline-none text-primary mt-1 placeholder:text-dim"
+            placeholder="在此写下你的判断……（模型永远留白这一栏）"
+          />
+        </div>
+      </section>
+
+      {/* 今天只看这3件事 */}
+      <section>
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-0.5 h-4 bg-accent" />
+          <h2 className="font-semibold">今天只看这 3 件事</h2>
+        </div>
+        <ol className="space-y-2">
+          {r.top3.map((it, i) => (
+            <li key={i} className="border hairline rounded bg-surface px-3 py-2">
+              <div className="flex gap-2">
+                <span className="mono text-accent">{i + 1}</span>
+                <div className="flex-1">
+                  <p className="text-primary">{it.change}</p>
+                  <div className="flex flex-wrap items-center gap-2 mt-1 text-[11px]">
+                    <span className="text-info">{it.evidence}</span>
+                    {it.node_ids.map((n) => (
+                      <span key={n} className="text-dim">▸{n}</span>
+                    ))}
+                    {it.related_stocks.map((s) => (
+                      <span key={s} className="mono text-muted">{s}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {/* 分板块扫描 */}
+      <section>
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-0.5 h-4 bg-dim" />
+          <h2 className="font-semibold text-muted">分板块扫描</h2>
+        </div>
+        <div className="space-y-1">
+          {r.sectors.map((s, i) => (
+            <div key={i} className="flex gap-2 text-[12px]">
+              <span className="text-muted w-16 shrink-0">{s.chain}</span>
+              <span className="text-dim">{s.status}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 证伪与风险 */}
+      <section>
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-0.5 h-4 bg-up" />
+          <h2 className="font-semibold">证伪与风险</h2>
+        </div>
+        <div className="space-y-2">
+          {r.falsification.map((f, i) => (
+            <div key={i} className="border hairline rounded px-3 py-2">
+              <p className="text-primary text-[12px]">{f.claim}</p>
+              <p className="text-muted text-[11px] mt-1">
+                <span className="text-down">证伪条件：</span>{f.condition}
+              </p>
+              <div className="mt-1 flex gap-2">
+                <Badge text="DeepSeek 起草" cls="bg-elevated text-dim" />
+                <Badge text="待审定" cls="bg-accent/10 text-accent" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function EventStream({ nodes }: { nodes: Dashboard["news_by_node"] }) {
+  return (
+    <div className="space-y-3">
+      {nodes.slice(0, 10).map((g) => (
+        <div key={g.node_id}>
+          <div className="flex items-center gap-2 text-[11px] text-muted mb-1">
+            <span className="text-primary">{g.chain}/{g.node}</span>
+            <span className="text-dim">({g.items.length})</span>
+          </div>
+          <div className="space-y-1">
+            {g.items.slice(0, 4).map((n: NewsItem, i) => (
+              <div key={i} className="flex items-start gap-2 text-[12px] leading-snug">
+                <Badge text={n.sentiment} cls={sentColor[n.sentiment] || "text-muted"} />
+                <span className="text-primary flex-1">{n.one_line || n.title}</span>
+                <span className="text-dim text-[11px] shrink-0">{n.src}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Events({ events }: { events: StockEvent[] }) {
+  return (
+    <div className="space-y-1">
+      {events.map((e, i) => (
+        <div key={i} className="flex items-center gap-2 text-[12px]">
+          <Badge text={e.event_type} cls="bg-elevated text-muted" />
+          <span className={e.direction === "利好" ? "text-up" : e.direction === "利空" ? "text-down" : "text-muted"}>
+            {e.direction}
+          </span>
+          <span className="mono text-muted">{e.code}</span>
+          <span className="text-dim flex-1 truncate">{e.summary}</span>
+          <span className="mono text-dim text-[11px]">{e.date}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Panel({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="border hairline rounded bg-surface">
+      <div className="px-3 py-2 border-b hairline text-[11px] text-muted uppercase tracking-wide">{title}</div>
+      <div className="p-3">{children}</div>
+    </div>
+  );
+}
+
+export default function App() {
+  const [d, setD] = useState<Dashboard | null>(null);
+  const [err, setErr] = useState("");
+  useEffect(() => {
+    fetch("/data/dashboard.json").then((r) => r.json()).then(setD).catch((e) => setErr(String(e)));
+  }, []);
+
+  if (err) return <div className="p-6 text-down">加载失败：{err}</div>;
+  if (!d) return <div className="p-6 text-muted">加载中…</div>;
+
+  return (
+    <div className="min-h-screen flex">
+      {/* 左侧窄导航 */}
+      <nav className="w-14 shrink-0 border-r hairline bg-surface flex flex-col items-center py-3 gap-4 text-[10px] text-dim">
+        <div className="text-accent font-bold text-[13px]">RV</div>
+        {["报告", "新闻", "热力", "研究", "信函"].map((x, i) => (
+          <div key={x} className={`flex flex-col items-center gap-0.5 ${i === 0 ? "text-primary" : ""}`}>
+            <div className={`w-8 h-8 rounded flex items-center justify-center ${i === 0 ? "bg-elevated" : ""}`}>●</div>
+            <span>{x}</span>
+          </div>
+        ))}
+      </nav>
+
+      <div className="flex-1 flex flex-col min-w-0">
+        <StatusBar d={d} />
+        <div className="flex-1 grid grid-cols-[1.6fr_1fr] gap-4 p-4 overflow-auto">
+          <div><DailyReport d={d} /></div>
+          <div className="space-y-4">
+            <Panel title="判断复盘账本 · 近30日">
+              <div className="text-dim text-[12px]">存活 — · 证伪 — · 错误类型分布(账本积累中)</div>
+            </Panel>
+            <Panel title="我的持仓 / 自选动态">
+              {d.report?.holdings_moves?.length
+                ? <div className="text-primary text-[12px]">{d.report.holdings_moves.length} 条异动</div>
+                : <div className="text-dim text-[12px]">未设持仓/自选。设置后,你的票有事永远第一时间最高优先级出现。</div>}
+            </Panel>
+            <Panel title="事件流 · 按节点">
+              <EventStream nodes={d.news_by_node} />
+            </Panel>
+            <Panel title="个股事件 · 公告/龙虎榜">
+              <Events events={d.stock_events} />
+            </Panel>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
