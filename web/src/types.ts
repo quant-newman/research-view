@@ -16,10 +16,10 @@ export interface Report {
   us_overnight?: UsOvernight;
 }
 export interface NewsItem {
-  title: string; one_line: string; sentiment: string; src: string;
-  url: string | null; codes: string[]; holding: boolean; watching: boolean;
+  title: string; one_line: string; sentiment: string; event_type?: string; src: string;
+  url: string | null; time?: string; codes: string[]; holding: boolean; watching: boolean;
 }
-export interface NewsNode { node_id: string; chain: string; node: string; items: NewsItem[]; }
+export interface NewsNode { node_id: string; chain: string; node: string; scope?: string; items: NewsItem[]; }
 export interface StockEvent {
   code: string; event_type: string; direction: string; date: string;
   summary: string; node_ids: string[]; holding: boolean; watching: boolean;
