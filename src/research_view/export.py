@@ -170,10 +170,12 @@ def build_dashboard(date_utc8: str) -> Path:
         cur.execute("""SELECT name, count(*) c, max(report_date), max(scope) FROM research_report
             GROUP BY name ORDER BY c DESC LIMIT 24""")
         coverage = [{"name": r[0], "n": r[1], "latest": str(r[2]), "scope": r[3]} for r in cur.fetchall()]
-        cur.execute("""SELECT fund_name,period,stance,strategy,relevance,core_views,status
-            FROM fund_letter ORDER BY created_at DESC LIMIT 40""")
+        cur.execute("""SELECT fund_name,period,stance,strategy,relevance,core_views,status,
+                   title,url,relevant_points
+            FROM fund_letter ORDER BY relevance DESC NULLS LAST, created_at DESC LIMIT 40""")
         letters = [{"fund_name": r[0], "period": r[1], "stance": r[2], "strategy": r[3],
-                    "relevance": r[4], "core_views": r[5], "status": r[6]} for r in cur.fetchall()]
+                    "relevance": r[4], "core_views": r[5], "status": r[6],
+                    "title": r[7], "url": r[8], "relevant_points": r[9]} for r in cur.fetchall()]
     research = {"reports": reports, "coverage": coverage, "letters": letters}
 
     # 判断复盘账本(近30日已钉死判断 + 存活/证伪 + 错误类型分布)

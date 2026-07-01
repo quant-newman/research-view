@@ -53,6 +53,7 @@ export interface Coverage { name: string; n: number; latest: string; scope?: str
 export interface FundLetter {
   fund_name: string; period: string | null; stance: string | null;
   strategy: string | null; relevance: number | null; core_views: any; status: string;
+  title?: string | null; url?: string | null; relevant_points?: any;
 }
 export interface Research { reports: ResearchReport[]; coverage: Coverage[]; letters: FundLetter[]; }
 

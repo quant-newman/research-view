@@ -69,19 +69,35 @@ export function LettersView({ r }: { r: Research | undefined }) {
       </div>
     );
   }
+  const relColor = (v: number | null) =>
+    v == null ? "text-dim" : v >= 7 ? "text-up" : v >= 4 ? "text-accent" : "text-dim";
   return (
     <div className="grid grid-cols-2 gap-3">
       {letters.map((l, i) => (
         <div key={i} className="border hairline rounded bg-surface p-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <span className="text-primary font-medium">{l.fund_name}</span>
-            <span className="text-dim text-[11px] mono">{l.period}</span>
+            <span className="text-dim text-[11px] mono shrink-0">{l.period}</span>
           </div>
-          <div className="flex gap-2 mt-1 text-[11px]">
+          {l.title && (
+            <div className="text-muted text-[12px] mt-0.5">
+              {l.url ? <a href={l.url} target="_blank" rel="noreferrer" className="hover:text-primary hover:underline">{l.title} ↗</a> : l.title}
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2 mt-1 text-[11px]">
             {l.stance && <span className="text-muted">{l.stance}</span>}
             {l.strategy && <span className="text-dim">{l.strategy}</span>}
-            {l.relevance != null && <span className="text-accent">相关 {l.relevance}/10</span>}
+            {l.relevance != null && <span className={relColor(l.relevance)}>AI科技链相关 {l.relevance}/10</span>}
           </div>
+          {Array.isArray(l.core_views) && l.core_views.length > 0 && (
+            <ul className="mt-2 space-y-1">
+              {l.core_views.slice(0, 3).map((v: string, j: number) => (
+                <li key={j} className="text-primary text-[12px] leading-snug flex gap-1.5">
+                  <span className="text-accent shrink-0">·</span><span>{v}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       ))}
     </div>

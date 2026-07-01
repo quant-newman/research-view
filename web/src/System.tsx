@@ -56,7 +56,7 @@ export default function SystemView({ h }: { h: Health | undefined }) {
             <div key={i} className="flex items-center justify-between">
               <span className="text-muted">{s.name}</span>
               {s.pending ? (
-                <span className="text-dim">◌ {s.latest}<span className="text-[10px] ml-1">待接入</span></span>
+                <span className="text-dim">◌ {s.latest}<span className="text-[10px] ml-1">{s.latest === "未接入" ? "待接入" : "低频·不计告警"}</span></span>
               ) : (
                 <span className={s.stale ? "text-accent" : "text-dim"}>
                   {s.stale ? "⚠ " : ""}{s.latest}
