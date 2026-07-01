@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Dashboard, NewsItem, StockEvent } from "./types";
 import HeatmapView from "./Heatmap";
+import SystemView, { HealthDot } from "./System";
 
 // A股红涨绿跌:正=红(up) 负=绿(down)
 const pctColor = (v: number) => (v > 0 ? "text-up" : v < 0 ? "text-down" : "text-muted");
@@ -26,7 +27,7 @@ function Badge({ text, cls }: { text: string; cls: string }) {
   return <span className={`px-1.5 py-0.5 rounded text-[11px] ${cls}`}>{text}</span>;
 }
 
-function StatusBar({ d }: { d: Dashboard }) {
+function StatusBar({ d, onHealth }: { d: Dashboard; onHealth: () => void }) {
   const t = d.temperature;
   return (
     <div className="flex items-center gap-4 px-4 h-11 border-b hairline bg-surface text-[12px]">
@@ -43,7 +44,10 @@ function StatusBar({ d }: { d: Dashboard }) {
         <span className="text-up">涨停 {t.limit_up}</span>
         <span className={pctColor(t.avg_pct)}>均 {t.avg_pct}%</span>
       </div>
-      <div className="ml-auto"><Clock /></div>
+      <div className="ml-auto flex items-center gap-4">
+        {d.health && <HealthDot level={d.health.level} onClick={onHealth} />}
+        <Clock />
+      </div>
     </div>
   );
 }
@@ -198,6 +202,7 @@ const NAV = [
   { key: "news", label: "新闻" },
   { key: "research", label: "研究" },
   { key: "letters", label: "信函" },
+  { key: "system", label: "系统" },
 ];
 
 export default function App() {
@@ -211,7 +216,7 @@ export default function App() {
   if (err) return <div className="p-6 text-down">加载失败：{err}</div>;
   if (!d) return <div className="p-6 text-muted">加载中…</div>;
 
-  const enabled = new Set(["report", "heatmap"]);
+  const enabled = new Set(["report", "heatmap", "system"]);
 
   return (
     <div className="min-h-screen flex">
@@ -232,7 +237,7 @@ export default function App() {
       </nav>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <StatusBar d={d} />
+        <StatusBar d={d} onHealth={() => setView("system")} />
         {view === "report" && (
           <div className="flex-1 grid grid-cols-[1.6fr_1fr] gap-4 p-4 overflow-auto">
             <div><DailyReport d={d} /></div>
@@ -256,6 +261,9 @@ export default function App() {
         )}
         {view === "heatmap" && (
           <div className="flex-1 p-4 overflow-auto"><HeatmapView h={d.heatmap} /></div>
+        )}
+        {view === "system" && (
+          <div className="flex-1 p-4 overflow-auto"><SystemView h={d.health} /></div>
         )}
       </div>
     </div>

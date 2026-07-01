@@ -34,8 +34,15 @@ export interface HeatStock {
 }
 export interface Heatmap { nodes: HeatNode[]; stocks: HeatStock[]; }
 
+export interface HealthSource { name: string; latest: string; stale: boolean; }
+export interface HealthTask { task: string; status: string; count: number | null; duration_ms: number | null; ts: string; }
+export interface HealthFlag { kind: string; count: number; }
+export interface Health {
+  level: string; sources: HealthSource[]; tasks: HealthTask[]; flags: HealthFlag[];
+}
+
 export interface Dashboard {
   meta: Meta; report: Report | null; temperature: Temperature;
   news_by_node: NewsNode[]; stock_events: StockEvent[];
-  heatmap?: Heatmap;
+  heatmap?: Heatmap; health?: Health;
 }

@@ -138,9 +138,15 @@ def build_dashboard(date_utc8: str) -> Path:
               for r in cur.fetchall()]
     heatmap = {"nodes": hn, "stocks": hs}
 
+    from . import monitor
+    try:
+        health = monitor.health()
+    except Exception as e:  # noqa: BLE001 健康汇总失败不应阻塞导出
+        health = {"level": "yellow", "error": str(e)[:200], "sources": [], "tasks": [], "flags": []}
+
     dash = {"meta": ev["meta"], "report": report, "temperature": ev["temperature"],
             "news_by_node": ev["news_by_node"], "stock_events": ev["stock_events"],
-            "heatmap": heatmap}
+            "heatmap": heatmap, "health": health}
     path = EXPORT_DIR / "dashboard.json"
     path.write_text(json.dumps(dash, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
     return path
