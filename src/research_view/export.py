@@ -119,8 +119,23 @@ def build_dashboard(date_utc8: str) -> Path:
                       "headline": row[3], "top3": row[4], "sectors": row[5],
                       "falsification": row[6], "holdings_moves": row[7],
                       "generated_at": str(row[8])}
+    # 热力图(节点四象限 + 个股散点)
+    with db.rv_conn() as conn, conn.cursor() as cur:
+        cur.execute("""SELECT node_id,chain,node,n_stocks,total_mv,ret_1m,ret_6m,
+            or_yoy,gross_margin,pe,ps,quadrant FROM heatmap_node ORDER BY total_mv DESC NULLS LAST""")
+        hn = [dict(zip(["node_id","chain","node","n_stocks","total_mv","ret_1m","ret_6m",
+                        "or_yoy","gross_margin","pe","ps","quadrant"],
+                       [float(x) if isinstance(x,(int,float)) and not isinstance(x,bool) else x for x in r]))
+              for r in cur.fetchall()]
+        cur.execute("""SELECT code,name,total_mv,pe,ps,ret_1m,ret_6m,or_yoy,gross_margin,pe_pct
+            FROM heatmap_stock ORDER BY total_mv DESC NULLS LAST""")
+        hs = [dict(zip(["code","name","total_mv","pe","ps","ret_1m","ret_6m","or_yoy","gross_margin","pe_pct"], r))
+              for r in cur.fetchall()]
+    heatmap = {"nodes": hn, "stocks": hs}
+
     dash = {"meta": ev["meta"], "report": report, "temperature": ev["temperature"],
-            "news_by_node": ev["news_by_node"], "stock_events": ev["stock_events"]}
+            "news_by_node": ev["news_by_node"], "stock_events": ev["stock_events"],
+            "heatmap": heatmap}
     path = EXPORT_DIR / "dashboard.json"
     path.write_text(json.dumps(dash, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
     return path

@@ -21,7 +21,21 @@ export interface StockEvent {
   code: string; event_type: string; direction: string; date: string;
   summary: string; node_ids: string[]; holding: boolean; watching: boolean;
 }
+export interface HeatNode {
+  node_id: string; chain: string; node: string; n_stocks: number;
+  total_mv: number | null; ret_1m: number | null; ret_6m: number | null;
+  or_yoy: number | null; gross_margin: number | null; pe: number | null;
+  ps: number | null; quadrant: string;
+}
+export interface HeatStock {
+  code: string; name: string; total_mv: number | null; pe: number | null;
+  ps: number | null; ret_1m: number | null; ret_6m: number | null;
+  or_yoy: number | null; gross_margin: number | null; pe_pct: number | null;
+}
+export interface Heatmap { nodes: HeatNode[]; stocks: HeatStock[]; }
+
 export interface Dashboard {
   meta: Meta; report: Report | null; temperature: Temperature;
   news_by_node: NewsNode[]; stock_events: StockEvent[];
+  heatmap?: Heatmap;
 }

@@ -13,7 +13,7 @@ from zoneinfo import ZoneInfo
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 from research_view import config, export  # noqa: E402
-from research_view.collect import announcements, news  # noqa: E402
+from research_view.collect import announcements, heatmap, news  # noqa: E402
 from research_view.funnel import run_funnel  # noqa: E402
 from research_view.structure import run_structure  # noqa: E402
 
@@ -25,8 +25,9 @@ def main() -> None:
     print(f"  2) 规则漏斗: {run_funnel()}")
     print(f"  3) B1 结构化: {run_structure()}")
     print(f"  4) 个股事件(marketdata公告/龙虎榜): {announcements.collect_events()}")
-    path = export.build_export(date)
-    print(f"  5) 导出事件流 JSON: {path}")
+    print(f"  5) 热力图计算(四象限): {heatmap.compute()}")
+    path = export.build_dashboard(date)
+    print(f"  6) 导出前端数据源 dashboard.json: {path}")
 
 
 if __name__ == "__main__":

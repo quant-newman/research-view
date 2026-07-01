@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Dashboard, NewsItem, StockEvent } from "./types";
+import HeatmapView from "./Heatmap";
 
 // A股红涨绿跌:正=红(up) 负=绿(down)
 const pctColor = (v: number) => (v > 0 ? "text-up" : v < 0 ? "text-down" : "text-muted");
@@ -191,9 +192,18 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
   );
 }
 
+const NAV = [
+  { key: "report", label: "报告" },
+  { key: "heatmap", label: "热力" },
+  { key: "news", label: "新闻" },
+  { key: "research", label: "研究" },
+  { key: "letters", label: "信函" },
+];
+
 export default function App() {
   const [d, setD] = useState<Dashboard | null>(null);
   const [err, setErr] = useState("");
+  const [view, setView] = useState("report");
   useEffect(() => {
     fetch("/data/dashboard.json").then((r) => r.json()).then(setD).catch((e) => setErr(String(e)));
   }, []);
@@ -201,40 +211,52 @@ export default function App() {
   if (err) return <div className="p-6 text-down">加载失败：{err}</div>;
   if (!d) return <div className="p-6 text-muted">加载中…</div>;
 
+  const enabled = new Set(["report", "heatmap"]);
+
   return (
     <div className="min-h-screen flex">
       {/* 左侧窄导航 */}
       <nav className="w-14 shrink-0 border-r hairline bg-surface flex flex-col items-center py-3 gap-4 text-[10px] text-dim">
         <div className="text-accent font-bold text-[13px]">RV</div>
-        {["报告", "新闻", "热力", "研究", "信函"].map((x, i) => (
-          <div key={x} className={`flex flex-col items-center gap-0.5 ${i === 0 ? "text-primary" : ""}`}>
-            <div className={`w-8 h-8 rounded flex items-center justify-center ${i === 0 ? "bg-elevated" : ""}`}>●</div>
-            <span>{x}</span>
-          </div>
-        ))}
+        {NAV.map((n) => {
+          const on = view === n.key;
+          const ok = enabled.has(n.key);
+          return (
+            <button key={n.key} disabled={!ok} onClick={() => ok && setView(n.key)}
+              className={`flex flex-col items-center gap-0.5 ${on ? "text-primary" : ok ? "text-muted hover:text-primary" : "text-dim/50 cursor-not-allowed"}`}>
+              <div className={`w-8 h-8 rounded flex items-center justify-center ${on ? "bg-elevated" : ""}`}>●</div>
+              <span>{n.label}</span>
+            </button>
+          );
+        })}
       </nav>
 
       <div className="flex-1 flex flex-col min-w-0">
         <StatusBar d={d} />
-        <div className="flex-1 grid grid-cols-[1.6fr_1fr] gap-4 p-4 overflow-auto">
-          <div><DailyReport d={d} /></div>
-          <div className="space-y-4">
-            <Panel title="判断复盘账本 · 近30日">
-              <div className="text-dim text-[12px]">存活 — · 证伪 — · 错误类型分布(账本积累中)</div>
-            </Panel>
-            <Panel title="我的持仓 / 自选动态">
-              {d.report?.holdings_moves?.length
-                ? <div className="text-primary text-[12px]">{d.report.holdings_moves.length} 条异动</div>
-                : <div className="text-dim text-[12px]">未设持仓/自选。设置后,你的票有事永远第一时间最高优先级出现。</div>}
-            </Panel>
-            <Panel title="事件流 · 按节点">
-              <EventStream nodes={d.news_by_node} />
-            </Panel>
-            <Panel title="个股事件 · 公告/龙虎榜">
-              <Events events={d.stock_events} />
-            </Panel>
+        {view === "report" && (
+          <div className="flex-1 grid grid-cols-[1.6fr_1fr] gap-4 p-4 overflow-auto">
+            <div><DailyReport d={d} /></div>
+            <div className="space-y-4">
+              <Panel title="判断复盘账本 · 近30日">
+                <div className="text-dim text-[12px]">存活 — · 证伪 — · 错误类型分布(账本积累中)</div>
+              </Panel>
+              <Panel title="我的持仓 / 自选动态">
+                {d.report?.holdings_moves?.length
+                  ? <div className="text-primary text-[12px]">{d.report.holdings_moves.length} 条异动</div>
+                  : <div className="text-dim text-[12px]">未设持仓/自选。设置后,你的票有事永远第一时间最高优先级出现。</div>}
+              </Panel>
+              <Panel title="事件流 · 按节点">
+                <EventStream nodes={d.news_by_node} />
+              </Panel>
+              <Panel title="个股事件 · 公告/龙虎榜">
+                <Events events={d.stock_events} />
+              </Panel>
+            </div>
           </div>
-        </div>
+        )}
+        {view === "heatmap" && (
+          <div className="flex-1 p-4 overflow-auto"><HeatmapView h={d.heatmap} /></div>
+        )}
       </div>
     </div>
   );
