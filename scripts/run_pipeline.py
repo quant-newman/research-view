@@ -13,7 +13,7 @@ from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-from research_view import config, db, export, monitor  # noqa: E402
+from research_view import config, db, export, monitor, universe  # noqa: E402
 from research_view.collect import announcements, heatmap, news, research  # noqa: E402
 from research_view.funnel import run_funnel  # noqa: E402
 from research_view.structure import run_structure  # noqa: E402
@@ -28,6 +28,7 @@ def step(name, fn):
 def main() -> None:
     date = sys.argv[1] if len(sys.argv) > 1 else datetime.now(ZoneInfo(config.TZ)).strftime("%Y%m%d")
     print(f"[Pipeline] {date} UTC+8")
+    step("tech_universe", universe.build)
     step("fetch_news", lambda: {"n": news.fetch_major_news(date)})
     step("funnel", run_funnel)
     step("structure_b1", run_structure)

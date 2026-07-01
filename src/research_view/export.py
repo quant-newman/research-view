@@ -53,12 +53,14 @@ def build_export(date_utc8: str) -> Path:
         cur.execute("SELECT code FROM watchlist")
         watches = {r[0] for r in cur.fetchall()}
 
-        # 相关新闻(有效相关),按节点分组
+        # 相关新闻(有效相关),按节点分组;泛科技(无节点)按申万行业分组
         cur.execute("""
             SELECT rn.news_id, rn.src, rn.title, rn.one_line, rn.sentiment,
-                   rn.event_type, rn.url, rn.matched_codes, rn.matched_node_ids
+                   rn.event_type, rn.url, rn.matched_codes, rn.matched_node_ids,
+                   rn.matched_tech_codes, rn.tech_industries
             FROM raw_news rn
-            WHERE rn.relevant AND (rn.is_chain_relevant IS NOT false OR array_length(rn.matched_codes,1) > 0)
+            WHERE rn.relevant AND (rn.is_chain_relevant IS NOT false
+                  OR array_length(rn.matched_codes,1) > 0 OR array_length(rn.matched_tech_codes,1) > 0)
             ORDER BY rn.pub_time DESC""")
         news = cur.fetchall()
 
@@ -77,14 +79,25 @@ def build_export(date_utc8: str) -> Path:
         codes = codes or []
         return {"holding": any(c in holds for c in codes), "watching": any(c in watches for c in codes)}
 
-    # 按节点分组新闻
+    # 按节点分组新闻;核心链节点在前,泛科技行业组在后
     by_node: dict[str, dict] = {}
-    for nid, src, title, one_line, sent, etype, url, codes, node_ids in news:
-        for node_id in (node_ids or []):
-            g = by_node.setdefault(node_id, {"node_id": node_id, **node_meta.get(node_id, {}), "items": []})
-            g["items"].append({"title": title, "one_line": one_line, "sentiment": sent,
-                               "src": src, "url": url, "codes": codes or [], **flags(codes)})
-    news_by_node = sorted(by_node.values(), key=lambda g: -len(g["items"]))
+    for nid, src, title, one_line, sent, etype, url, codes, node_ids, tech_codes, tech_inds in news:
+        item = {"title": title, "one_line": one_line, "sentiment": sent,
+                "src": src, "url": url, "codes": codes or [], **flags(codes)}
+        if node_ids:  # 命中核心链节点
+            for node_id in node_ids:
+                g = by_node.setdefault(node_id, {"node_id": node_id, "scope": "核心链",
+                                                 **node_meta.get(node_id, {}), "items": []})
+                g["items"].append(item)
+        elif tech_codes:  # 纯泛科技(无核心节点)→ 按申万行业归组
+            for ind in (tech_inds or ["泛科技"]):
+                gid = f"泛科技::{ind}"
+                g = by_node.setdefault(gid, {"node_id": gid, "scope": "泛科技",
+                                             "chain": "泛科技", "node": ind, "items": []})
+                g["items"].append({**item, "codes": tech_codes})
+    # 核心链在前,泛科技在后,组内按条数
+    news_by_node = sorted(by_node.values(),
+                          key=lambda g: (g.get("scope") == "泛科技", -len(g["items"])))
 
     events_out = [{"code": c, "event_type": et, "direction": d, "date": str(ed),
                    "summary": s, "node_ids": nids or [], **flags([c])}
@@ -140,14 +153,15 @@ def build_dashboard(date_utc8: str) -> Path:
 
     # 研究库(卖方研报)+ 基金信函
     with db.rv_conn() as conn, conn.cursor() as cur:
-        cur.execute("""SELECT report_date,code,name,org_name,rating,title,tp,pe,node_ids
-            FROM research_report ORDER BY report_date DESC NULLS LAST LIMIT 80""")
+        cur.execute("""SELECT report_date,code,name,org_name,rating,title,tp,pe,node_ids,scope,industry
+            FROM research_report ORDER BY report_date DESC NULLS LAST LIMIT 120""")
         reports = [{"date": str(r[0]), "code": r[1], "name": r[2], "org": r[3], "rating": r[4],
                     "title": r[5], "tp": (float(r[6]) if r[6] and 0 < float(r[6]) < 2000 else None),
-                    "pe": fnum(r[7]), "node_ids": r[8] or []} for r in cur.fetchall()]
-        cur.execute("""SELECT name, count(*) c, max(report_date) FROM research_report
-            GROUP BY name ORDER BY c DESC LIMIT 20""")
-        coverage = [{"name": r[0], "n": r[1], "latest": str(r[2])} for r in cur.fetchall()]
+                    "pe": fnum(r[7]), "node_ids": r[8] or [], "scope": r[9], "industry": r[10]}
+                   for r in cur.fetchall()]
+        cur.execute("""SELECT name, count(*) c, max(report_date), max(scope) FROM research_report
+            GROUP BY name ORDER BY c DESC LIMIT 24""")
+        coverage = [{"name": r[0], "n": r[1], "latest": str(r[2]), "scope": r[3]} for r in cur.fetchall()]
         cur.execute("""SELECT fund_name,period,stance,strategy,relevance,core_views,status
             FROM fund_letter ORDER BY created_at DESC LIMIT 40""")
         letters = [{"fund_name": r[0], "period": r[1], "stance": r[2], "strategy": r[3],

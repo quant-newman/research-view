@@ -21,6 +21,9 @@ export function ResearchView({ r }: { r: Research | undefined }) {
               <div className="flex items-center gap-2 text-[12px]">
                 <span className="mono text-dim">{rp.date}</span>
                 <span className="text-primary font-medium">{rp.name}</span>
+                {rp.scope === "核心池"
+                  ? <span className="px-1 rounded text-[10px] text-accent bg-accent/10">核心</span>
+                  : <span className="px-1 rounded text-[10px] text-muted bg-muted/10">泛科技{rp.industry ? `·${rp.industry}` : ""}</span>}
                 <span className={`px-1.5 py-0.5 rounded text-[11px] ${ratingColor(rp.rating || "")}`}>
                   {rp.rating || "—"}
                 </span>

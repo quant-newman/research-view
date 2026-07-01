@@ -44,8 +44,9 @@ export interface Health {
 export interface ResearchReport {
   date: string; code: string; name: string; org: string; rating: string;
   title: string; tp: number | null; pe: number | null; node_ids: string[];
+  scope?: string; industry?: string | null;
 }
-export interface Coverage { name: string; n: number; latest: string; }
+export interface Coverage { name: string; n: number; latest: string; scope?: string; }
 export interface FundLetter {
   fund_name: string; period: string | null; stance: string | null;
   strategy: string | null; relevance: number | null; core_views: any; status: string;
