@@ -188,38 +188,37 @@ function DailyReport({ report }: { report: Report | null | undefined }) {
 function EventStream({ nodes }: { nodes: Dashboard["news_by_node"] }) {
   const open = useOpenStock();
   return (
-    <div className="space-y-5">
-      {nodes.slice(0, 8).map((g) => (
-        <div key={g.node_id}>
-          {/* 节点组标题 */}
+    <MoreList items={nodes.slice(0, 14)} initial={5}>
+      {(g) => (
+        <div key={g.node_id} className="mb-5 last:mb-0">
           <div className="flex items-center gap-2 mb-2.5">
             <span className="w-0.5 h-3.5 bg-accent" />
             <span className="text-primary text-[13px] font-semibold">{g.chain}/{g.node}</span>
             <span className="text-dim text-[12px] mono">{g.items.length}</span>
           </div>
-          {/* 时间线式条目:左边线 + 分隔线 */}
           <div className="border-l border-[#232B36] pl-3.5 ml-0.5 divide-y divide-[#232B36]">
-            {g.items.slice(0, 3).map((n: NewsItem, i) => (
-              <div key={i} className="py-3 first:pt-0 last:pb-0">
-                <div className="flex items-start gap-2">
-                  <span className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${sentDot[n.sentiment] || "bg-muted"}`} />
-                  <p className="text-primary text-[14px] leading-snug font-medium flex-1">{n.one_line || n.title}</p>
+            <MoreList items={g.items} initial={3}>
+              {(n: NewsItem, i) => (
+                <div key={i} className="py-3 first:pt-0">
+                  <div className="flex items-start gap-2">
+                    <span className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${sentDot[n.sentiment] || "bg-muted"}`} />
+                    <p className="text-primary text-[14px] leading-snug font-medium flex-1">{n.one_line || n.title}</p>
+                  </div>
+                  {n.summary && <p className="text-muted text-[13px] leading-relaxed mt-1.5 ml-3.5">{n.summary}</p>}
+                  <div className="flex items-center gap-2 mt-1.5 ml-3.5 text-[12px] text-dim">
+                    <span className={sentTx[n.sentiment] || "text-muted"}>{n.sentiment}</span>
+                    <span>·</span><span>{n.src}</span>
+                    {(n.codes || []).slice(0, 3).map((c) => (
+                      <button key={c} onClick={() => open({ code: c })} className="mono hover:text-accent">{c}</button>
+                    ))}
+                  </div>
                 </div>
-                {n.summary && <p className="text-muted text-[13px] leading-relaxed mt-1.5 ml-3.5">{n.summary}</p>}
-                <div className="flex items-center gap-2 mt-1.5 ml-3.5 text-[12px] text-dim">
-                  <span className={sentTx[n.sentiment] || "text-muted"}>{n.sentiment}</span>
-                  <span>·</span>
-                  <span>{n.src}</span>
-                  {(n.codes || []).slice(0, 3).map((c) => (
-                    <button key={c} onClick={() => open({ code: c })} className="mono hover:text-accent">{c}</button>
-                  ))}
-                </div>
-              </div>
-            ))}
+              )}
+            </MoreList>
           </div>
         </div>
-      ))}
-    </div>
+      )}
+    </MoreList>
   );
 }
 
@@ -227,17 +226,17 @@ const dirDot = (d: string) => (d === "利好" ? "bg-up" : d === "利空" ? "bg-d
 function Events({ events }: { events: StockEvent[] }) {
   const open = useOpenStock();
   return (
-    <div className="divide-y divide-[#232B36]">
-      {events.slice(0, 12).map((e, i) => (
-        <div key={i} className="flex items-center gap-2.5 py-2.5 text-[13px]">
+    <MoreList items={events} initial={7}>
+      {(e: StockEvent, i) => (
+        <div key={i} className="flex items-center gap-2.5 py-2.5 border-b border-[#232B36] last:border-0 text-[13px]">
           <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dirDot(e.direction)}`} />
-          <span className="text-muted shrink-0 w-14">{e.event_type}</span>
+          <span className="text-muted shrink-0 w-16">{e.event_type}</span>
           <button onClick={() => open({ code: e.code })} className="mono text-muted hover:text-accent shrink-0 w-14 text-left">{e.code}</button>
           <span className="text-dim flex-1 truncate">{e.summary}</span>
           <span className="mono text-dim text-[12px] shrink-0">{e.date}</span>
         </div>
-      ))}
-    </div>
+      )}
+    </MoreList>
   );
 }
 
@@ -300,14 +299,35 @@ function LedgerPanel({ ledger }: { ledger: Dashboard["ledger"] }) {
   );
 }
 
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
+function Panel({ title, children, count, collapsible = false, defaultOpen = true }:
+  { title: string; children: React.ReactNode; count?: number; collapsible?: boolean; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="border hairline rounded-md bg-surface">
-      <div className="px-4 py-2.5 border-b hairline text-[12px] text-muted tracking-wide flex items-center gap-2">
+      <button type="button" onClick={() => collapsible && setOpen(!open)}
+        className={`w-full px-4 py-2.5 text-[12px] text-muted tracking-wide flex items-center gap-2 ${open ? "border-b hairline" : ""} ${collapsible ? "hover:text-primary cursor-pointer" : "cursor-default"}`}>
         <span className="w-1 h-1 rounded-full bg-accent/70" />{title}
-      </div>
-      <div className="p-4">{children}</div>
+        {count != null && <span className="text-dim mono">{count}</span>}
+        {collapsible && <span className={`ml-auto text-dim transition-transform ${open ? "rotate-90" : ""}`}>▸</span>}
+      </button>
+      {open && <div className="p-4">{children}</div>}
     </div>
+  );
+}
+
+// 长列表折叠:先显示 initial 条,余下"展开剩余 N 条"
+function MoreList<T,>({ items, initial = 5, children }: { items: T[]; initial?: number; children: (item: T, i: number) => React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const shown = open ? items : items.slice(0, initial);
+  return (
+    <>
+      {shown.map((it, i) => children(it, i))}
+      {items.length > initial && (
+        <button onClick={() => setOpen(!open)} className="text-info text-[13px] mt-2 hover:underline">
+          {open ? "收起 ▴" : `展开剩余 ${items.length - initial} 条 ▾`}
+        </button>
+      )}
+    </>
   );
 }
 
@@ -394,14 +414,21 @@ export default function App() {
         <StatusBar d={d} market={market} onMarket={setMarket} onHealth={() => setView("system")} />
         {view === "report" && (
           <div className="flex-1 grid grid-cols-[1.6fr_1fr] gap-6 p-6 overflow-auto">
-            <div><DailyReport report={isUS ? d.us?.report : d.report} /></div>
+            <div className="space-y-6">
+              <DailyReport report={isUS ? d.us?.report : d.report} />
+              {!isUS && d.stock_events.length > 0 && (
+                <Panel title="个股事件 · 公告 / 龙虎榜" count={d.stock_events.length} collapsible>
+                  <Events events={d.stock_events} />
+                </Panel>
+              )}
+            </div>
             <div className="space-y-5">
               {isUS ? (
                 <>
-                  <Panel title="美股新闻流 · 按板块">
+                  <Panel title="美股新闻流 · 按板块" count={usNewsNodes.length} collapsible>
                     <EventStream nodes={usNewsNodes} />
                   </Panel>
-                  <Panel title="美股指数">
+                  <Panel title="美股指数" collapsible>
                     <div className="space-y-1">
                       {(d.us?.indices || []).map((i) => (
                         <div key={i.ticker} className="flex items-center gap-2 text-[15px]">
@@ -420,19 +447,16 @@ export default function App() {
                       <UsOvernightBoard us={d.report.us_overnight} />
                     </Panel>
                   )}
-                  <Panel title="判断复盘账本 · 近30日">
+                  <Panel title="判断复盘账本 · 近30日" collapsible>
                     <LedgerPanel ledger={d.ledger} />
                   </Panel>
-                  <Panel title="我的持仓 / 自选动态">
+                  <Panel title="我的持仓 / 自选动态" collapsible>
                     {d.report?.holdings_moves?.length
                       ? <div className="text-primary text-[15px]">{d.report.holdings_moves.length} 条异动</div>
                       : <div className="text-dim text-[15px]">未设持仓/自选。设置后,你的票有事永远第一时间最高优先级出现。</div>}
                   </Panel>
-                  <Panel title="事件流 · 按节点">
+                  <Panel title="事件流 · 按节点" count={d.news_by_node.length} collapsible>
                     <EventStream nodes={d.news_by_node} />
-                  </Panel>
-                  <Panel title="个股事件 · 公告/龙虎榜">
-                    <Events events={d.stock_events} />
                   </Panel>
                 </>
               )}
