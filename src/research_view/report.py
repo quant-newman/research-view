@@ -18,32 +18,80 @@ SYSTEM = """你是投研信息整理器,为一位每日做决策的A股AI科技�
 - 主线那栏(headline.fact)只做"基于数据的中性事实陈述"(如"资金从X净流出、流入Y"),
   绝不写"所以该关注Z""看好W"这类倾向性结论——headline.user_judgment 一栏永远填 "<待填>"。
 - 只用我提供的数据,不调用外部知识补充,不编造公告/数字/股票。
+- 研报评级/基金观点属于"机构说了什么"的客观事实,可作为变化信号呈现(注明来源),
+  但绝不能把机构的看多看空当成你自己的判断或结论——你只转述"谁给了什么评级/说了什么"。
 - 证伪条件须具体、可在1-2周内验证(不许写"除非大盘崩盘"这类几乎不可能触发的)。
 输出严格JSON。"""
 
 
 def _gather(date_utc8: str) -> tuple[str, str]:
-    """从 DB 组装盘后输入数据块 + 数据截止时点。"""
+    """从 DB 组装盘后输入数据块 + 数据截止时点。
+
+    客观事实全量入口(修管道缺口):相关新闻(含泛科技,与 export 口径一致,LEFT JOIN
+    不丢无节点新闻)+ 个股事件 + 今日新增卖方研报(评级/机构,零解读)+ 相关基金信函观点。
+    """
     with db.rv_conn() as conn, conn.cursor() as cur:
-        cur.execute("""SELECT node.chain, node.node, rn.one_line, rn.sentiment, rn.src, rn.matched_codes
+        cur.execute("SELECT node_id, chain, node FROM node")
+        node_meta = {nid: f"{ch}/{nd}" for nid, ch, nd in cur.fetchall()}
+
+        # 新闻:与 export 相关口径一致(核心链 + 泛科技),不再被 node JOIN 丢弃无节点新闻
+        cur.execute("""SELECT rn.one_line, rn.sentiment, rn.src, rn.matched_codes,
+                   rn.matched_node_ids, rn.tech_industries
             FROM raw_news rn
-            CROSS JOIN LATERAL unnest(rn.matched_node_ids) AS m(node_id)
-            JOIN node ON node.node_id = m.node_id
-            WHERE rn.relevant AND rn.is_chain_relevant AND rn.one_line IS NOT NULL
-            ORDER BY node.chain LIMIT 60""")
+            WHERE rn.relevant AND rn.one_line IS NOT NULL
+              AND (rn.is_chain_relevant IS NOT false
+                   OR array_length(rn.matched_codes,1) > 0
+                   OR array_length(rn.matched_tech_codes,1) > 0)
+            ORDER BY rn.pub_time DESC LIMIT 80""")
         news = cur.fetchall()
+
+        # 个股事件:时间窗以报告日为锚(补跑历史不错位)
         cur.execute("""SELECT event_type, direction, code, summary, event_date
-            FROM stock_event WHERE event_date >= current_date - 7
-            ORDER BY event_type, event_date DESC""")
+            FROM stock_event WHERE event_date >= to_date(%s,'YYYYMMDD') - 7
+            ORDER BY event_type, event_date DESC""", (date_utc8,))
         events = cur.fetchall()
 
-    news_lines = [f"- [{ch}/{nd}] {ol}(情绪:{se},来源:{src},票:{','.join(codes or [])})"
-                  for ch, nd, ol, se, src, codes in news]
+        # 今日新增卖方研报(近3日,机构评级=客观事实,零解读)
+        cur.execute("""SELECT report_date, name, org_name, rating, title, scope
+            FROM research_report WHERE report_date >= to_date(%s,'YYYYMMDD') - 3
+            ORDER BY report_date DESC NULLS LAST LIMIT 30""", (date_utc8,))
+        reports = cur.fetchall()
+
+        # 相关基金/大行信函(已分类、相关度高的近期观点;表空时自然为空)
+        cur.execute("""SELECT fund_name, stance, strategy, relevance, core_views
+            FROM fund_letter WHERE status <> '待分类' AND relevance IS NOT NULL
+            ORDER BY relevance DESC NULLS LAST, created_at DESC LIMIT 5""")
+        letters = cur.fetchall()
+
+    def _label(node_ids, tech_inds):
+        if node_ids:
+            return "、".join(node_meta.get(n, n) for n in node_ids[:2])
+        if tech_inds:
+            return "泛科技·" + "、".join(tech_inds[:2])
+        return "泛科技"
+
+    def _views(cv):
+        if not cv:
+            return ""
+        if isinstance(cv, list):
+            return " / ".join(str(x) for x in cv[:2])
+        return str(cv)[:120]
+
+    news_lines = [f"- [{_label(nids, tinds)}] {ol}(情绪:{se},来源:{src},票:{','.join(codes or [])})"
+                  for ol, se, src, codes, nids, tinds in news]
     ev_lines = [f"- [{et}·{d}] {code} {summ}(公告日{ed})" for et, d, code, summ, ed in events]
+    rpt_lines = [f"- [{scope or ''}] {org} 予 {name} 「{rating}」评级:{title}(报告日{rd})"
+                 for rd, name, org, rating, title, scope in reports]
+    letter_lines = [f"- {fn}(立场:{st or '—'},策略:{sg or '—'},相关度{rl}):{_views(cv)}"
+                    for fn, st, sg, rl, cv in letters]
 
     ts = datetime.now(ZoneInfo(config.TZ)).strftime("%Y-%m-%d %H:%M")
-    block = (f"【相关产业链新闻(按链)】\n" + "\n".join(news_lines) +
-             f"\n\n【个股事件(近7日,来自公告/龙虎榜)】\n" + "\n".join(ev_lines))
+    block = "\n\n".join([
+        "【相关产业链新闻(按链/行业)】\n" + ("\n".join(news_lines) or "(无)"),
+        "【个股事件(近7日,来自公告/龙虎榜)】\n" + ("\n".join(ev_lines) or "(无)"),
+        "【今日新增卖方研报(机构评级=客观事实,非你的判断)】\n" + ("\n".join(rpt_lines) or "(无)"),
+        "【相关基金/大行观点(供背景,非你的判断)】\n" + ("\n".join(letter_lines) or "(无)"),
+    ])
     return ts, block
 
 
@@ -65,7 +113,8 @@ def generate_afterhours(date_utc8: str) -> dict:
     {{"claim":"某个可证伪的观察","condition":"具体的1-2周内可验证的证伪条件","draft_by":"deepseek"}}
   ]
 }}
-只用上面提供的数据,top3 选今天最值得注意的3个变化。"""
+只用上面提供的数据,top3 选今天最值得注意的3个变化。
+研报评级与基金观点仅作背景与佐证(可在 evidence 里注明"[来源:XX机构评级]"),不得升格为主线判断——headline.user_judgment 仍留 "<待填>"。"""
     return llm.chat_json(SYSTEM, user, timeout=120)
 
 
