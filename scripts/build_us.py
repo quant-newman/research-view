@@ -156,30 +156,38 @@ def _b1_batch(raw: list[dict]) -> list[dict]:
 
 
 # ---------- 全球科技舆情:西媒+社交源 → B1 中文化 ----------
-def _b1_wire(raw: list[dict]) -> list[dict]:
-    """把 WSJ/路透/科技媒体/Reddit 的英文条目批量译成中文一句话+情绪。降级用原标题。"""
-    if not raw:
-        return []
+def _b1_wire_chunk(raw: list[dict]) -> dict:
+    """单批(≤~45条)调 DeepSeek 中文化,返回 {序号: 提炼}。失败返回空(降级原标题)。"""
     listing = "\n".join(
         f"{i}. [{r['group']}] 标题:{r['title']}" + (f"\n   摘要:{r['desc']}" if r["desc"] else "")
         for i, r in enumerate(raw))
-    user = f"""下面是西方科技/财经媒体和 Reddit 社区的英文条目(带序号+来源分组)。逐条中文提炼,JSON:
-{{"items":[{{"i":序号,"one_line":"中文一句话概括≤40字","summary":"中文核心:据标题/摘要挑1-2个重点,≤80字,不看原文就懂;只陈述不判断","sentiment":"利好|利空|中性|澄清"}}]}}
+    user = f"""下面是西方媒体/Reddit/推特X 的条目(带序号+来源分组,中英混合;Reddit/X 可能已是中文)。逐条中文提炼,JSON:
+{{"items":[{{"i":序号,"one_line":"中文一句话概括≤40字,已是中文则精简","summary":"中文核心:据标题/摘要挑1-2个重点,≤80字,不看原文就懂;只陈述不判断","sentiment":"利好|利空|中性|澄清"}}]}}
 {listing}
-只翻译概括,不许出现"看好/建议买入"等判断词,不许编造摘要没有的数字。Reddit 是散户情绪,如实转述不背书。"""
+只翻译概括,不许出现"看好/建议买入"等判断词,不许编造原文没有的数字。Reddit/推特X 是个人观点,如实转述不背书。"""
     try:
         j = llm.chat_json(B1_SYS, user, timeout=150)
-        m = {int(it["i"]): it for it in j.get("items", []) if "i" in it}
-    except Exception as e:  # noqa: BLE001 B1失败降级:用原标题
+        return {int(it["i"]): it for it in j.get("items", []) if "i" in it}
+    except Exception as e:  # noqa: BLE001 单批失败降级:用原标题
         print(f"  ! 舆情B1失败,降级原标题: {str(e)[:80]}")
-        m = {}
+        return {}
+
+
+def _b1_wire(raw: list[dict], batch: int = 40) -> list[dict]:
+    """西媒+社交源批量中文化。分批调用(条数多时避免单次 JSON 过大截断)。"""
+    if not raw:
+        return []
     out = []
-    for i, r in enumerate(raw):
-        b = m.get(i, {})
-        out.append({"title": r["title"], "one_line": b.get("one_line") or r["title"],
-                    "summary": (b.get("summary") or "")[:200] or None,
-                    "sentiment": b.get("sentiment") or "中性",
-                    "src": r["src"], "group": r["group"], "url": r["url"]})
+    for s in range(0, len(raw), batch):
+        chunk = raw[s:s + batch]
+        m = _b1_wire_chunk(chunk)
+        for i, r in enumerate(chunk):
+            b = m.get(i, {})
+            out.append({"title": r["title"], "one_line": b.get("one_line") or r["title"],
+                        "summary": (b.get("summary") or "")[:200] or None,
+                        "sentiment": b.get("sentiment") or "中性",
+                        "src": r["src"], "group": r["group"], "url": r["url"],
+                        **({"weight": r["weight"]} if "weight" in r else {})})
     return out
 
 
@@ -219,9 +227,10 @@ def _report(stocks: list[dict], news: list[dict], wire: list[dict], us_date: str
                 for s in top_up + top_dn]
     news_lines = [f"- [{n['sector']}] {n['one_line']}(情绪:{n['sentiment']},来源:{n['src']})"
                   for n in news[:30]]
-    # 舆情高信号:非 Reddit 优先(权威媒体),Reddit 单列少量作情绪参考
-    wire_auth = [w for w in wire if w["group"] != "Reddit"][:15]
-    wire_lines = [f"- [{w['group']}] {w['one_line']}(来源:{w['src']})" for w in wire_auth]
+    # 舆情高信号:权威媒体优先,外加重点 X 号(serenity,weight2)作情绪信号;Reddit 不喂报告
+    auth = [w for w in wire if w["group"] in ("华尔街日报", "路透社", "科技媒体")][:12]
+    key_x = [w for w in wire if w["group"] == "推特X" and w.get("weight", 1) >= 2][:4]
+    wire_lines = [f"- [{w['group']}] {w['one_line']}(来源:{w['src']})" for w in auth + key_x]
     block = ("【今日美股科技涨跌(前5涨/前5跌)】\n" + "\n".join(mv_lines) +
              "\n\n【美股科技新闻】\n" + ("\n".join(news_lines) or "(无)") +
              "\n\n【全球科技舆情(西方媒体)】\n" + ("\n".join(wire_lines) or "(无)"))

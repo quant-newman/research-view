@@ -99,7 +99,7 @@ export interface UsNewsItem {
 }
 export interface WireItem {
   title: string; one_line: string; summary?: string | null; sentiment: string;
-  src: string; group: string; url: string | null;
+  src: string; group: string; url: string | null; weight?: number;
 }
 export interface UsData {
   us_session_date: string;

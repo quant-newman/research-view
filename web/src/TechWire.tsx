@@ -38,6 +38,7 @@ export function TechWire({ wire }: { wire: WireItem[] }) {
                   <div className="flex items-center gap-2 mt-1.5 ml-3.5 text-[12px] text-dim">
                     <span className={sentTx[w.sentiment] || "text-muted"}>{w.sentiment}</span>
                     <span>·</span><span>{w.src}</span>
+                    {(w.weight ?? 1) >= 2 && <span className="text-accent">★重点</span>}
                     {w.url && <span className="text-accent/70">↗</span>}
                   </div>
                 </>

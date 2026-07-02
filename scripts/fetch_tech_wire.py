@@ -7,12 +7,24 @@
 """
 from __future__ import annotations
 
+import asyncio
+import os
 import re
+import sys
 import time
 import xml.etree.ElementTree as ET
 from html import unescape
+from pathlib import Path
 
 import requests
+
+# 复用 research_view.config 的 .env 加载(读 X cookie),standalone 运行时补 path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+try:
+    from research_view import config as _cfg  # noqa: E402
+    _cfg._load_dotenv()
+except Exception:  # noqa: BLE001 config 不可用时退化为纯 os.environ
+    pass
 
 UA = "Mozilla/5.0 (compatible; mofangbot/1.0; +https://example.com/bot)"
 TIMEOUT = 15
@@ -124,12 +136,112 @@ def _parse(xml_text: str, kind: str) -> list[dict]:
     return out
 
 
-def fetch_x_placeholder() -> list[dict]:
-    """推特/X 槽位:等用户给账号名单再实现(无免费官方API,方案待定)。"""
-    return []
+# 推特/X 监控名单(handle, 权重)。weight=2 为重点号,消息权重最高。
+# 2026 免费抓取现状:nitter 大面积阵亡、RSSHub twitter 路由需鉴权、x.com 正文在鉴权GraphQL后。
+# 抓取方案待定(xcancel白名单 / twikit+小号cookie / 官方API付费),定了再实现 _fetch_x。
+X_ACCOUNTS = [
+    ("aleabitoreddit", 2),  # serenity — 重点,最高权重
+    ("wuxin_sir", 1), ("111_114390", 1), ("Kay2289123", 1), ("leto_bao", 1),
+    ("xingpt", 1), ("RYANHINGSHING", 1), ("jimmyhuli", 1), ("EliasVanceQuant", 1),
+    ("ohiain", 1), ("dons_korea", 1), ("_FORAB", 1), ("xiaomustock", 1),
+    ("iamai_omni", 1), ("op7418", 1), ("Money_or_Life_X", 1), ("BiteyeCN", 1),
+]
 
 
-def fetch_wire(per_source: int = 12, total_cap: int = 60) -> list[dict]:
+_INDICES_RE = re.compile(r"\(\w\[(\d{1,2})\],\s*16\)")
+
+
+def _patch_twikit_ondemand() -> None:
+    """X 2026 改了 webpack manifest:ondemand.s 的 hash 不再内联,而是 chunk-id→name +
+    chunk-id→hash 两张表。twikit/tweety 的老正则失效→'KEY_BYTE indices' 报错。
+    这里覆写 get_indices,按新格式重建 ondemand.s.<hash>a.js 再解析索引。X 若再改需跟着调。"""
+    from twikit.x_client_transaction import transaction as _t
+
+    async def get_indices(self, home_page_response, session, headers):  # noqa: ANN001
+        page = str(self.validate_response(home_page_response) or self.home_page_response)
+        mid = re.search(r'(\d+):"ondemand\.s"', page)
+        mhash = re.search(rf'{mid.group(1)}:"([a-f0-9]+)"', page) if mid else None
+        if not mhash:
+            raise Exception("Couldn't get KEY_BYTE indices (manifest 格式又变了)")
+        url = f"https://abs.twimg.com/responsive-web/client-web/ondemand.s.{mhash.group(1)}a.js"
+        resp = await session.request(method="GET", url=url, headers=headers)
+        idx = [int(x) for x in _INDICES_RE.findall(str(resp.text))]
+        if not idx:
+            raise Exception("Couldn't get KEY_BYTE indices")
+        return idx[0], idx[1:]
+
+    _t.ClientTransaction.get_indices = get_indices
+
+
+def _tweets_from_timeline(resp: dict) -> list[dict]:
+    """从 user_tweets 原始 GraphQL 响应里挖推文,只取需要的字段(绕开 twikit 易腐的模型层)。"""
+    tl = resp["data"]["user"]["result"]
+    tl = tl.get("timeline_v2") or tl.get("timeline") or {}
+    instrs = (tl.get("timeline") or {}).get("instructions", [])
+    entries = next((i.get("entries", []) for i in instrs if i.get("type") == "TimelineAddEntries"), [])
+    rows = []
+    for e in entries:
+        if not str(e.get("entryId", "")).startswith("tweet-"):
+            continue
+        try:
+            tr = e["content"]["itemContent"]["tweet_results"]["result"]
+        except (KeyError, TypeError):
+            continue
+        tw = tr.get("tweet", tr)
+        lg = tw.get("legacy", {})
+        if not lg or lg.get("retweeted_status_result") or lg.get("in_reply_to_status_id_str"):
+            continue  # 跳过纯转推/回复,只留原创+引用
+        note = (((tw.get("note_tweet") or {}).get("note_tweet_results") or {}).get("result") or {}).get("text")
+        text = _clean(note or lg.get("full_text", ""), 500)
+        rid = tw.get("rest_id") or lg.get("id_str")
+        if text and rid:
+            rows.append({"text": text, "id": rid, "created": lg.get("created_at", "")})
+    return rows
+
+
+async def _fetch_x_async(cookies: dict, per_high: int, per_norm: int) -> list[dict]:
+    from twikit import Client  # 延迟导入,未装/未启用 X 时不影响其余源
+    _patch_twikit_ondemand()
+    client = Client("en-US")
+    client.set_cookies(cookies)
+    out: list[dict] = []
+    for handle, weight in X_ACCOUNTS:
+        want = per_high if weight >= 2 else per_norm
+        try:
+            uresp, _ = await client.gql.user_by_screen_name(handle)
+            res = uresp["data"]["user"]["result"]
+            if res.get("__typename") != "User" or not res.get("rest_id"):
+                raise RuntimeError(res.get("__typename") or "no rest_id")
+            tresp, _ = await client.gql.user_tweets(res["rest_id"], max(want * 3, 12), None)
+            tweets = _tweets_from_timeline(tresp)
+        except Exception as e:  # noqa: BLE001 单账号失败(风控/改名/私密)不阻塞其余
+            print(f"  ! X @{handle} 取失败: {str(e)[:60]}")
+            await asyncio.sleep(1.5)
+            continue
+        for tw in tweets[:want]:
+            out.append({"title": tw["text"][:120], "desc": tw["text"],
+                        "url": f"https://x.com/{handle}/status/{tw['id']}",
+                        "src": f"@{handle}", "group": "推特X", "weight": weight})
+        print(f"  X @{handle}(w{weight}): {min(len(tweets), want)} 条")
+        await asyncio.sleep(1.2)  # 礼貌间隔,降风控概率
+    out.sort(key=lambda x: -x.get("weight", 1))  # 重点号(weight2)排前
+    return out
+
+
+def fetch_x(per_high: int = 6, per_norm: int = 3) -> list[dict]:
+    """推特/X:twikit + 小号 cookie(.env 的 X_AUTH_TOKEN/X_CT0)。未配置则跳过不阻塞。"""
+    auth, ct0 = os.environ.get("X_AUTH_TOKEN"), os.environ.get("X_CT0")
+    if not (auth and ct0):
+        print("  ! X 未配置 cookie(.env 缺 X_AUTH_TOKEN/X_CT0),跳过 X")
+        return []
+    try:
+        return asyncio.run(_fetch_x_async({"auth_token": auth, "ct0": ct0}, per_high, per_norm))
+    except Exception as e:  # noqa: BLE001 X 整体失败(cookie 失效等)不阻塞其余源
+        print(f"  ! X 抓取整体失败,跳过: {str(e)[:80]}")
+        return []
+
+
+def fetch_wire(per_source: int = 12, rss_cap: int = 48) -> list[dict]:
     seen: set[str] = set()
     items: list[dict] = []
     for name, group, url, kind in SOURCES:
@@ -154,8 +266,8 @@ def fetch_wire(per_source: int = 12, total_cap: int = 60) -> list[dict]:
             if kept >= per_source:
                 break
         print(f"  {name}({group}): {kept} 条")
-    items.extend(fetch_x_placeholder())
-    return items[:total_cap]
+    # RSS 部分单独限量,X 全量保留(尤其 serenity 重点号不能被截掉)
+    return items[:rss_cap] + fetch_x()
 
 
 if __name__ == "__main__":
