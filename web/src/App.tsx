@@ -429,7 +429,7 @@ export default function App() {
                   <Panel title="美股新闻流 · 按板块" count={usNewsNodes.length} collapsible>
                     <EventStream nodes={usNewsNodes} />
                   </Panel>
-                  <Panel title="全球科技舆情 · WSJ/路透/科技媒体/Reddit" count={d.us?.wire?.length || 0} collapsible>
+                  <Panel title="全球科技舆情 · WSJ/路透/科技媒体/Reddit/推特X" count={d.us?.wire?.length || 0} collapsible>
                     <TechWire wire={d.us?.wire || []} />
                   </Panel>
                   <Panel title="美股指数" collapsible>
