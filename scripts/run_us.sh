@@ -7,9 +7,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 set -a; source .env; set +a
 DATE="${1:-$(TZ=Asia/Shanghai date +%Y%m%d)}"  # 与 dashboard 的 UTC+8 日期口径一致
-SSH_BASE="-o StrictHostKeyChecking=no -o ConnectTimeout=20 -o UserKnownHostsFile=/dev/null"
-SSH="sshpass -p $ALIYUN_DC_PASS ssh $SSH_BASE $ALIYUN_DC_USER@$ALIYUN_DC_HOST"
-export RSYNC_RSH="sshpass -p $ALIYUN_DC_PASS ssh $SSH_BASE"
+SSH_BASE="-i $HOME/.ssh/aliyun_dc_ed25519 -o IdentitiesOnly=yes -o ConnectTimeout=20"
+SSH="ssh $SSH_BASE $ALIYUN_DC_USER@$ALIYUN_DC_HOST"
+export RSYNC_RSH="ssh $SSH_BASE"
 REMOTE=/opt/research_view
 
 echo "[us] 1/3 台北构建美股全量数据 $DATE ..."

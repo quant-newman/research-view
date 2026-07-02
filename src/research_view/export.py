@@ -120,8 +120,12 @@ def build_export(date_utc8: str) -> Path:
         cur.execute("SELECT node_id, chain, node FROM node")
         node_meta = {nid: {"chain": ch, "node": nd} for nid, ch, nd in cur.fetchall()}
 
-    with db.marketdata_conn() as mc, mc.cursor() as mcur:
-        temperature = _temperature(mcur, pool_ts)
+    try:
+        with db.marketdata_conn() as mc, mc.cursor() as mcur:
+            temperature = _temperature(mcur, pool_ts)
+    except Exception as e:  # noqa: BLE001 行情库不可用时降级为空,兜底导出不能在这里断掉
+        print(f"  ! temperature 降级(marketdata 不可用): {e}")
+        temperature = None
 
     def flags(codes):
         codes = codes or []
@@ -309,7 +313,11 @@ def build_dashboard(date_utc8: str) -> Path:
     clickable.update(e["code"] for e in ev["stock_events"] if e.get("code"))
     clickable.update(s["code"] for s in hs)
     clickable.update(r["code"] for r in reports if r.get("code"))
-    a_trends = _ashare_trends(clickable)
+    try:
+        a_trends = _ashare_trends(clickable)
+    except Exception as e:  # noqa: BLE001 行情库不可用时走势小图降级为空
+        print(f"  ! trends 降级(marketdata 不可用): {e}")
+        a_trends = {}
     us_trends = (us or {}).get("trends") or {}  # 台北 build_us 产出,随 us blob 带过来
     trends = {"meta": {"date": date_utc8, "a": len(a_trends), "us": len(us_trends)},
               "a": a_trends, "us": us_trends}

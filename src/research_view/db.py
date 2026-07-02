@@ -13,11 +13,15 @@ import psycopg
 
 from . import config
 
+# 全系统"今天/近N天"分桶依赖 PG 会话时区(current_date、::date)。
+# 在连接层焊死 UTC+8,不再依赖服务器默认值——服务器迁移/重装成 UTC 也不会拉错日期。
+_TZ_OPTIONS = "-c TimeZone=Asia/Shanghai"
+
 
 @contextmanager
 def rv_conn():
     """research_view 读写连接。"""
-    conn = psycopg.connect(config.research_view_dsn())
+    conn = psycopg.connect(config.research_view_dsn(), options=_TZ_OPTIONS)
     try:
         yield conn
         conn.commit()
@@ -31,7 +35,7 @@ def rv_conn():
 @contextmanager
 def marketdata_conn():
     """marketdata 只读连接(read_only 事务 + DB 层无写权限双保险)。"""
-    conn = psycopg.connect(config.marketdata_ro_dsn())
+    conn = psycopg.connect(config.marketdata_ro_dsn(), options=_TZ_OPTIONS)
     conn.read_only = True
     try:
         yield conn

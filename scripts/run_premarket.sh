@@ -9,10 +9,14 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 set -a; source .env; set +a
 DATE="${1:-$(TZ=Asia/Shanghai date +%Y%m%d)}"
-SSH_BASE="-o StrictHostKeyChecking=no -o ConnectTimeout=20 -o UserKnownHostsFile=/dev/null"
-SSH="sshpass -p $ALIYUN_DC_PASS ssh $SSH_BASE $ALIYUN_DC_USER@$ALIYUN_DC_HOST"
-export RSYNC_RSH="sshpass -p $ALIYUN_DC_PASS ssh $SSH_BASE"
+SSH_BASE="-i $HOME/.ssh/aliyun_dc_ed25519 -o IdentitiesOnly=yes -o ConnectTimeout=20"
+SSH="ssh $SSH_BASE $ALIYUN_DC_USER@$ALIYUN_DC_HOST"
+export RSYNC_RSH="ssh $SSH_BASE"
 REMOTE=/opt/research_view
+
+# 失败告警旗标:失败写 webdata/alert.json(前端红横幅),成功清除。
+mkdir -p webdata
+trap 'echo "{\"job\":\"盘前\",\"at\":\"$(TZ=Asia/Shanghai date "+%F %T")\",\"msg\":\"盘前流程失败,数据可能陈旧(logs/premarket-*.log)\"}" > webdata/alert.json' ERR
 
 echo "[premarket] 1/4 台北拉隔夜美股 + 美股板块 $DATE ..."
 if ! ./.venv-taipei/bin/python scripts/fetch_us_overnight.py "$DATE"; then
@@ -34,6 +38,6 @@ $SSH "cd $REMOTE && ./.venv/bin/python -c \"import sys;sys.path.insert(0,'src');
 
 echo "[premarket] 4/4 阿里云重建 dashboard + 拉回 webdata/ ..."
 $SSH "cd $REMOTE && ./.venv/bin/python -c \"import sys;sys.path.insert(0,'src');from research_view import export;print(export.build_dashboard('$DATE'))\"" 2>&1 | grep -v "Warning: Permanently"
-mkdir -p webdata
 rsync -az "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/"{dashboard,trends}.json webdata/ 2>&1 | grep -v "Warning: Permanently" || true
+rm -f webdata/alert.json
 echo "[premarket] 完成。前端 8092 已读取盘前报告。"

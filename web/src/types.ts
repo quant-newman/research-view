@@ -123,7 +123,7 @@ export interface HotspotItem {
 export interface Hotspot { headline: string; items: HotspotItem[]; }
 
 export interface Dashboard {
-  meta: Meta; report: Report | null; temperature: Temperature;
+  meta: Meta; report: Report | null; temperature: Temperature | null;
   news_by_node: NewsNode[]; stock_events: StockEvent[];
   heatmap?: Heatmap; health?: Health; research?: Research; ledger?: Ledger;
   us?: UsData | null; hotspot?: Hotspot | null;

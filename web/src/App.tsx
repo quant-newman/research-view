@@ -66,7 +66,7 @@ function StatusBar({ d, market, onMarket, onHealth }: { d: Dashboard; market: Ma
         <span className={`w-2 h-2 rounded-full inline-block ${isUS ? "bg-info" : "bg-accent"}`} />
         <span className="font-semibold">{isUS ? "美股" : sessionLabel}</span>
         <span className="text-dim">·</span>
-        <span className="text-muted">{isUS ? `美东 ${us?.us_session_date || "—"} 收盘` : (d.report?.data_cutoff || d.meta.date)}</span>
+        <span className="text-muted">{isUS ? `美东 ${us?.us_session_date || "—"} 收盘` : (d.report?.data_cutoff || d.meta?.date || "—")}</span>
       </div>
       {isUS ? (
         ut && (
@@ -78,13 +78,15 @@ function StatusBar({ d, market, onMarket, onHealth }: { d: Dashboard; market: Ma
           </div>
         )
       ) : (
-        <div className="mono text-muted flex gap-3">
-          <span>池 <span className="text-primary">{at.pool_counted}</span></span>
-          <span className="text-up">涨 {at.up}</span>
-          <span className="text-down">跌 {at.down}</span>
-          <span className="text-up">涨停 {at.limit_up}</span>
-          <span className={pctColor(at.avg_pct)}>均 {at.avg_pct}%</span>
-        </div>
+        at && (
+          <div className="mono text-muted flex gap-3">
+            <span>池 <span className="text-primary">{at.pool_counted}</span></span>
+            <span className="text-up">涨 {at.up}</span>
+            <span className="text-down">跌 {at.down}</span>
+            <span className="text-up">涨停 {at.limit_up}</span>
+            <span className={pctColor(at.avg_pct)}>均 {at.avg_pct}%</span>
+          </div>
+        )
       )}
       <div className="ml-auto flex items-center gap-4">
         {d.health && <HealthDot level={d.health.level} onClick={onHealth} />}
@@ -364,8 +366,18 @@ export default function App() {
   const [view, setView] = useState("report");
   const [market, setMarket] = useState<Market>("A");
   const [stock, setStock] = useState<StockSel | null>(null);
+  const [alert, setAlert] = useState<{ job?: string; at?: string; msg?: string } | null>(null);
   useEffect(() => {
-    fetch("/data/dashboard.json").then((r) => r.json()).then(setD).catch((e) => setErr(String(e)));
+    // 核心键缺失时补默认值:后端某天少发一个键不该让整页白屏
+    fetch("/data/dashboard.json").then((r) => r.json()).then((raw) => setD({
+      ...raw,
+      meta: raw?.meta || { date: "", generated_at: "", tz: "UTC+8" },
+      temperature: raw?.temperature ?? null,
+      news_by_node: raw?.news_by_node || [],
+      stock_events: raw?.stock_events || [],
+    } as Dashboard)).catch((e) => setErr(String(e)));
+    // 管道失败旗标(run_*.sh 失败时写入,成功清除)→ 红横幅
+    fetch("/data/alert.json").then((r) => (r.ok ? r.json() : null)).then(setAlert).catch(() => setAlert(null));
   }, []);
 
   // 美股新闻(扁平)→ 复用 A股 的按节点分组结构(按板块分组)
@@ -432,6 +444,11 @@ export default function App() {
       </nav>
 
       <div className="flex-1 flex flex-col min-w-0">
+        {alert?.msg && (
+          <div className="px-4 py-2 bg-down/15 text-down text-[13px] border-b hairline">
+            ⚠ {alert.msg}{alert.at ? ` · ${alert.at}` : ""}
+          </div>
+        )}
         <StatusBar d={d} market={market} onMarket={setMarket} onHealth={() => setView("system")} />
         {view === "report" && (
           <div className="flex-1 grid grid-cols-[1.6fr_1fr] gap-6 p-6 overflow-auto">
