@@ -11,3 +11,7 @@ web/dist/
 web/tsconfig.tsbuildinfo
 web/public/data/*.json
 logs/
+
+# tweety/twikit 会话文件(含登录态,勿提交)
+*.tw_session
+*.twikit_session
