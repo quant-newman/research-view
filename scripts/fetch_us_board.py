@@ -17,22 +17,47 @@ import yfinance as yf
 ROOT = Path(__file__).resolve().parents[1]
 TZ = "Asia/Shanghai"
 
-# (ticker, 中文名, 板块)
+# (ticker, 中文名, 板块) —— 按 AI 产业链分层,每层收头部几家,便于看链条轮动
 US_UNIVERSE = [
+    # 算力芯片/加速器
     ("NVDA", "英伟达", "AI算力芯片"), ("AMD", "AMD", "AI算力芯片"),
-    ("AVGO", "博通", "AI算力/网络"), ("TSM", "台积电", "晶圆代工"),
-    ("MRVL", "迈威尔", "AI网络/定制"), ("ARM", "Arm", "IP/端侧"),
-    ("MU", "美光", "存储"),
+    # 定制ASIC/网络芯片
+    ("AVGO", "博通", "AI算力/网络"), ("MRVL", "迈威尔", "AI算力/网络"),
+    # IP/EDA
+    ("ARM", "Arm", "IP/EDA"), ("SNPS", "新思", "IP/EDA"), ("CDNS", "楷登", "IP/EDA"),
+    # 晶圆代工
+    ("TSM", "台积电", "晶圆代工"), ("GFS", "格芯", "晶圆代工"),
+    # 存储(HBM/DRAM/HDD)
+    ("MU", "美光", "存储"), ("WDC", "西部数据", "存储"), ("STX", "希捷", "存储"),
+    # 半导体设备
     ("ASML", "阿斯麦", "半导体设备"), ("AMAT", "应用材料", "半导体设备"),
     ("LRCX", "泛林", "半导体设备"), ("KLAC", "科天", "半导体设备"),
+    ("TER", "泰瑞达", "半导体设备"), ("ONTO", "Onto", "半导体设备"),
+    # 光模块/光通信(AXTI 磷化铟衬底→激光器为上游)
+    ("COHR", "相干", "光模块/光通信"), ("LITE", "Lumentum", "光模块/光通信"),
+    ("AAOI", "旭创对标AOI", "光模块/光通信"), ("FN", "Fabrinet", "光模块/光通信"),
+    ("CIEN", "Ciena", "光模块/光通信"), ("AXTI", "AXT衬底", "光模块/光通信"),
+    # AI网络设备
+    ("ANET", "Arista", "AI网络"),
+    # AI服务器/ODM
+    ("SMCI", "超微", "AI服务器"), ("DELL", "戴尔", "AI服务器"), ("HPE", "慧与", "AI服务器"),
+    # AI电源/散热
+    ("VRT", "Vertiv", "AI电源/散热"),
+    # GPU云/Neocloud
+    ("NBIS", "Nebius", "GPU云/Neocloud"), ("CRWV", "CoreWeave", "GPU云/Neocloud"),
+    # 云/超大规模
     ("MSFT", "微软", "云/超大规模"), ("GOOGL", "谷歌", "云/超大规模"),
     ("AMZN", "亚马逊", "云/超大规模"), ("META", "Meta", "云/超大规模"),
-    ("SMCI", "超微", "AI服务器"), ("DELL", "戴尔", "AI服务器"),
-    ("ANET", "Arista", "AI网络"), ("VRT", "Vertiv", "AI电源/散热"),
+    ("ORCL", "甲骨文", "云/超大规模"),
+    # AI软件/应用
     ("PLTR", "Palantir", "AI软件"), ("NOW", "ServiceNow", "AI软件"),
+    ("SNOW", "Snowflake", "AI软件"),
+    # 端侧/机器人
     ("AAPL", "苹果", "消费电子/端侧"), ("TSLA", "特斯拉", "AI/机器人"),
+    # 中概科技
     ("BABA", "阿里巴巴", "中概科技"), ("PDD", "拼多多", "中概科技"),
     ("BIDU", "百度", "中概/AI"), ("KWEB", "中概互联ETF", "中概情绪"),
+    # 指数参照
     ("^IXIC", "纳斯达克综指", "指数参照"), ("^SOX", "费城半导体", "指数参照"),
 ]
 
