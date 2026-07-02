@@ -229,7 +229,7 @@ def _report(stocks: list[dict], news: list[dict], wire: list[dict], us_date: str
                   for n in news[:30]]
     # 舆情高信号:权威媒体优先,外加重点 X 号(serenity,weight2)作情绪信号;Reddit 不喂报告
     auth = [w for w in wire if w["group"] in ("华尔街日报", "路透社", "科技媒体")][:12]
-    key_x = [w for w in wire if w["group"] == "推特X" and w.get("weight", 1) >= 2][:4]
+    key_x = [w for w in wire if w["group"] == "推特X" and w.get("weight", 1) >= 2][:5]
     wire_lines = [f"- [{w['group']}] {w['one_line']}(来源:{w['src']})" for w in auth + key_x]
     block = ("【今日美股科技涨跌(前5涨/前5跌)】\n" + "\n".join(mv_lines) +
              "\n\n【美股科技新闻】\n" + ("\n".join(news_lines) or "(无)") +

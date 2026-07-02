@@ -173,6 +173,21 @@ def _patch_twikit_ondemand() -> None:
     _t.ClientTransaction.get_indices = get_indices
 
 
+X_MAX_AGE_DAYS = 14  # 超过此天数的推文视为陈旧,丢弃(冷门号别灌旧内容);解析失败则保留
+
+
+def _too_old(created: str) -> bool:
+    """created 形如 'Thu Jul 02 10:34:00 +0000 2026'。解析失败/为空→不判旧(保留)。"""
+    if not created:
+        return False
+    try:
+        from datetime import datetime, timedelta, timezone
+        dt = datetime.strptime(created, "%a %b %d %H:%M:%S %z %Y")
+        return (datetime.now(timezone.utc) - dt) > timedelta(days=X_MAX_AGE_DAYS)
+    except Exception:  # noqa: BLE001 格式异动不误删
+        return False
+
+
 def _tweets_from_timeline(resp: dict) -> list[dict]:
     """从 user_tweets 原始 GraphQL 响应里挖推文,只取需要的字段(绕开 twikit 易腐的模型层)。"""
     tl = resp["data"]["user"]["result"]
@@ -191,6 +206,8 @@ def _tweets_from_timeline(resp: dict) -> list[dict]:
         lg = tw.get("legacy", {})
         if not lg or lg.get("retweeted_status_result") or lg.get("in_reply_to_status_id_str"):
             continue  # 跳过纯转推/回复,只留原创+引用
+        if _too_old(lg.get("created_at", "")):
+            continue
         note = (((tw.get("note_tweet") or {}).get("note_tweet_results") or {}).get("result") or {}).get("text")
         text = _clean(note or lg.get("full_text", ""), 500)
         rid = tw.get("rest_id") or lg.get("id_str")
@@ -228,7 +245,7 @@ async def _fetch_x_async(cookies: dict, per_high: int, per_norm: int) -> list[di
     return out
 
 
-def fetch_x(per_high: int = 6, per_norm: int = 3) -> list[dict]:
+def fetch_x(per_high: int = 8, per_norm: int = 3) -> list[dict]:
     """推特/X:twikit + 小号 cookie(.env 的 X_AUTH_TOKEN/X_CT0)。未配置则跳过不阻塞。"""
     auth, ct0 = os.environ.get("X_AUTH_TOKEN"), os.environ.get("X_CT0")
     if not (auth and ct0):
