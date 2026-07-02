@@ -154,6 +154,28 @@ def _b1_batch(raw: list[dict]) -> list[dict]:
     return out
 
 
+# ---------- 走势小图:6M 日线收盘 ----------
+def _trends(tickers: list[str]) -> dict:
+    """批量拉 6 个月日线收盘 → {ticker: [[YYYYMMDD, close], ...]}。供个股详情走势小图。"""
+    try:
+        data = yf.download(tickers, period="6mo", interval="1d", progress=False,
+                           group_by="ticker", auto_adjust=True, threads=True)
+    except Exception as e:  # noqa: BLE001 走势拉取失败不阻塞整个 blob
+        print(f"  ! 美股走势拉取失败: {str(e)[:80]}")
+        return {}
+    out: dict[str, list] = {}
+    multi = len(tickers) > 1
+    for t in tickers:
+        try:
+            closes = (data[t]["Close"] if multi else data["Close"]).dropna()
+        except Exception:  # noqa: BLE001 单票缺失跳过
+            continue
+        series = [[d.strftime("%Y%m%d"), round(float(v), 2)] for d, v in closes.items()]
+        if series:
+            out[t] = series
+    return out
+
+
 # ---------- 每日报告 B3 ----------
 B3_SYS = """你是投研信息整理器,为关注美股AI科技的投资者服务。只呈现变化,不做投资判断。
 铁律:每个事实带来源[来源:xxx];headline.fact 中性事实陈述,user_judgment 永远填"<待填>";
@@ -205,6 +227,10 @@ def main() -> None:
     print("[build_us] 合成美股报告 B3 ...")
     report = _report(stocks, news, us_date)
 
+    print("[build_us] 拉美股 6M 走势 ...")
+    trends = _trends([t for t, _, _ in US_UNIVERSE])
+    print(f"  走势 {len(trends)} 只")
+
     us = {
         "us_session_date": us_date,
         "board": {"items": board["items"], "n_ok": board["n_ok"]},
@@ -213,6 +239,7 @@ def main() -> None:
         "research": _research(stocks),
         "news": news,
         "report": report,
+        "trends": trends,
         "indices": idx,
         "fetched_at": datetime.now(ZoneInfo(TZ)).isoformat(),
     }

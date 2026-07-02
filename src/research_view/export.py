@@ -64,6 +64,34 @@ def _temperature(mc_cur, pool_ts: list[str]) -> dict:
             "flat": flat, "limit_up": lu, "limit_down": ld, "avg_pct": avg}
 
 
+def _ashare_trends(codes: set[str]) -> dict:
+    """6个月日线收盘走势(供个股详情走势小图),keyed by 6位 code。
+    只取传入的可点股票(当日 dashboard 里出现的),自限规模。code→ts_code 用 stock ∪ tech_stock。"""
+    codes = sorted(c for c in codes if isinstance(c, str) and len(c) == 6 and c.isdigit())
+    if not codes:
+        return {}
+    with db.rv_conn() as conn, conn.cursor() as cur:
+        cur.execute("""SELECT code, ts_code FROM stock WHERE code = ANY(%s) AND ts_code IS NOT NULL
+            UNION SELECT code, ts_code FROM tech_stock WHERE code = ANY(%s) AND ts_code IS NOT NULL""",
+            (codes, codes))
+        code2ts: dict[str, str] = {}
+        for c, t in cur.fetchall():
+            code2ts.setdefault(c, t)
+    ts2code = {t: c for c, t in code2ts.items()}
+    if not ts2code:
+        return {}
+    trends: dict[str, list] = {}
+    with db.marketdata_conn() as mc, mc.cursor() as cur:
+        cur.execute("""SELECT ts_code, trade_date, close FROM md.bar_daily_raw
+            WHERE ts_code = ANY(%s) AND trade_date >= current_date - 190
+            ORDER BY ts_code, trade_date""", (list(ts2code),))
+        for ts, dt, cl in cur.fetchall():
+            if cl is None:
+                continue
+            trends.setdefault(ts2code[ts], []).append([dt.strftime("%Y%m%d"), round(float(cl), 2)])
+    return trends
+
+
 def build_export(date_utc8: str) -> Path:
     with db.rv_conn() as conn, conn.cursor() as cur:
         cur.execute("SELECT ts_code FROM stock WHERE ts_code IS NOT NULL")
@@ -271,4 +299,20 @@ def build_dashboard(date_utc8: str) -> Path:
             "us": us, "hotspot": hotspot}
     path = EXPORT_DIR / "dashboard.json"
     path.write_text(_dump(dash), encoding="utf-8")
+
+    # 走势小图数据(6M日线):单列 trends.json 懒加载,不撑大 dashboard.json。
+    # 只取当日 dashboard 里"可点"的 A股(新闻/事件/热力/研报出现过的),自限规模。
+    clickable: set[str] = set()
+    for g in ev["news_by_node"]:
+        for it in g["items"]:
+            clickable.update(it.get("codes") or [])
+    clickable.update(e["code"] for e in ev["stock_events"] if e.get("code"))
+    clickable.update(s["code"] for s in hs)
+    clickable.update(r["code"] for r in reports if r.get("code"))
+    a_trends = _ashare_trends(clickable)
+    us_trends = (us or {}).get("trends") or {}  # 台北 build_us 产出,随 us blob 带过来
+    trends = {"meta": {"date": date_utc8, "a": len(a_trends), "us": len(us_trends)},
+              "a": a_trends, "us": us_trends}
+    (EXPORT_DIR / "trends.json").write_text(_dump(trends), encoding="utf-8")
+    print(f"  trends: A股 {len(a_trends)} 只 / 美股 {len(us_trends)} 只")
     return path

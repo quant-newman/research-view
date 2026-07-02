@@ -35,5 +35,5 @@ $SSH "cd $REMOTE && ./.venv/bin/python -c \"import sys;sys.path.insert(0,'src');
 echo "[premarket] 4/4 阿里云重建 dashboard + 拉回 webdata/ ..."
 $SSH "cd $REMOTE && ./.venv/bin/python -c \"import sys;sys.path.insert(0,'src');from research_view import export;print(export.build_dashboard('$DATE'))\"" 2>&1 | grep -v "Warning: Permanently"
 mkdir -p webdata
-rsync -az "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/dashboard.json" webdata/ 2>&1 | grep -v "Warning: Permanently" || true
+rsync -az "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/"{dashboard,trends}.json webdata/ 2>&1 | grep -v "Warning: Permanently" || true
 echo "[premarket] 完成。前端 8092 已读取盘前报告。"

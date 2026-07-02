@@ -1,5 +1,54 @@
+import { useEffect, useRef, useState } from "react";
+import * as echarts from "echarts";
 import type { Dashboard, NewsItem } from "./types";
 import type { StockSel } from "./stockCtx";
+
+// 走势小图数据(6M日线)单列 trends.json,首次打开个股详情时懒加载一次,模块级缓存。
+type TrendPoint = [string, number];
+type TrendMap = { a?: Record<string, TrendPoint[]>; us?: Record<string, TrendPoint[]> };
+let _trendsCache: TrendMap | null = null;
+let _trendsPromise: Promise<TrendMap> | null = null;
+function loadTrends(): Promise<TrendMap> {
+  if (_trendsCache) return Promise.resolve(_trendsCache);
+  if (!_trendsPromise) {
+    _trendsPromise = fetch("/data/trends.json")
+      .then((r) => r.json())
+      .then((j: TrendMap) => (_trendsCache = j))
+      .catch(() => ({ a: {}, us: {} }) as TrendMap);
+  }
+  return _trendsPromise;
+}
+
+function TrendChart({ series }: { series: TrendPoint[] }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!ref.current) return;
+    const chart = echarts.init(ref.current, undefined, { renderer: "canvas" });
+    const dates = series.map((p) => p[0]);
+    const closes = series.map((p) => p[1]);
+    const up = closes[closes.length - 1] >= closes[0]; // A股/美股统一红涨绿跌
+    const color = up ? "#F6465D" : "#2EBD85";
+    const fmt = (s: string) => `${s.slice(4, 6)}/${s.slice(6, 8)}`;
+    chart.setOption({
+      grid: { left: 46, right: 12, top: 10, bottom: 20 },
+      tooltip: { trigger: "axis", formatter: (p: any) => `${dates[p[0].dataIndex]}<br/>${p[0].data}` },
+      xAxis: { type: "category", data: dates.map(fmt), boundaryGap: false,
+        axisLabel: { color: "#5A6474", fontSize: 10, interval: Math.max(1, Math.floor(dates.length / 6)) },
+        axisLine: { lineStyle: { color: "#232B36" } }, axisTick: { show: false } },
+      yAxis: { type: "value", scale: true, axisLabel: { color: "#5A6474", fontSize: 10 },
+        splitLine: { lineStyle: { color: "#1A2029" } } },
+      series: [{ type: "line", data: closes, smooth: true, symbol: "none",
+        lineStyle: { color, width: 1.5 },
+        areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          { offset: 0, color: up ? "rgba(246,70,93,0.22)" : "rgba(46,189,133,0.22)" },
+          { offset: 1, color: "rgba(0,0,0,0)" }]) } }],
+    });
+    const ro = new ResizeObserver(() => chart.resize());
+    ro.observe(ref.current);
+    return () => { ro.disconnect(); chart.dispose(); };
+  }, [series]);
+  return <div ref={ref} className="w-full h-40" />;
+}
 
 const pctCls = (v: number | null | undefined) => (v == null ? "text-dim" : v > 0 ? "text-up" : v < 0 ? "text-down" : "text-muted");
 const sentColor: Record<string, string> = {
@@ -62,6 +111,18 @@ export function StockDetail({ sel, market, d, onClose }: { sel: StockSel; market
   const pct = bd.pct ?? hs.ret_1d;
   const mv = hs.total_mv ?? bd.market_cap;
 
+  // 6个月走势(懒加载 trends.json,按 code/ticker 查)
+  const [trend, setTrend] = useState<TrendPoint[] | null>(null);
+  useEffect(() => {
+    let alive = true;
+    loadTrends().then((t) => {
+      if (!alive) return;
+      const s = (isUS ? t.us : t.a)?.[code as string];
+      setTrend(s && s.length > 1 ? s : []);
+    });
+    return () => { alive = false; };
+  }, [code, isUS]);
+
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 p-4 overflow-auto" onClick={onClose}>
       <div className="bg-surface border hairline rounded-lg w-full max-w-2xl my-4" onClick={(e) => e.stopPropagation()}>
@@ -85,6 +146,13 @@ export function StockDetail({ sel, market, d, onClose }: { sel: StockSel; market
             {isUS && bd.target_mean != null && <Field k="目标均价" v={num(bd.target_mean)} cls="text-accent" />}
             {isUS && bd.rec_key && <Field k="评级" v={recLabel[bd.rec_key] || bd.rec_key} cls="text-up" />}
           </div>
+
+          {/* 6个月走势小图 */}
+          {trend && trend.length > 1 && (
+            <Sec title="6个月走势">
+              <TrendChart series={trend} />
+            </Sec>
+          )}
 
           {/* 所属节点/象限 */}
           {myNodes.length > 0 && (

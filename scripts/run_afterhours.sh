@@ -17,5 +17,5 @@ $SSH "cd $REMOTE && ./.venv/bin/python scripts/run_pipeline.py $DATE" 2>&1 | gre
 
 echo "[afterhours] 拉回 dashboard.json → webdata/ ..."
 mkdir -p webdata
-rsync -az "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/dashboard.json" webdata/ 2>&1 | grep -v "Warning: Permanently" || true
+rsync -az "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/"{dashboard,trends}.json webdata/ 2>&1 | grep -v "Warning: Permanently" || true
 echo "[afterhours] 完成。前端 8092 已更新。"

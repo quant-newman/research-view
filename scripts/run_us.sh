@@ -21,5 +21,5 @@ rsync -az "exports/us_${DATE}.json" "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exp
 echo "[us] 3/3 重建 dashboard + 拉回 ..."
 $SSH "cd $REMOTE && ./.venv/bin/python -c \"import sys;sys.path.insert(0,'src');from research_view import export;print(export.build_dashboard('$DATE'))\"" 2>&1 | grep -v "Warning: Permanently"
 mkdir -p webdata
-rsync -az "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/dashboard.json" webdata/ 2>&1 | grep -v "Warning: Permanently" || true
+rsync -az "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/"{dashboard,trends}.json webdata/ 2>&1 | grep -v "Warning: Permanently" || true
 echo "[us] 完成。前端顶部切"美股"即见。"
