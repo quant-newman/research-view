@@ -56,7 +56,7 @@ function StatusBar({ d, market, onMarket, onHealth }: { d: Dashboard; market: Ma
   const isUS = market === "US";
   const ut = us?.temperature;
   const at = d.temperature;
-  const sessionLabel = d.report?.session === "premarket" ? "盘前" : "盘后";
+  const sessionLabel = d.report?.session === "premarket" ? "盘前" : d.report?.session === "intraday" ? "盘中" : "盘后";
   return (
     <div className="flex items-center gap-4 px-4 h-11 border-b hairline bg-surface text-[14px]">
       <MarketToggle market={market} onMarket={onMarket} />
@@ -443,7 +443,7 @@ export default function App() {
               ) : (
                 <>
                   {d.report?.us_overnight && (
-                    <Panel title="隔夜美股科技链 · 盘前">
+                    <Panel title="隔夜美股科技链">
                       <UsOvernightBoard us={d.report.us_overnight} />
                     </Panel>
                   )}

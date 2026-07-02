@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""盘中轻量刷新:只刷新闻/研报(行情类上游 EOD/22:00 才更新,盘中重算无意义)。
+"""盘中轻量刷新:刷新闻/研报 + 重生成 B3 报告/热点(行情类上游 EOD/22:00 才更新,盘中重算无意义)。
 
-采集→漏斗→B1(含核心观点提炼)→近3日研报→导出 dashboard。每步失败不阻断。
+采集→漏斗→B1(含核心观点提炼)→近3日研报→观点提炼→盘中报告(session=intraday)→热点→导出 dashboard。每步失败不阻断。
 增量友好:funnel 只处理 relevant IS NULL、B1 只处理未结构化,所以每次很轻。
 用法: ./.venv/bin/python scripts/run_light.py [YYYYMMDD]
 """
@@ -14,7 +14,7 @@ from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-from research_view import config, export, hotspots, monitor, research_digest  # noqa: E402
+from research_view import config, export, hotspots, monitor, report, research_digest  # noqa: E402
 from research_view.collect import news, research  # noqa: E402
 from research_view.funnel import run_funnel  # noqa: E402
 from research_view.structure import run_structure  # noqa: E402
@@ -37,6 +37,8 @@ def main() -> None:
     step("structure_b1", run_structure)
     step("research", lambda: research.collect_reports(3))
     step("research_digest", lambda: research_digest.persist(date))
+    # 盘中重生成 B3 报告(基于截至此刻的新闻/研报/事件),让报告页盘中也"活"
+    step("report_intraday", lambda: {"report_id": report.persist_intraday(date)})
     step("hotspots", lambda: {"n": hotspots.persist(date)})
     step("export_dashboard", lambda: str(export.build_dashboard(date)))
 

@@ -149,6 +149,33 @@ def generate_afterhours(date_utc8: str) -> dict:
     return llm.chat_json(SYSTEM, user, timeout=120)
 
 
+# ---------- 盘中(intraday) ----------
+
+def generate_intraday(date_utc8: str) -> dict:
+    """盘中报告:复用盘后的全量客观事实层(_gather),但视角是"今日截至此刻在发生什么"。
+    A股行情盘中不更新(EOD),所以变化主要来自陆续发布的新闻/研报——这正是盘中值得盯的。"""
+    ts, block = _gather(date_utc8)
+    user = f"""【数据截止 UTC+8】{ts}(盘中)
+{block}
+
+输出JSON(盘中,呈现"今天截至此刻发生了什么、消息面/研报在往哪走、盘中在炒什么"):
+{{
+  "data_cutoff": "{ts} UTC+8",
+  "session": "intraday",
+  "headline": {{"fact":"基于截至此刻数据的中性事实陈述,不预测收盘涨跌","user_judgment":"<待填>","confidence":"高|中|低"}},
+  "top3": [
+    {{"change":"截至此刻最值得注意的一个变化","evidence":"[来源:xxx]","node_ids":[],"related_stocks":[]}}
+  ],
+  "sectors": [{{"chain":"光通信","status":"一句状态[来源]"}}],
+  "falsification": [
+    {{"claim":"某个可证伪的观察","condition":"具体的1-2周内可验证的证伪条件","draft_by":"deepseek"}}
+  ]
+}}
+只用上面提供的数据(龙虎榜/资金流盘中尚未落地,若相关块为空属正常,不要脑补)。
+top3 选截至此刻最值得注意的3个变化。研报/基金观点仅作佐证并注明来源,不升格为主线判断——headline.user_judgment 仍留 "<待填>"。"""
+    return llm.chat_json(SYSTEM, user, timeout=120)
+
+
 # ---------- 盘前(premarket) ----------
 
 def _load_us_overnight(date_utc8: str) -> dict | None:
@@ -268,3 +295,8 @@ def persist_afterhours(date_utc8: str) -> str:
 def persist_premarket(date_utc8: str) -> str:
     """生成盘前报告(隔夜外盘映射)+ 我的持仓动态,存 daily_report。返回 report_id。"""
     return _persist(date_utc8, "premarket", generate_premarket(date_utc8))
+
+
+def persist_intraday(date_utc8: str) -> str:
+    """生成盘中报告(截至此刻的消息面/研报变化)+ 我的持仓动态,存 daily_report。返回 report_id。"""
+    return _persist(date_utc8, "intraday", generate_intraday(date_utc8))
