@@ -97,6 +97,10 @@ export interface UsNewsItem {
   title: string; one_line: string; summary?: string | null; sentiment: string; src: string; url: string | null;
   sector: string; ticker: string;
 }
+export interface WireItem {
+  title: string; one_line: string; summary?: string | null; sentiment: string;
+  src: string; group: string; url: string | null;
+}
 export interface UsData {
   us_session_date: string;
   board: { items: UsBoardItem[]; n_ok: number };
@@ -104,6 +108,7 @@ export interface UsData {
   heatmap: Heatmap;
   research: UsResearchItem[];
   news: UsNewsItem[];
+  wire?: WireItem[];
   report: Report | null;
   indices: UsBoardItem[];
 }

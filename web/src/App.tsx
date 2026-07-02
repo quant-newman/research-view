@@ -6,6 +6,7 @@ import { ResearchView, LettersView } from "./Research";
 import { NewsView } from "./News";
 import { UsBoardView } from "./UsBoard";
 import { UsResearchView } from "./UsResearch";
+import { TechWire } from "./TechWire";
 import { HotspotView } from "./Hotspot";
 import { StockDetail } from "./StockDetail";
 import { StockCtx, useOpenStock, type StockSel } from "./stockCtx";
@@ -427,6 +428,9 @@ export default function App() {
                 <>
                   <Panel title="美股新闻流 · 按板块" count={usNewsNodes.length} collapsible>
                     <EventStream nodes={usNewsNodes} />
+                  </Panel>
+                  <Panel title="全球科技舆情 · WSJ/路透/科技媒体/Reddit" count={d.us?.wire?.length || 0} collapsible>
+                    <TechWire wire={d.us?.wire || []} />
                   </Panel>
                   <Panel title="美股指数" collapsible>
                     <div className="space-y-1">
