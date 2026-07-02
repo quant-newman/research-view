@@ -136,6 +136,7 @@ def generate_afterhours(date_utc8: str) -> dict:
   "data_cutoff": "{ts} UTC+8",
   "session": "afterhours",
   "headline": {{"fact":"基于上述数据的中性事实陈述,不带倾向","user_judgment":"<待填>","confidence":"高|中|低"}},
+  "narrative": "约500字今日综述,分3-4个自然段(段间用\\n\\n分隔):①今日大盘温度(涨跌家数/涨停/情绪冷热)与主线;②资金与板块轮动(哪些链条强弱、龙虎榜/北向动向);③重要个股事件与新闻(公告/业绩/增减持/解禁,点名带来源);④研报与基金观点佐证。只陈述事实不下投资判断,不编造数字。",
   "top3": [
     {{"change":"变化描述","evidence":"[来源:xxx]","node_ids":[],"related_stocks":[]}}
   ],
@@ -144,9 +145,9 @@ def generate_afterhours(date_utc8: str) -> dict:
     {{"claim":"某个可证伪的观察","condition":"具体的1-2周内可验证的证伪条件","draft_by":"deepseek"}}
   ]
 }}
-只用上面提供的数据,top3 选今天最值得注意的3个变化。
+只用上面提供的数据。narrative 约500字(控制在480-620字,充实但别啰嗦);top3 选今天最值得注意的3个变化。
 研报评级与基金观点仅作背景与佐证(可在 evidence 里注明"[来源:XX机构评级]"),不得升格为主线判断——headline.user_judgment 仍留 "<待填>"。"""
-    return llm.chat_json(SYSTEM, user, timeout=120)
+    return llm.chat_json(SYSTEM, user, timeout=180)
 
 
 # ---------- 盘中(intraday) ----------
@@ -163,6 +164,7 @@ def generate_intraday(date_utc8: str) -> dict:
   "data_cutoff": "{ts} UTC+8",
   "session": "intraday",
   "headline": {{"fact":"基于截至此刻数据的中性事实陈述,不预测收盘涨跌","user_judgment":"<待填>","confidence":"高|中|低"}},
+  "narrative": "约500字盘中综述,分3-4个自然段(段间用\\n\\n分隔):①截至此刻大盘/主线概况;②消息面与研报动向(哪些链条有新增量);③重要个股事件与新闻(点名带来源);④基金/研报观点佐证。只陈述截至此刻的事实不预测收盘,不编造数字。",
   "top3": [
     {{"change":"截至此刻最值得注意的一个变化","evidence":"[来源:xxx]","node_ids":[],"related_stocks":[]}}
   ],
@@ -171,9 +173,9 @@ def generate_intraday(date_utc8: str) -> dict:
     {{"claim":"某个可证伪的观察","condition":"具体的1-2周内可验证的证伪条件","draft_by":"deepseek"}}
   ]
 }}
-只用上面提供的数据(龙虎榜/资金流盘中尚未落地,若相关块为空属正常,不要脑补)。
+只用上面提供的数据(龙虎榜/资金流盘中尚未落地,若相关块为空属正常,不要脑补)。narrative 约500字(480-620字)。
 top3 选截至此刻最值得注意的3个变化。研报/基金观点仅作佐证并注明来源,不升格为主线判断——headline.user_judgment 仍留 "<待填>"。"""
-    return llm.chat_json(SYSTEM, user, timeout=120)
+    return llm.chat_json(SYSTEM, user, timeout=180)
 
 
 # ---------- 盘前(premarket) ----------
@@ -230,6 +232,7 @@ def generate_premarket(date_utc8: str) -> dict:
   "data_cutoff": "{ts} UTC+8",
   "session": "premarket",
   "headline": {{"fact":"基于隔夜美股+国内增量的中性事实陈述(如'费半跌X%、存储MU跌Y%;国内MLCC酝酿涨价'),不预测A股今天涨跌","user_judgment":"<待填>","confidence":"高|中|低"}},
+  "narrative": "约500字盘前综述,分3-4个自然段(段间用\\n\\n分隔):①隔夜外盘科技链怎么走(费半/关键个股涨跌%);②对应A股链条的外盘参照(中性映射,不预测A股涨跌);③国内隔夜新增量(新闻/公告/研报/基金观点);④今天开盘该盯的方向。只陈述客观事实与外盘参照,绝不预测A股今日走势,不编造数字。",
   "top3": [
     {{"change":"今天开盘最值得盯的一个点(源自隔夜变化)","evidence":"[来源:xxx]","node_ids":[],"related_stocks":[]}}
   ],
@@ -238,9 +241,9 @@ def generate_premarket(date_utc8: str) -> dict:
     {{"claim":"某个可证伪的观察","condition":"具体的1-2周内可验证的证伪条件","draft_by":"deepseek"}}
   ]
 }}
-隔夜美股是客观涨跌%,可据此中性陈述对应A股链条的外盘参照,但绝不预测A股今天怎么走(那是判断,user_judgment 留白)。
+隔夜美股是客观涨跌%,可据此中性陈述对应A股链条的外盘参照,但绝不预测A股今天怎么走(那是判断,user_judgment 留白)。narrative 约500字(480-620字)。
 top3 选隔夜最值得开盘关注的3点。研报/基金观点仅作佐证,注明来源,不升格为主线判断。"""
-    return llm.chat_json(SYSTEM, user, timeout=120)
+    return llm.chat_json(SYSTEM, user, timeout=180)
 
 
 # ---------- 我的持仓动态 + 落库 ----------
@@ -272,14 +275,15 @@ def _persist(date_utc8: str, session: str, rpt: dict) -> str:
         report_id = f"{date_utc8}:{session}"
         cur.execute("""
             INSERT INTO daily_report(report_id,report_date,session,data_cutoff,
-                headline,top3,sectors,falsification,holdings_moves)
-            VALUES(%s, to_date(%s,'YYYYMMDD'),%s,%s,%s,%s,%s,%s,%s)
+                headline,narrative,top3,sectors,falsification,holdings_moves)
+            VALUES(%s, to_date(%s,'YYYYMMDD'),%s,%s,%s,%s,%s,%s,%s,%s)
             ON CONFLICT(report_id) DO UPDATE SET data_cutoff=EXCLUDED.data_cutoff,
-                headline=EXCLUDED.headline, top3=EXCLUDED.top3, sectors=EXCLUDED.sectors,
-                falsification=EXCLUDED.falsification, holdings_moves=EXCLUDED.holdings_moves,
-                generated_at=now()""",
+                headline=EXCLUDED.headline, narrative=EXCLUDED.narrative, top3=EXCLUDED.top3,
+                sectors=EXCLUDED.sectors, falsification=EXCLUDED.falsification,
+                holdings_moves=EXCLUDED.holdings_moves, generated_at=now()""",
             (report_id, date_utc8, session, rpt.get("data_cutoff", ""),
              json.dumps(rpt.get("headline"), ensure_ascii=False),
+             rpt.get("narrative"),
              json.dumps(rpt.get("top3"), ensure_ascii=False),
              json.dumps(rpt.get("sectors"), ensure_ascii=False),
              json.dumps(rpt.get("falsification"), ensure_ascii=False),

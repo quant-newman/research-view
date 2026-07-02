@@ -14,6 +14,8 @@ export interface Report {
   headline: Headline; top3: Top3Item[]; sectors: Sector[];
   falsification: Falsification[]; holdings_moves: any[]; generated_at: string;
   us_overnight?: UsOvernight;
+  x_takes?: { us_global?: string; a_share?: string };
+  narrative?: string;
 }
 export interface NewsItem {
   title: string; one_line: string; summary?: string | null; sentiment: string; event_type?: string; src: string;
@@ -95,11 +97,11 @@ export interface UsResearchItem {
 }
 export interface UsNewsItem {
   title: string; one_line: string; summary?: string | null; sentiment: string; src: string; url: string | null;
-  sector: string; ticker: string;
+  sector: string; ticker: string; time?: string;
 }
 export interface WireItem {
   title: string; one_line: string; summary?: string | null; sentiment: string;
-  src: string; group: string; url: string | null; weight?: number;
+  src: string; group: string; url: string | null; weight?: number; time?: string; market?: string;
 }
 export interface UsData {
   us_session_date: string;
@@ -116,7 +118,7 @@ export interface UsData {
 export interface HotspotItem {
   node_id: string; chain: string; node: string; heat: number; trend: string; reason?: string;
   news_today: number; news_prior?: number; pos?: number; neg?: number;
-  ret_1d?: number | null; lhb?: number; stocks: string[]; news: string[];
+  ret_1d?: number | null; lhb?: number; stocks: string[]; news: string[]; latest_time?: string;
 }
 export interface Hotspot { headline: string; items: HotspotItem[]; }
 

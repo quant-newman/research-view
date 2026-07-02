@@ -6,10 +6,11 @@ import { ResearchView, LettersView } from "./Research";
 import { NewsView } from "./News";
 import { UsBoardView } from "./UsBoard";
 import { UsResearchView } from "./UsResearch";
-import { TechWire } from "./TechWire";
+import { TechWire, TechWireX } from "./TechWire";
 import { HotspotView } from "./Hotspot";
 import { StockDetail } from "./StockDetail";
 import { StockCtx, useOpenStock, type StockSel } from "./stockCtx";
+import { timeHour } from "./ui";
 
 type Market = "A" | "US";
 
@@ -116,8 +117,22 @@ function DailyReport({ report }: { report: Report | null | undefined }) {
         </div>
       </section>
 
+      {/* 今日综述 ~500字 */}
+      {r.narrative && (
+        <section className="border-t hairline pt-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-0.5 h-4 bg-info" />
+            <h2 className="font-semibold">今日综述</h2>
+            <span className="text-dim text-[12px]">DeepSeek 综合 · 只述事实不判断</span>
+          </div>
+          <div className="border hairline rounded bg-surface px-4 py-3 text-[14px] leading-[1.85] text-muted whitespace-pre-line">
+            {r.narrative}
+          </div>
+        </section>
+      )}
+
       {/* 今天只看这3件事 */}
-      <section>
+      <section className="border-t hairline pt-4">
         <div className="flex items-center gap-2 mb-2">
           <div className="w-0.5 h-4 bg-accent" />
           <h2 className="font-semibold">今天只看这 3 件事</h2>
@@ -146,15 +161,15 @@ function DailyReport({ report }: { report: Report | null | undefined }) {
       </section>
 
       {/* 分板块扫描 */}
-      <section>
+      <section className="border-t hairline pt-4">
         <div className="flex items-center gap-2 mb-2">
           <div className="w-0.5 h-4 bg-dim" />
           <h2 className="font-semibold text-muted">分板块扫描</h2>
         </div>
-        <div className="space-y-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
           {r.sectors.map((s, i) => (
-            <div key={i} className="flex gap-2 text-[14px]">
-              <span className="text-muted w-16 shrink-0">{s.chain}</span>
+            <div key={i} className="flex gap-2 text-[14px] border-l-2 border-hairline pl-2 py-0.5">
+              <span className="text-accent shrink-0 font-medium">{s.chain}</span>
               <span className="text-dim">{s.status}</span>
             </div>
           ))}
@@ -162,7 +177,7 @@ function DailyReport({ report }: { report: Report | null | undefined }) {
       </section>
 
       {/* 证伪与风险 */}
-      <section>
+      <section className="border-t hairline pt-4">
         <div className="flex items-center gap-2 mb-2">
           <div className="w-0.5 h-4 bg-up" />
           <h2 className="font-semibold">证伪与风险</h2>
@@ -208,6 +223,7 @@ function EventStream({ nodes }: { nodes: Dashboard["news_by_node"] }) {
                   {n.summary && <p className="text-muted text-[13px] leading-relaxed mt-1.5 ml-3.5">{n.summary}</p>}
                   <div className="flex items-center gap-2 mt-1.5 ml-3.5 text-[12px] text-dim">
                     <span className={sentTx[n.sentiment] || "text-muted"}>{n.sentiment}</span>
+                    {timeHour(n.time) && <><span>·</span><span className="mono">{timeHour(n.time)}</span></>}
                     <span>·</span><span>{n.src}</span>
                     {(n.codes || []).slice(0, 3).map((c) => (
                       <button key={c} onClick={() => open({ code: c })} className="mono hover:text-accent">{c}</button>
@@ -353,13 +369,16 @@ export default function App() {
   }, []);
 
   // 美股新闻(扁平)→ 复用 A股 的按节点分组结构(按板块分组)
+  // 报告页舆情面板:只留媒体+Reddit(推特X 已挪到热点视图右栏)
+  const usWireMedia = useMemo(() => (d?.us?.wire || []).filter((w) => w.group !== "推特X"), [d]);
+
   const usNewsNodes: NewsNode[] = useMemo(() => {
     const m: Record<string, NewsNode> = {};
     for (const n of d?.us?.news || []) {
       (m[n.sector] ||= { node_id: n.sector, chain: "美股", node: n.sector, scope: "美股", items: [] });
       m[n.sector].items.push({
         title: n.title, one_line: n.one_line, summary: n.summary, sentiment: n.sentiment, event_type: "",
-        src: n.src, url: n.url, time: "", codes: [n.ticker], holding: false, watching: false,
+        src: n.src, url: n.url, time: n.time || "", codes: [n.ticker], holding: false, watching: false,
       });
     }
     return Object.values(m).sort((a, b) => b.items.length - a.items.length);
@@ -369,10 +388,11 @@ export default function App() {
   const usHotspot = useMemo(() => {
     const us = d?.us;
     if (!us?.news?.length) return null;
-    const bySec: Record<string, { news: string[]; count: number }> = {};
+    const bySec: Record<string, { news: string[]; count: number; latest: string }> = {};
     for (const n of us.news) {
-      (bySec[n.sector] ||= { news: [], count: 0 });
+      (bySec[n.sector] ||= { news: [], count: 0, latest: "" });
       bySec[n.sector].count++;
+      if ((n.time || "") > bySec[n.sector].latest) bySec[n.sector].latest = n.time || "";
       if (bySec[n.sector].news.length < 3) bySec[n.sector].news.push(n.one_line);
     }
     const ret1d: Record<string, number | null> = {};
@@ -380,7 +400,7 @@ export default function App() {
     const items = Object.entries(bySec).map(([sec, v]) => ({
       node_id: sec, chain: "美股", node: sec, heat: v.count, trend: "持平",
       reason: `${v.count} 条相关新闻`, news_today: v.count, ret_1d: ret1d[sec] ?? null,
-      lhb: 0, stocks: [] as string[], news: v.news,
+      lhb: 0, stocks: [] as string[], news: v.news, latest_time: v.latest,
     })).sort((a, b) => b.heat - a.heat).slice(0, 10);
     return { headline: "美股科技新闻热度(按板块新闻量)", items };
   }, [d]);
@@ -429,9 +449,23 @@ export default function App() {
                   <Panel title="美股新闻流 · 按板块" count={usNewsNodes.length} collapsible>
                     <EventStream nodes={usNewsNodes} />
                   </Panel>
-                  <Panel title="全球科技舆情 · WSJ/路透/科技媒体/Reddit/推特X" count={d.us?.wire?.length || 0} collapsible>
-                    <TechWire wire={d.us?.wire || []} />
+                  <Panel title="全球科技舆情 · WSJ/路透/科技媒体/Reddit" count={usWireMedia.length} collapsible>
+                    <TechWire wire={usWireMedia} />
                   </Panel>
+                  {(d.us?.report?.x_takes?.us_global || d.us?.report?.x_takes?.a_share) && (
+                    <Panel title="推特X 观点综述 · serenity等17号(完整流见「热点」页)" collapsible>
+                      <div className="space-y-2.5 text-[14px] leading-relaxed">
+                        {d.us?.report?.x_takes?.us_global && d.us.report.x_takes.us_global !== "(无)" && (
+                          <div><span className="text-accent text-[12px]">美股/全球</span>
+                            <p className="text-muted mt-0.5">{d.us.report.x_takes.us_global}</p></div>
+                        )}
+                        {d.us?.report?.x_takes?.a_share && d.us.report.x_takes.a_share !== "(无)" && (
+                          <div><span className="text-accent text-[12px] bg-accent/10 px-1 rounded">A股</span>
+                            <p className="text-muted mt-0.5">{d.us.report.x_takes.a_share}</p></div>
+                        )}
+                      </div>
+                    </Panel>
+                  )}
                   <Panel title="美股指数" collapsible>
                     <div className="space-y-1">
                       {(d.us?.indices || []).map((i) => (
@@ -468,7 +502,14 @@ export default function App() {
           </div>
         )}
         {view === "hotspot" && (
-          <div className="flex-1 p-5 overflow-auto"><HotspotView hotspot={isUS ? usHotspot : d.hotspot} /></div>
+          <div className="flex-1 flex gap-5 p-5 overflow-auto">
+            <div className="flex-1 min-w-0"><HotspotView hotspot={isUS ? usHotspot : d.hotspot} /></div>
+            {isUS && (d.us?.wire?.some((w) => w.group === "推特X")) && (
+              <div className="w-[52%] shrink-0 min-w-0 border-l hairline pl-5">
+                <TechWireX wire={d.us?.wire || []} />
+              </div>
+            )}
+          </div>
         )}
         {view === "heatmap" && (
           <div className="flex-1 p-5 overflow-auto space-y-4">

@@ -1,5 +1,12 @@
 import { useState } from "react";
 
+// 时间统一显示到小时:"YYYY-MM-DD HH:MM" → "MM-DD HH时"。解析失败/空则不显示。
+export function timeHour(t?: string): string {
+  if (!t) return "";
+  const m = t.match(/\d{4}-(\d{2})-(\d{2})[ T](\d{2}):\d{2}/);
+  return m ? `${m[1]}-${m[2]} ${m[3]}时` : "";
+}
+
 // 可折叠区块:标题(带条数)点击展开/收起
 export function Section({ title, count, defaultOpen = true, right, children }:
   { title: string; count?: number; defaultOpen?: boolean; right?: React.ReactNode; children: React.ReactNode }) {

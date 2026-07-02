@@ -27,11 +27,13 @@ def _signals(date_utc8: str, top: int = 10) -> list[dict]:
               count(*) FILTER (WHERE rn.pub_time::date = to_date(%s,'YYYYMMDD')) AS today,
               count(*) FILTER (WHERE rn.pub_time::date = to_date(%s,'YYYYMMDD')-1) AS prior,
               count(*) FILTER (WHERE rn.sentiment='利好') AS pos,
-              count(*) FILTER (WHERE rn.sentiment='利空') AS neg
+              count(*) FILTER (WHERE rn.sentiment='利空') AS neg,
+              max(rn.pub_time) FILTER (WHERE rn.pub_time::date = to_date(%s,'YYYYMMDD')) AS latest
             FROM raw_news rn CROSS JOIN LATERAL unnest(rn.matched_node_ids) m(node_id)
             WHERE rn.relevant AND rn.pub_time::date >= to_date(%s,'YYYYMMDD')-1
-            GROUP BY m.node_id""", (date_utc8, date_utc8, date_utc8))
-        news = {r[0]: {"today": r[1], "prior": r[2], "pos": r[3], "neg": r[4]} for r in cur.fetchall()}
+            GROUP BY m.node_id""", (date_utc8, date_utc8, date_utc8, date_utc8))
+        news = {r[0]: {"today": r[1], "prior": r[2], "pos": r[3], "neg": r[4],
+                       "latest": str(r[5]) if r[5] else ""} for r in cur.fetchall()}
         cur.execute("SELECT node_id, ret_1d, n_stocks FROM heatmap_node")
         hm = {r[0]: (float(r[1]) if r[1] is not None else None, r[2]) for r in cur.fetchall()}
         # 节点代表新闻(今日,summary 优先)
@@ -68,7 +70,7 @@ def _signals(date_utc8: str, top: int = 10) -> list[dict]:
 
     rows = []
     for nid, (chain, node) in meta.items():
-        nw = news.get(nid, {"today": 0, "prior": 0, "pos": 0, "neg": 0})
+        nw = news.get(nid, {"today": 0, "prior": 0, "pos": 0, "neg": 0, "latest": ""})
         r1d, _n = hm.get(nid, (None, 0))
         lhb = lhb_node.get(nid, 0)
         heat = nw["today"] * 1.0 + lhb * 1.5 + max(0.0, (r1d or 0.0)) * 0.2
@@ -78,7 +80,7 @@ def _signals(date_utc8: str, top: int = 10) -> list[dict]:
         rows.append({
             "node_id": nid, "chain": chain, "node": node, "heat": round(heat, 1), "trend": trend,
             "news_today": nw["today"], "news_prior": nw["prior"], "pos": nw["pos"], "neg": nw["neg"],
-            "ret_1d": r1d, "lhb": lhb,
+            "ret_1d": r1d, "lhb": lhb, "latest_time": nw.get("latest", ""),
             "stocks": node_stocks.get(nid, [])[:5],
             "news": node_news.get(nid, [])[:3],
         })

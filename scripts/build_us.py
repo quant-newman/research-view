@@ -22,7 +22,7 @@ sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "scripts"))
 from research_view import llm  # noqa: E402
 from fetch_us_board import US_UNIVERSE, fetch as fetch_board  # noqa: E402
-from fetch_tech_wire import fetch_wire  # noqa: E402
+from fetch_tech_wire import fetch_wire, _norm_time  # noqa: E402
 
 TZ = "Asia/Shanghai"
 
@@ -121,7 +121,21 @@ def _fetch_news_raw(tickers: list[str]) -> list[dict]:
                 if v:
                     desc = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", str(v))).strip()[:600]
                     break
-            raw.append({"title": title, "desc": desc, "src": src or "Yahoo", "url": url, "from_ticker": t})
+            # 发布时间:新格式 pubDate(ISO 串),旧格式 providerPublishTime(unix)
+            tm = ""
+            pd = c.get("pubDate") or c.get("displayTime") if isinstance(c, dict) else None
+            if pd:
+                tm = _norm_time(str(pd))
+            elif n.get("providerPublishTime"):
+                try:
+                    from datetime import datetime, timezone
+                    from zoneinfo import ZoneInfo
+                    tm = datetime.fromtimestamp(int(n["providerPublishTime"]), timezone.utc)\
+                        .astimezone(ZoneInfo("Asia/Shanghai")).strftime("%Y-%m-%d %H:%M")
+                except Exception:  # noqa: BLE001
+                    tm = ""
+            raw.append({"title": title, "desc": desc, "src": src or "Yahoo", "url": url,
+                        "from_ticker": t, "time": tm})
     return raw[:45]  # 控量
 
 
@@ -151,7 +165,8 @@ def _b1_batch(raw: list[dict]) -> list[dict]:
         out.append({"title": r["title"], "one_line": b.get("one_line") or r["title"],
                     "summary": (b.get("summary") or "")[:280] or None,
                     "sentiment": b.get("sentiment") or "中性", "src": r["src"], "url": r["url"],
-                    "sector": sec_of.get(r["from_ticker"], "科技"), "ticker": r["from_ticker"]})
+                    "sector": sec_of.get(r["from_ticker"], "科技"), "ticker": r["from_ticker"],
+                    "time": r.get("time", "")})
     return out
 
 
@@ -162,8 +177,9 @@ def _b1_wire_chunk(raw: list[dict]) -> dict:
         f"{i}. [{r['group']}] 标题:{r['title']}" + (f"\n   摘要:{r['desc']}" if r["desc"] else "")
         for i, r in enumerate(raw))
     user = f"""下面是西方媒体/Reddit/推特X 的条目(带序号+来源分组,中英混合;Reddit/X 可能已是中文)。逐条中文提炼,JSON:
-{{"items":[{{"i":序号,"one_line":"中文一句话概括≤40字,已是中文则精简","summary":"中文核心:据标题/摘要挑1-2个重点,≤80字,不看原文就懂;只陈述不判断","sentiment":"利好|利空|中性|澄清"}}]}}
+{{"items":[{{"i":序号,"one_line":"中文一句话概括≤40字,已是中文则精简","summary":"中文核心:据标题/摘要挑1-2个重点,≤80字,不看原文就懂;只陈述不判断","sentiment":"利好|利空|中性|澄清","market":"A股|美股|其他"}}]}}
 {listing}
+market 判断:主要讲 A股上市公司/A股板块/中国境内市场→"A股";讲美股/美国科技公司/全球AI→"美股";都不明确→"其他"。
 只翻译概括,不许出现"看好/建议买入"等判断词,不许编造原文没有的数字。Reddit/推特X 是个人观点,如实转述不背书。"""
     try:
         j = llm.chat_json(B1_SYS, user, timeout=150)
@@ -183,10 +199,13 @@ def _b1_wire(raw: list[dict], batch: int = 40) -> list[dict]:
         m = _b1_wire_chunk(chunk)
         for i, r in enumerate(chunk):
             b = m.get(i, {})
+            mk = b.get("market")
             out.append({"title": r["title"], "one_line": b.get("one_line") or r["title"],
                         "summary": (b.get("summary") or "")[:200] or None,
                         "sentiment": b.get("sentiment") or "中性",
                         "src": r["src"], "group": r["group"], "url": r["url"],
+                        "time": r.get("time", ""),
+                        "market": mk if mk in ("A股", "美股", "其他") else "其他",
                         **({"weight": r["weight"]} if "weight" in r else {})})
     return out
 
@@ -227,13 +246,20 @@ def _report(stocks: list[dict], news: list[dict], wire: list[dict], us_date: str
                 for s in top_up + top_dn]
     news_lines = [f"- [{n['sector']}] {n['one_line']}(情绪:{n['sentiment']},来源:{n['src']})"
                   for n in news[:30]]
-    # 舆情高信号:权威媒体优先,外加重点 X 号(serenity,weight2)作情绪信号;Reddit 不喂报告
+    # 舆情高信号:权威媒体优先喂报告;Reddit 不喂
     auth = [w for w in wire if w["group"] in ("华尔街日报", "路透社", "科技媒体")][:12]
-    key_x = [w for w in wire if w["group"] == "推特X" and w.get("weight", 1) >= 2][:5]
-    wire_lines = [f"- [{w['group']}] {w['one_line']}(来源:{w['src']})" for w in auth + key_x]
+    wire_lines = [f"- [{w['group']}] {w['one_line']}(来源:{w['src']})" for w in auth]
+    # 推特X 按 market 拆分(重点号 serenity 优先),给报告统一总结
+    x_all = [w for w in wire if w["group"] == "推特X"]
+    x_all.sort(key=lambda w: -w.get("weight", 1))
+    x_us = [w for w in x_all if w.get("market") != "A股"][:12]
+    x_a = [w for w in x_all if w.get("market") == "A股"][:12]
+    xl = lambda ws: "\n".join(f"- {w['src']}{'(重点)' if w.get('weight',1)>=2 else ''}:{w['one_line']}" for w in ws)
     block = ("【今日美股科技涨跌(前5涨/前5跌)】\n" + "\n".join(mv_lines) +
              "\n\n【美股科技新闻】\n" + ("\n".join(news_lines) or "(无)") +
-             "\n\n【全球科技舆情(西方媒体)】\n" + ("\n".join(wire_lines) or "(无)"))
+             "\n\n【全球科技舆情(西方媒体)】\n" + ("\n".join(wire_lines) or "(无)") +
+             "\n\n【推特X·美股/全球观点(个人观点,serenity权重最高)】\n" + (xl(x_us) or "(无)") +
+             "\n\n【推特X·A股相关观点】\n" + (xl(x_a) or "(无)"))
     user = f"""【数据截止 美东 {us_date} 收盘】
 {block}
 
@@ -242,13 +268,15 @@ def _report(stocks: list[dict], news: list[dict], wire: list[dict], us_date: str
   "data_cutoff": "美东 {us_date} 收盘",
   "session": "us",
   "headline": {{"fact":"基于上述数据的中性事实陈述,不带倾向","user_judgment":"<待填>","confidence":"高|中|低"}},
+  "narrative": "约500字的今日综述,分3-4个自然段(段间用\\n\\n分隔):①大盘与板块涨跌概况(点名强弱板块+代表个股数据);②今日重要新闻事件(半导体/云/光模块/存储/Neocloud等,按重要性展开2-4条,带来源);③舆情要点(权威媒体口径 + 推特X的美股与A股两方观点分歧,注明谁说的)。只陈述事实与各方说法,不下投资判断,不编造数字。",
   "top3": [{{"change":"变化描述","evidence":"[来源:xxx]","node_ids":[],"related_stocks":[]}}],
   "sectors": [{{"chain":"半导体","status":"一句状态[来源]"}}],
+  "x_takes": {{"us_global":"综述推特X在美股/全球AI上的主要观点分歧≤120字,注明谁说的;无则填(无)","a_share":"综述推特X在A股上的主要观点≤120字,注明谁说的;无则填(无)"}},
   "falsification": [{{"claim":"可证伪观察","condition":"1-2周内可验证条件","draft_by":"deepseek"}}]
 }}
-只用上面数据,top3 选今天最值得注意的3个变化。"""
+只用上面数据。narrative 约500字(控制在480-620字,充实但别啰嗦);top3 选今天最值得注意的3个变化;x_takes 是对推特X两组观点的中性综述(转述不背书)。"""
     try:
-        return llm.chat_json(B3_SYS, user, timeout=120)
+        return llm.chat_json(B3_SYS, user, timeout=180)
     except Exception as e:  # noqa: BLE001 报告失败不阻塞整个blob
         print(f"  ! 美股B3报告失败: {str(e)[:80]}")
         return None

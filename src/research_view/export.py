@@ -170,13 +170,13 @@ def build_dashboard(date_utc8: str) -> Path:
     ev = json.loads(events.read_text(encoding="utf-8"))
     with db.rv_conn() as conn, conn.cursor() as cur:
         cur.execute("""SELECT report_id,session,data_cutoff,headline,top3,sectors,
-            falsification,holdings_moves,generated_at FROM daily_report
+            falsification,holdings_moves,generated_at,narrative FROM daily_report
             WHERE report_date=to_date(%s,'YYYYMMDD') ORDER BY generated_at DESC LIMIT 1""",
             (date_utc8,))
         row = cur.fetchone()
         if row is None:  # 跨天早盘前当日报告还没生成 → 回退显示最近一份(不让报告页空白)
             cur.execute("""SELECT report_id,session,data_cutoff,headline,top3,sectors,
-                falsification,holdings_moves,generated_at FROM daily_report
+                falsification,holdings_moves,generated_at,narrative FROM daily_report
                 ORDER BY report_date DESC, generated_at DESC LIMIT 1""")
             row = cur.fetchone()
         report = None
@@ -184,7 +184,7 @@ def build_dashboard(date_utc8: str) -> Path:
             report = {"report_id": row[0], "session": row[1], "data_cutoff": row[2],
                       "headline": row[3], "top3": row[4], "sectors": row[5],
                       "falsification": row[6], "holdings_moves": row[7],
-                      "generated_at": str(row[8])}
+                      "generated_at": str(row[8]), "narrative": row[9]}
             # 盘前/盘中报告附隔夜美股科技链(台北 yfinance 产出,scp 到本机 exports/),供前端小面板。
             # 盘中也附:否则盘中报告一接管,早上的隔夜外盘参照会整天消失。
             if row[1] in ("premarket", "intraday"):

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Hotspot, HotspotItem } from "./types";
 import { useOpenStock } from "./stockCtx";
-import { MoreList } from "./ui";
+import { MoreList, timeHour } from "./ui";
 
 const trendCls: Record<string, string> = {
   升温: "text-up bg-up/10", 降温: "text-down bg-down/10", 持平: "text-muted bg-muted/10",
@@ -20,6 +20,7 @@ function Card({ it, rank }: { it: HotspotItem; rank: number }) {
             <span className="text-primary font-semibold text-[15px]">{it.chain}/{it.node}</span>
             <span className={`px-1.5 py-0.5 rounded text-[12px] ${trendCls[it.trend] || "text-muted"}`}>{it.trend}</span>
             <span className="text-dim text-[12px] mono">热度 {it.heat}</span>
+            {timeHour(it.latest_time) && <span className="text-dim text-[12px] mono ml-auto">最新 {timeHour(it.latest_time)}</span>}
           </div>
           {it.reason && <p className="text-muted text-[14px] leading-relaxed mt-1">{it.reason}</p>}
           <div className="flex flex-wrap items-center gap-3 mt-1.5 text-[12px] text-dim mono">

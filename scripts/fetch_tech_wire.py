@@ -69,6 +69,37 @@ def _clean(s: str | None, limit: int = 500) -> str:
     return _WS.sub(" ", unescape(_TAG.sub(" ", s))).strip()[:limit]
 
 
+def _norm_time(s: str | None) -> str:
+    """把各种时间串(RSS RFC822 / ISO / X 'Thu Jul 02 ...')统一成 UTC+8 'YYYY-MM-DD HH:MM'。
+    解析失败返回空串(前端不显示)。全系统时间口径 UTC+8,与 A股 新闻一致。"""
+    if not s or not s.strip():
+        return ""
+    from datetime import datetime, timezone
+    from zoneinfo import ZoneInfo
+    s = s.strip()
+    dt = None
+    try:  # RFC822: 'Wed, 02 Jul 2026 10:34:00 GMT'
+        from email.utils import parsedate_to_datetime
+        dt = parsedate_to_datetime(s)
+    except Exception:  # noqa: BLE001
+        dt = None
+    if dt is None:
+        for fmt in ("%a %b %d %H:%M:%S %z %Y", "%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dT%H:%M:%SZ"):
+            try:
+                dt = datetime.strptime(s.replace("Z", "+0000") if fmt.endswith("z") else s, fmt)
+                break
+            except Exception:  # noqa: BLE001
+                continue
+    if dt is None:
+        try:
+            dt = datetime.fromisoformat(s.replace("Z", "+00:00"))
+        except Exception:  # noqa: BLE001
+            return ""
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(ZoneInfo("Asia/Shanghai")).strftime("%Y-%m-%d %H:%M")
+
+
 # 词边界匹配,避免 "ai" 命中 fairly/against、"chip" 命中 chipper 等假阳性
 _KW_RE = re.compile(
     r"(?<![a-z])(" + "|".join(re.escape(k.strip()) for k in KEYWORDS) + r")(?![a-z])", re.I)
@@ -132,7 +163,9 @@ def _parse(xml_text: str, kind: str) -> list[dict]:
         if d is None:
             d = _local(node, "content")
         desc = _clean(d.text if d is not None else None)
-        out.append({"title": title, "desc": desc, "url": url})
+        pt = _local(node, "pubDate") or _local(node, "published") or _local(node, "updated")
+        out.append({"title": title, "desc": desc, "url": url,
+                    "time": _norm_time(pt.text if pt is not None else None)})
     return out
 
 
@@ -238,7 +271,8 @@ async def _fetch_x_async(cookies: dict, per_high: int, per_norm: int) -> list[di
         for tw in tweets[:want]:
             out.append({"title": tw["text"][:120], "desc": tw["text"],
                         "url": f"https://x.com/{handle}/status/{tw['id']}",
-                        "src": f"@{handle}", "group": "推特X", "weight": weight})
+                        "src": f"@{handle}", "group": "推特X", "weight": weight,
+                        "time": _norm_time(tw.get("created", ""))})
         print(f"  X @{handle}(w{weight}): {min(len(tweets), want)} 条")
         await asyncio.sleep(1.2)  # 礼貌间隔,降风控概率
     out.sort(key=lambda x: -x.get("weight", 1))  # 重点号(weight2)排前
@@ -278,7 +312,7 @@ def fetch_wire(per_source: int = 12, rss_cap: int = 48) -> list[dict]:
                 continue
             seen.add(key)
             items.append({"title": title, "desc": desc, "url": it["url"],
-                          "src": name, "group": group})
+                          "src": name, "group": group, "time": it.get("time", "")})
             kept += 1
             if kept >= per_source:
                 break

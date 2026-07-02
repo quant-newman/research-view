@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { NewsNode, NewsItem } from "./types";
 import { useOpenStock } from "./stockCtx";
-import { Section, MoreList } from "./ui";
+import { Section, MoreList, timeHour } from "./ui";
 
 const sentColor: Record<string, string> = {
   利好: "text-up bg-up/10", 利空: "text-down bg-down/10",
@@ -10,12 +10,6 @@ const sentColor: Record<string, string> = {
 const SENTS = ["利好", "利空", "中性", "澄清"];
 
 type Flat = NewsItem & { chain: string; node: string; scope: string; gid: string };
-
-function timeShort(t?: string) {
-  if (!t) return "";
-  const m = t.match(/\d{4}-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
-  return m ? `${m[1]}-${m[2]} ${m[3]}:${m[4]}` : t.slice(5, 16);
-}
 
 function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
@@ -42,7 +36,7 @@ function NewsRow({ n }: { n: Flat }) {
             {n.holding && <span className="text-accent">持仓</span>}
             {n.watching && <span className="text-info">自选</span>}
             <span className="ml-auto text-muted">{n.src}</span>
-            <span className="mono">{timeShort(n.time)}</span>
+            <span className="mono">{timeHour(n.time)}</span>
             {n.url && <a href={n.url} target="_blank" rel="noreferrer" className="text-info hover:underline">原文↗</a>}
           </div>
         </div>
