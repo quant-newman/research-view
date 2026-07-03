@@ -153,7 +153,10 @@ def _moneyflow_block() -> str:
         ml += [f"- 资金价格背离:{g['chain']}/{g['node']} 近一周涨跌{g['ret_1w']:+.1f}%"
                f"而主力5日{g['d5']:+.1f}亿(方向相反,仅客观标注)"
                for g in md_["nodes"] if g["divergence"]][:4]
-        block += f"\n\n【多日资金(截至{md_['asof']},EOD口径)】\n" + "\n".join(ml)
+        mk = md_.get("market") or {}
+        block += (f"\n\n【多日资金(截至{md_['asof']},EOD口径)】\n"
+                  f"(基准:全市场5日主力净额{mk.get('d5', 0):+.0f}亿——主力口径结构性偏净流出,"
+                  f"节点数字应读相对强弱与方向变化,不是绝对买卖量)\n" + "\n".join(ml))
     return block
 
 

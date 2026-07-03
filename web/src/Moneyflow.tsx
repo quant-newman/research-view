@@ -116,6 +116,7 @@ function StockRow({ s, onOpen }: { s: MfStock; onOpen: () => void }) {
 export function MoneyflowView({ mf, isUS }: { mf?: Moneyflow | null; isUS: boolean }) {
   const openStock = useOpenStock();
   const [nid, setNid] = useState<string | null>(null);
+  const [tab, setTab] = useState<"today" | "multi">("today");
   if (isUS) return <div className="text-muted p-4">资金面为 A股口径(主力=大单+超大单净额),请切回「A股」查看。</div>;
   if (!mf || !mf.nodes?.length) return <div className="text-muted p-4">暂无资金数据(交易日盘中/盘后生成)。</div>;
 
@@ -134,11 +135,21 @@ export function MoneyflowView({ mf, isUS }: { mf?: Moneyflow | null; isUS: boole
     <div className="space-y-5 max-w-6xl">
       <div className="flex flex-wrap items-center gap-3 text-[14px]">
         <span className="text-primary font-semibold text-[16px]">资金面 · 产业链节点主力净额</span>
-        <span className="text-dim">{label}</span>
-        <span className="text-dim">核心池合计 <span className={`mono ${pctCls(mf.pool_main)}`}>{mf.pool_main > 0 ? "+" : ""}{mf.pool_main}亿</span></span>
-        <span className="text-dim text-[12px] ml-auto">主力=大单+超大单净额 · 口径=48产业链节点 · 只呈现事实不下判断</span>
+        {/* 子页签:当日盘口 / 多日趋势(两套口径与截止日不同,分开看不混排) */}
+        <div className="flex rounded overflow-hidden border hairline text-[13px]">
+          {([["today", "当日盘口"], ["multi", "多日趋势"]] as const).map(([k, l]) => (
+            <button key={k} onClick={() => setTab(k)}
+              className={`px-2.5 py-0.5 ${tab === k ? "bg-accent text-black font-semibold" : "text-muted hover:text-primary"}`}>
+              {l}
+            </button>
+          ))}
+        </div>
+        {tab === "today" && <span className="text-dim">{label} · 核心池合计 <span className={`mono ${pctCls(mf.pool_main)}`}>{mf.pool_main > 0 ? "+" : ""}{mf.pool_main}亿</span></span>}
+        {tab === "multi" && mf.multi && <span className="text-dim">EOD 截至 {mf.multi.asof}</span>}
+        <span className="text-dim text-[12px] ml-auto hidden lg:inline">主力=大单+超大单净额 · 口径=48产业链节点 · 只呈现事实不下判断</span>
       </div>
 
+      {tab === "today" && (<>
       {/* 当日累计曲线(15min 采集节奏;部署当日为小时桶种子,次一交易日起自然积累) */}
       {intraday && intraday.times.length > 1 ? (
         <div className="border hairline rounded bg-surface p-3">
@@ -150,12 +161,15 @@ export function MoneyflowView({ mf, isUS }: { mf?: Moneyflow | null; isUS: boole
           盘中累计曲线自下一交易日开始积累(每 15 分钟一个点,随盘中刷新生长)。
         </div>
       )}
+      </>)}
 
-      {/* 多日资金:5/20日累计 + 连续天数 + 资金×涨幅背离(EOD口径,与当日截面互补) */}
-      {mf.multi && mf.multi.nodes.length > 0 && (
+      {tab === "multi" && (
+        mf.multi && mf.multi.nodes.length > 0 ? (
         <div className="border hairline rounded bg-surface p-3">
-          <div className="text-[13px] text-muted mb-2">
-            多日资金 · 截至 {mf.multi.asof}(EOD)· <span className="text-accent">⚠背离</span>=近一周涨跌与5日资金方向相反
+          <div className="text-[13px] text-dim leading-relaxed mb-2 border-b hairline pb-2">
+            <span className="text-muted">怎么读:</span>主力净额(大单+超大单)口径<span className="text-muted">结构性偏净流出</span>——主力卖出常用大单、买入常拆成中小单,全市场多数交易日为负
+            {mf.multi.market && <>(基准:全市场5日 <span className={`mono ${pctCls(mf.multi.market.d5)}`}>{mf.multi.market.d5 > 0 ? "+" : ""}{mf.multi.market.d5}亿</span>)</>}。
+            看<span className="text-muted">相对强弱与方向变化</span>,不是绝对买卖量。<span className="text-accent">⚠背离</span>=近一周涨跌与5日资金方向相反。
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[560px] text-[14px] mono">
@@ -167,13 +181,15 @@ export function MoneyflowView({ mf, isUS }: { mf?: Moneyflow | null; isUS: boole
                 <th className="font-normal text-right">周涨跌</th>
               </tr></thead>
               <tbody>
-                <MultiRows nodes={mf.multi.nodes} onPick={setNid} />
+                <MultiRows nodes={mf.multi.nodes} onPick={(n) => { setNid(n); setTab("today"); }} />
               </tbody>
             </table>
           </div>
         </div>
+        ) : <div className="border hairline rounded bg-surface p-4 text-dim text-[14px]">多日数据生成中(盘后落地)。</div>
       )}
 
+      {tab === "today" && (
       <div className="grid grid-cols-1 md:grid-cols-[1.2fr_1fr] gap-5">
         {/* 节点排行 → 点击下钻 */}
         <div className="border hairline rounded bg-surface p-3">
@@ -210,6 +226,7 @@ export function MoneyflowView({ mf, isUS }: { mf?: Moneyflow | null; isUS: boole
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }

@@ -300,6 +300,15 @@ def multi_day(windows: tuple[int, int] = (5, 20)) -> dict | None:
                  +coalesce(buy_elg_amount,0)-coalesce(sell_elg_amount,0))/1e4
             FROM md.moneyflow WHERE trade_date>=%s AND ts_code=ANY(%s)""", (dates[0], pool_ts))
         rows = cur.fetchall()
+        # 全市场基准:主力口径结构性偏净流出(大单卖/拆单买),节点数字须对照全市场读相对强弱
+        cur.execute("""SELECT trade_date,
+                sum(coalesce(buy_lg_amount,0)-coalesce(sell_lg_amount,0)
+                    +coalesce(buy_elg_amount,0)-coalesce(sell_elg_amount,0))/1e4
+            FROM md.moneyflow WHERE trade_date>=%s GROUP BY trade_date""", (dates[0],))
+        mkt = {d: float(v) for d, v in cur.fetchall()}
+    mkt_daily = [mkt.get(d, 0.0) for d in dates]
+    market = {"d5": round(sum(mkt_daily[-windows[0]:]), 0),
+              "d20": round(sum(mkt_daily[-windows[1]:]), 0)}
     nd: dict[str, dict] = {}
     for d, ts, main in rows:
         for nid, _c, _n in nodes_of.get(ts, ()):
@@ -329,7 +338,7 @@ def multi_day(windows: tuple[int, int] = (5, 20)) -> dict | None:
                     "d5": round(d5, 1), "d20": round(d20, 1), "streak": streak,
                     "ret_1w": ret1w, "divergence": div})
     out.sort(key=lambda x: -x["d5"])
-    return {"asof": str(dates[-1]), "nodes": out}
+    return {"asof": str(dates[-1]), "market": market, "nodes": out}
 
 
 # ---------- 报告用文本行 ----------

@@ -152,7 +152,7 @@ export interface Moneyflow {
   kind: string; date: string; stamp?: string | null;
   nodes: MfNode[]; pool_main: number; stocks: Record<string, number>;
   intraday?: MfIntraday | null;
-  multi?: { asof: string; nodes: MfMultiNode[] } | null;
+  multi?: { asof: string; market?: { d5: number; d20: number }; nodes: MfMultiNode[] } | null;
 }
 
 export interface Dashboard {
