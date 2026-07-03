@@ -10,7 +10,7 @@ import { TechWire, TechWireX } from "./TechWire";
 import { HotspotView } from "./Hotspot";
 import { StockDetail } from "./StockDetail";
 import { StockCtx, useOpenStock, type StockSel } from "./stockCtx";
-import { timeHour } from "./ui";
+import { StaleBadge, timeHour } from "./ui";
 
 type Market = "A" | "US";
 
@@ -53,12 +53,23 @@ function Badge({ text, cls }: { text: string; cls: string }) {
   return <span className={`px-1.5 py-0.5 rounded text-[13px] ${cls}`}>{text}</span>;
 }
 
+// "YYYY-MM-DD HH:MM"/ISO(都是 UTC+8 字面值)→ 分钟数,只用于两者相减,时区一致差值正确
+const mins = (s?: string) => {
+  const m = (s || "").match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+  return m ? Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]) / 60000 : null;
+};
+
 function StatusBar({ d, market, onMarket, onHealth }: { d: Dashboard; market: Market; onMarket: (m: Market) => void; onHealth: () => void }) {
   const us = d.us;
   const isUS = market === "US";
   const ut = us?.temperature;
   const at = d.temperature;
   const sessionLabel = d.report?.session === "premarket" ? "盘前" : d.report?.session === "intraday" ? "盘中" : "盘后";
+  // 新闻停更检测:最新新闻比 dashboard 生成时点落后 >3h 即标(对比生成时点而非墙钟,周末/夜间不误报)
+  let newsLatest = "";
+  for (const g of d.news_by_node) for (const it of g.items) if (it.time && it.time > newsLatest) newsLatest = it.time;
+  const nl = mins(newsLatest), gen = mins(d.meta?.generated_at);
+  const newsStale = nl != null && gen != null && gen - nl > 180;
   return (
     <div className="flex items-center gap-4 px-4 h-11 border-b hairline bg-surface text-[14px]">
       <MarketToggle market={market} onMarket={onMarket} />
@@ -68,6 +79,8 @@ function StatusBar({ d, market, onMarket, onHealth }: { d: Dashboard; market: Ma
         <span className="text-dim">·</span>
         <span className="text-muted">{isUS ? `美东 ${us?.us_session_date || "—"} ${us?.session_status || "收盘"}` : (d.report?.data_cutoff || d.meta?.date || "—")}</span>
       </div>
+      {isUS && us?.fallback && <StaleBadge date={us.data_date} label="美股数据截至" />}
+      {!isUS && newsStale && <StaleBadge date={timeHour(newsLatest)} label="新闻停更 · 最新" />}
       {isUS ? (
         ut && (
           <div className="mono text-muted flex gap-3">
@@ -108,6 +121,7 @@ function DailyReport({ report }: { report: Report | null | undefined }) {
           <h2 className="font-semibold">今日主线</h2>
           <span className={`w-2 h-2 rounded-full ${confDot[r.headline.confidence] || "bg-muted"}`} />
           <span className="text-dim text-[13px]">置信度 {r.headline.confidence}</span>
+          {r.fallback && <StaleBadge date={r.report_date} label="今日报告未生成 · 显示" />}
         </div>
         <p className="text-[15px] leading-relaxed text-primary">{r.headline.fact}</p>
         <div className="mt-2 border border-accent/50 rounded bg-accent/5 px-3 py-2">

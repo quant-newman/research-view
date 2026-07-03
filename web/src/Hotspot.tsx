@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Hotspot, HotspotItem } from "./types";
 import { useOpenStock } from "./stockCtx";
-import { MoreList, timeHour } from "./ui";
+import { MoreList, StaleBadge, timeHour } from "./ui";
 
 const trendCls: Record<string, string> = {
   升温: "text-up bg-up/10", 降温: "text-down bg-down/10", 持平: "text-muted bg-muted/10",
@@ -63,7 +63,10 @@ export function HotspotView({ hotspot }: { hotspot: Hotspot | null | undefined }
   return (
     <div className="max-w-3xl space-y-3">
       <div className="border border-accent/40 rounded bg-accent/5 px-4 py-3">
-        <div className="text-accent text-[12px] mb-1">今日热点 · 市场在炒什么</div>
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-accent text-[12px]">今日热点 · 市场在炒什么</span>
+          {hotspot.fallback && <StaleBadge date={hotspot.date} label="非今日 · 数据截至" />}
+        </div>
         <p className="text-primary text-[16px] leading-relaxed font-medium">{hotspot.headline}</p>
         <p className="text-dim text-[12px] mt-1">热度=统计(新闻量+龙虎榜/异动+涨跌),归因由 DeepSeek 综合 · 只呈现事实不下判断</p>
       </div>

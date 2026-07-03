@@ -174,13 +174,13 @@ def build_dashboard(date_utc8: str) -> Path:
     ev = json.loads(events.read_text(encoding="utf-8"))
     with db.rv_conn() as conn, conn.cursor() as cur:
         cur.execute("""SELECT report_id,session,data_cutoff,headline,top3,sectors,
-            falsification,holdings_moves,generated_at,narrative FROM daily_report
+            falsification,holdings_moves,generated_at,narrative,report_date FROM daily_report
             WHERE report_date=to_date(%s,'YYYYMMDD') ORDER BY generated_at DESC LIMIT 1""",
             (date_utc8,))
         row = cur.fetchone()
         if row is None:  # 跨天早盘前当日报告还没生成 → 回退显示最近一份(不让报告页空白)
             cur.execute("""SELECT report_id,session,data_cutoff,headline,top3,sectors,
-                falsification,holdings_moves,generated_at,narrative FROM daily_report
+                falsification,holdings_moves,generated_at,narrative,report_date FROM daily_report
                 ORDER BY report_date DESC, generated_at DESC LIMIT 1""")
             row = cur.fetchone()
         report = None
@@ -188,7 +188,9 @@ def build_dashboard(date_utc8: str) -> Path:
             report = {"report_id": row[0], "session": row[1], "data_cutoff": row[2],
                       "headline": row[3], "top3": row[4], "sectors": row[5],
                       "falsification": row[6], "holdings_moves": row[7],
-                      "generated_at": str(row[8]), "narrative": row[9]}
+                      "generated_at": str(row[8]), "narrative": row[9],
+                      "report_date": str(row[10]),
+                      "fallback": row[10].strftime("%Y%m%d") != date_utc8}
             # 证伪草稿标注已钉死:锚点=report_id+condition 文本(与 manage_ledger drafts 同口径;
             # pin 时人改写 condition 措辞的,草稿侧不标——账本面板仍会显示该判断)。
             fals = report["falsification"] or []
@@ -258,13 +260,14 @@ def build_dashboard(date_utc8: str) -> Path:
         letters = [{"fund_name": r[0], "period": r[1], "stance": r[2], "strategy": r[3],
                     "relevance": r[4], "core_views": r[5], "status": r[6],
                     "title": r[7], "url": r[8], "relevant_points": r[9]} for r in cur.fetchall()]
-        # 研报深化(评级变动榜 + 观点提炼;当日无回退最近)
-        cur.execute("SELECT changes, views FROM research_digest WHERE report_date=to_date(%s,'YYYYMMDD')", (date_utc8,))
+        # 研报深化(评级变动榜 + 观点提炼;当日无回退最近,回退带 date/fallback 供前端标陈旧)
+        cur.execute("SELECT changes, views, report_date FROM research_digest WHERE report_date=to_date(%s,'YYYYMMDD')", (date_utc8,))
         drow = cur.fetchone()
         if drow is None:
-            cur.execute("SELECT changes, views FROM research_digest ORDER BY report_date DESC LIMIT 1")
+            cur.execute("SELECT changes, views, report_date FROM research_digest ORDER BY report_date DESC LIMIT 1")
             drow = cur.fetchone()
-    digest = {"changes": drow[0], "views": drow[1]} if drow else None
+    digest = ({"changes": drow[0], "views": drow[1], "date": str(drow[2]),
+               "fallback": drow[2].strftime("%Y%m%d") != date_utc8} if drow else None)
     research = {"reports": reports, "coverage": coverage, "letters": letters, "digest": digest}
 
     # 判断复盘账本(近30日已钉死判断 + 存活/证伪 + 错误类型分布)
@@ -288,15 +291,16 @@ def build_dashboard(date_utc8: str) -> Path:
     ledger = {"judgments": judgments, "alive": alive,
               "falsified": len(judgments) - alive, "error_dist": error_dist}
 
-    # 今日热点/主题热度榜(当日无则回退最近一份)
+    # 今日热点/主题热度榜(当日无则回退最近一份,回退带 date/fallback 供前端标陈旧)
     with db.rv_conn() as conn, conn.cursor() as cur:
-        cur.execute("SELECT headline, items FROM hotspot_daily WHERE report_date=to_date(%s,'YYYYMMDD')",
+        cur.execute("SELECT headline, items, report_date FROM hotspot_daily WHERE report_date=to_date(%s,'YYYYMMDD')",
                     (date_utc8,))
         hrow = cur.fetchone()
         if hrow is None:
-            cur.execute("SELECT headline, items FROM hotspot_daily ORDER BY report_date DESC LIMIT 1")
+            cur.execute("SELECT headline, items, report_date FROM hotspot_daily ORDER BY report_date DESC LIMIT 1")
             hrow = cur.fetchone()
-    hotspot = {"headline": hrow[0], "items": hrow[1]} if hrow else None
+    hotspot = ({"headline": hrow[0], "items": hrow[1], "date": str(hrow[2]),
+                "fallback": hrow[2].strftime("%Y%m%d") != date_utc8} if hrow else None)
 
     from . import monitor
     try:
@@ -306,13 +310,24 @@ def build_dashboard(date_utc8: str) -> Path:
 
     # 美股一等公民(台北 build_us 产出完整 blob→scp 到 exports/):
     # board/温度计/热力/新闻(B1)/研究(分析师)/报告(B3)。与 A股 同权,前端顶部一键切。
+    # 当日 blob 缺失(build_us 失败/还没跑到)→ 回退最近一份并标 fallback/data_date,
+    # 否则美股页整页消失还没任何提示(us_overnight_*.json 前缀不同不会被 glob 误中)。
     us = None
     up = EXPORT_DIR / f"us_{date_utc8}.json"
+    us_fallback = False
+    if not up.exists():
+        cands = sorted(EXPORT_DIR.glob("us_[0-9]*.json"))
+        if cands:
+            up, us_fallback = cands[-1], True
     if up.exists():
         try:
             us = json.loads(up.read_text(encoding="utf-8"))
+            if us_fallback:
+                fd = up.stem.split("_")[1]
+                us["fallback"] = True
+                us["data_date"] = f"{fd[:4]}-{fd[4:6]}-{fd[6:]}"
         except Exception:  # noqa: BLE001 美股文件损坏不阻塞导出
-            pass
+            us = None
 
     dash = {"meta": ev["meta"], "report": report, "temperature": ev["temperature"],
             "news_by_node": ev["news_by_node"], "stock_events": ev["stock_events"],

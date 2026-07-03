@@ -16,6 +16,7 @@ export interface Report {
   us_overnight?: UsOvernight;
   x_takes?: { us_global?: string; a_share?: string };
   narrative?: string;
+  report_date?: string; fallback?: boolean;
 }
 export interface NewsItem {
   title: string; one_line: string; summary?: string | null; sentiment: string; event_type?: string; src: string;
@@ -70,7 +71,7 @@ export interface OrgView {
   code: string; name: string; scope?: string; n: number; view: string | null;
   latest_rating: string | null; latest_tp: number | null;
 }
-export interface ResearchDigest { changes: RatingChange[]; views: OrgView[]; }
+export interface ResearchDigest { changes: RatingChange[]; views: OrgView[]; date?: string; fallback?: boolean; }
 export interface Research {
   reports: ResearchReport[]; coverage: Coverage[]; letters: FundLetter[]; digest?: ResearchDigest | null;
 }
@@ -115,6 +116,7 @@ export interface UsData {
   hotspot?: Hotspot | null;
   report: Report | null;
   indices: UsBoardItem[];
+  fallback?: boolean; data_date?: string;
 }
 
 export interface HotspotItem {
@@ -122,7 +124,7 @@ export interface HotspotItem {
   news_today: number; news_prior?: number; pos?: number; neg?: number;
   ret_1d?: number | null; lhb?: number; stocks: string[]; news: string[]; latest_time?: string;
 }
-export interface Hotspot { headline: string; items: HotspotItem[]; }
+export interface Hotspot { headline: string; items: HotspotItem[]; date?: string; fallback?: boolean; }
 
 export interface Dashboard {
   meta: Meta; report: Report | null; temperature: Temperature | null;

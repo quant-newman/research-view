@@ -7,6 +7,16 @@ export function timeHour(t?: string): string {
   return m ? `${m[1]}-${m[2]} ${m[3]}时` : "";
 }
 
+// 陈旧数据角标:回退显示旧数据时提示"数据截至 X"(琥珀色,与"待审定"同色系)
+export function StaleBadge({ date, label = "数据截至" }: { date?: string; label?: string }) {
+  if (!date) return null;
+  return (
+    <span className="px-1.5 py-0.5 rounded text-[12px] bg-accent/10 text-accent whitespace-nowrap">
+      ⏳ {label} {date}
+    </span>
+  );
+}
+
 // 可折叠区块:标题(带条数)点击展开/收起
 export function Section({ title, count, defaultOpen = true, right, children }:
   { title: string; count?: number; defaultOpen?: boolean; right?: React.ReactNode; children: React.ReactNode }) {

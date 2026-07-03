@@ -1,6 +1,6 @@
 import type { Research } from "./types";
 import { useOpenStock } from "./stockCtx";
-import { Section, MoreList } from "./ui";
+import { Section, MoreList, StaleBadge } from "./ui";
 
 // 评级色:偏多=红(A股涨色) 偏空=绿 中性=灰
 const ratingColor = (r: string) => {
@@ -18,7 +18,8 @@ export function ResearchView({ r }: { r: Research | undefined }) {
     <div className="space-y-4 max-w-5xl">
       {/* 评级/目标价变动榜 + 机构观点提炼 */}
       <div className="grid grid-cols-2 gap-4">
-        <Section title="评级 / 目标价变动榜" count={changes.length}>
+        <Section title="评级 / 目标价变动榜" count={changes.length}
+          right={r.digest?.fallback ? <StaleBadge date={r.digest.date} label="非今日 · 数据截至" /> : undefined}>
           {changes.length === 0 ? <div className="text-dim text-[13px]">近30日无评级/目标价变动。</div> : (
             <div className="space-y-2">
               <MoreList items={changes} initial={8}>
