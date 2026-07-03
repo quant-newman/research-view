@@ -154,17 +154,25 @@ def main() -> None:
     which = sys.argv[2] if len(sys.argv) > 2 else "oaktree,blackrock,gs,ms"
     limit = int(sys.argv[3]) if len(sys.argv) > 3 else 2
 
+    import source_status
     letters = []
+    stats = []
     for key in which.split(","):
         fn = SOURCES.get(key)
         if not fn:
             print(f"  跳过未知源 {key}(可选: {list(SOURCES)})")
             continue
+        skey = f"letter_{key}"
+        if not source_status.enabled(skey):
+            print(f"  · 已停用(注册表),跳过: {key}")
+            continue
         try:
             targets = fn(limit)
         except Exception as e:  # noqa: BLE001 单源列表页失败不阻塞其余
             print(f"  ! 源 {key} 列表页失败: {str(e)[:100]}")
+            stats.append({"key": skey, "ok": False, "n": 0, "err": f"列表页失败: {str(e)[:80]}"})
             continue
+        n_src, src_err = 0, ""
         for t in targets:
             fund, url = (t["fund"], t["url"]) if isinstance(t, dict) else t
             try:
@@ -185,9 +193,15 @@ def main() -> None:
                     "relevance": s.get("relevance"), "relevant_points": s.get("relevant_points") or [],
                     "status": "已摘要",
                 })
+                n_src += 1
                 print(f"  ✓ {fund} | {title[:40]} | 相关度 {s.get('relevance')}")
             except Exception as e:  # noqa: BLE001 单篇失败不阻塞
+                src_err = str(e)[:80]
                 print(f"  ! 失败 {url}: {str(e)[:100]}")
+        # ok=列表可达且至少1篇成文;列表0篇(改版/选择器失效)也算异常,面板要能看见
+        stats.append({"key": skey, "ok": n_src > 0, "n": n_src,
+                      "err": src_err or ("列表0篇" if not targets else "")})
+    source_status.report(stats)
 
     out = {"date": date, "n": len(letters), "letters": letters,
            "fetched_at": datetime.now(ZoneInfo(TZ)).isoformat()}

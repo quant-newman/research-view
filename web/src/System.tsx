@@ -1,4 +1,4 @@
-import type { Health } from "./types";
+import type { Health, TaipeiSource } from "./types";
 
 const LEVEL_COLOR: Record<string, string> = { green: "#2EBD85", yellow: "#F0B90B", red: "#F6465D" };
 const LEVEL_TEXT: Record<string, string> = { green: "全部正常", yellow: "有告警", red: "有失败" };
@@ -21,7 +21,49 @@ function Sec({ title, children }: { title: string; children: React.ReactNode }) 
   );
 }
 
-export default function SystemView({ h }: { h: Health | undefined }) {
+// 台北侧外网信源一行:灰=已停用 / 红=上次抓取失败 / 琥珀=停更或0条 / 绿=正常
+function SourceRow({ s }: { s: TaipeiSource }) {
+  const [dot, text, cls] = !s.enabled
+    ? ["#5A6474", "已停用", "text-dim"]
+    : s.ok === false
+      ? ["#F6465D", `失败${s.err ? " · " + s.err : ""}`, "text-up"]
+      : s.stale
+        ? ["#F0B90B", `停更 · 上次 ${s.fetched_at || "从未"}`, "text-accent"]
+        : s.ok && !s.n
+          ? ["#F0B90B", "0 条", "text-accent"]
+          : ["#2EBD85", `${s.n ?? "—"} 条`, "text-dim"];
+  return (
+    <tr className="border-t hairline">
+      <td className="py-1">
+        <span className="w-2 h-2 rounded-full inline-block mr-2" style={{ background: dot }} />
+        <span className="text-primary">{s.name}</span>
+      </td>
+      <td className="text-muted">{s.layer || "—"}</td>
+      <td className={cls}>{text}</td>
+      <td className="text-right text-dim">{s.fetched_at || "—"}</td>
+    </tr>
+  );
+}
+
+function SourcePanel({ list }: { list: TaipeiSource[] }) {
+  const layers = [...new Set(list.map((s) => s.layer || "其他"))];
+  return (
+    <Sec title="外网信源(台北抓取 · 注册表 data/sources.json)">
+      <table className="w-full text-[14px] mono">
+        <thead><tr className="text-muted text-left">
+          <th className="py-1 font-normal">信源</th><th className="font-normal">层</th>
+          <th className="font-normal">状态</th><th className="font-normal text-right">上次抓取</th>
+        </tr></thead>
+        <tbody>
+          {layers.map((ly) =>
+            list.filter((s) => (s.layer || "其他") === ly).map((s) => <SourceRow key={s.key} s={s} />))}
+        </tbody>
+      </table>
+    </Sec>
+  );
+}
+
+export default function SystemView({ h, sources }: { h: Health | undefined; sources?: TaipeiSource[] }) {
   if (!h) return <div className="text-muted p-4">暂无系统状态</div>;
   return (
     <div className="space-y-4 max-w-3xl">
@@ -66,6 +108,8 @@ export default function SystemView({ h }: { h: Health | undefined }) {
           ))}
         </div>
       </Sec>
+
+      {sources && sources.length > 0 && <SourcePanel list={sources} />}
 
       <Sec title="数据质量存疑(标记而非丢弃)">
         {h.flags.length === 0

@@ -74,6 +74,43 @@ def sanity_checks(pool_ts: list[str]) -> dict[str, int]:
 
 # ---------- 健康汇总(供导出/前端) ----------
 
+def taipei_sources() -> list[dict]:
+    """台北侧外网信源状态 = 注册表(data/sources.json)× 逐源上报(exports/source_status.json)。
+    注册表随代码 rsync 部署;状态文件由台北各编排脚本随数据 blob scp 到 exports/。
+    stale 判定:距上次成功上报超过该源 threshold_hours(按 cron 节奏+周末空窗定);
+    从未上报也算 stale(脚本没跑到/文件没带到,同样要可见)。供 dash.sources 与 health() 共用。"""
+    import json
+    from datetime import datetime
+    from pathlib import Path
+    from zoneinfo import ZoneInfo
+
+    root = Path(__file__).resolve().parents[2]
+    try:
+        reg = json.loads((root / "data" / "sources.json").read_text(encoding="utf-8"))["sources"]
+    except Exception:  # noqa: BLE001 注册表缺失(未部署)→ 面板空,不阻塞
+        return []
+    try:
+        st = json.loads((root / "exports" / "source_status.json").read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001 状态文件未送达 → 全部按未上报处理
+        st = {}
+    now = datetime.now(ZoneInfo("Asia/Shanghai")).replace(tzinfo=None)
+    out = []
+    for s in reg:
+        e = st.get(s["key"]) or {}
+        stale = True
+        if e.get("fetched_at"):
+            try:
+                dt = datetime.strptime(e["fetched_at"], "%Y-%m-%d %H:%M")
+                stale = (now - dt).total_seconds() > s.get("threshold_hours", 72) * 3600
+            except ValueError:
+                pass
+        out.append({"key": s["key"], "name": s["name"], "layer": s.get("layer"),
+                    "cadence": s.get("cadence"), "enabled": s.get("enabled", True),
+                    "ok": e.get("ok"), "n": e.get("n"), "err": e.get("err") or "",
+                    "fetched_at": e.get("fetched_at"), "stale": stale})
+    return out
+
+
 def health() -> dict:
     """各源新鲜度 + 今日任务成功率 + 数据存疑数,给前端角标/状态页。"""
     out: dict = {"sources": [], "tasks": [], "flags": [], "level": "green"}
@@ -126,6 +163,16 @@ def health() -> dict:
         # 今日存疑
         cur.execute("SELECT kind, count(*) FROM data_flag WHERE ts_utc8::date=current_date GROUP BY kind")
         out["flags"] = [{"kind": k, "count": c} for k, c in cur.fetchall()]
+
+    # 台北侧外网信源汇总一行(逐源明细在 dash.sources 信源面板):启用源里失败/停更即拉黄
+    try:
+        tp = [s for s in taipei_sources() if s["enabled"]]
+        if tp:
+            bad = [s for s in tp if s["ok"] is False or s["stale"]]
+            out["sources"].append({"name": "台北信源(舆情/美股/信函)",
+                                   "latest": f"{len(tp) - len(bad)}/{len(tp)} 正常", "stale": bool(bad)})
+    except Exception:  # noqa: BLE001 信源面板故障不阻塞健康汇总
+        pass
 
     any_fail = any(t["status"] == "失败" for t in out["tasks"])
     any_stale = any(s["stale"] for s in out["sources"] if not s.get("pending"))

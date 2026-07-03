@@ -469,6 +469,17 @@ def main() -> None:
     p = d / f"us_{date}.json"
     p.write_text(json.dumps(us, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"[build_us] {p}  (股{len(stocks)} 新闻{len(news)} 舆情{len(wire)} 报告{'有' if report else '无'})")
+    # 信源状态上报(wire 各 RSS/X 已在 fetch_wire 内自报;这里报 yfinance 三块)
+    import source_status
+    n_uni = len(US_UNIVERSE)
+    source_status.report([
+        {"key": "us_board", "ok": board["n_ok"] > 0, "n": board["n_ok"],
+         "err": "" if board["n_ok"] > 0 else "yfinance 全部标的失败"},
+        {"key": "us_news", "ok": len(news) > 0, "n": len(news),
+         "err": "" if news else "yfinance news 0 条"},
+        {"key": "us_trends", "ok": len(trends) > 0, "n": len(trends),
+         "err": "" if trends else f"yfinance 走势 0/{n_uni}"},
+    ])
 
 
 if __name__ == "__main__":

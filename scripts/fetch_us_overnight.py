@@ -65,6 +65,9 @@ def main() -> None:
     p = d / f"us_overnight_{date}.json"
     p.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"{p}  (美东{out['us_session_date']}, {out['n_ok']}/{len(INSTRUMENTS)} 标的)")
+    import source_status
+    source_status.report([{"key": "us_overnight", "ok": out["n_ok"] > 0, "n": out["n_ok"],
+                           "err": "" if out["n_ok"] > 0 else "yfinance 0/全部标的失败"}])
 
 
 if __name__ == "__main__":

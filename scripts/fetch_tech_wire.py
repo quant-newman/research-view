@@ -29,18 +29,19 @@ except Exception:  # noqa: BLE001 config 不可用时退化为纯 os.environ
 UA = "Mozilla/5.0 (compatible; mofangbot/1.0; +https://example.com/bot)"
 TIMEOUT = 15
 
-# (源显示名, 分组, url, 类型)  类型: rss=标准RSS<item>, atom=Atom<entry>
+# (注册表key, 源显示名, 分组, url, 类型)  类型: rss=标准RSS<item>, atom=Atom<entry>
+# key 对应 data/sources.json(enabled 开关/停更阈值),状态逐源上报 source_status
 SOURCES = [
-    ("WSJ科技", "华尔街日报", "https://feeds.a.dj.com/rss/RSSWSJD.xml", "rss"),
-    ("WSJ市场", "华尔街日报", "https://feeds.a.dj.com/rss/RSSMarketsMain.xml", "rss"),
-    ("路透", "路透社",
+    ("wire_wsj_tech", "WSJ科技", "华尔街日报", "https://feeds.a.dj.com/rss/RSSWSJD.xml", "rss"),
+    ("wire_wsj_markets", "WSJ市场", "华尔街日报", "https://feeds.a.dj.com/rss/RSSMarketsMain.xml", "rss"),
+    ("wire_reuters", "路透", "路透社",
      "https://news.google.com/rss/search?q=when:1d+site:reuters.com&hl=en-US&gl=US&ceid=US:en", "rss"),
-    ("TechCrunch", "科技媒体", "https://techcrunch.com/feed/", "rss"),
-    ("Ars Technica", "科技媒体", "https://feeds.arstechnica.com/arstechnica/index", "rss"),
-    ("r/wallstreetbets", "Reddit", "https://www.reddit.com/r/wallstreetbets/hot.rss?limit=25", "atom"),
-    ("r/stocks", "Reddit", "https://www.reddit.com/r/stocks/hot.rss?limit=25", "atom"),
-    ("r/technology", "Reddit", "https://www.reddit.com/r/technology/hot.rss?limit=25", "atom"),
-    ("r/hardware", "Reddit", "https://www.reddit.com/r/hardware/hot.rss?limit=15", "atom"),
+    ("wire_techcrunch", "TechCrunch", "科技媒体", "https://techcrunch.com/feed/", "rss"),
+    ("wire_ars", "Ars Technica", "科技媒体", "https://feeds.arstechnica.com/arstechnica/index", "rss"),
+    ("wire_reddit_wsb", "r/wallstreetbets", "Reddit", "https://www.reddit.com/r/wallstreetbets/hot.rss?limit=25", "atom"),
+    ("wire_reddit_stocks", "r/stocks", "Reddit", "https://www.reddit.com/r/stocks/hot.rss?limit=25", "atom"),
+    ("wire_reddit_tech", "r/technology", "Reddit", "https://www.reddit.com/r/technology/hot.rss?limit=25", "atom"),
+    ("wire_reddit_hw", "r/hardware", "Reddit", "https://www.reddit.com/r/hardware/hot.rss?limit=15", "atom"),
 ]
 
 # 相关性关键词(小写子串匹配):AI/算力/半导体/大厂/宏观。命中任一才留。
@@ -279,26 +280,33 @@ async def _fetch_x_async(cookies: dict, per_high: int, per_norm: int) -> list[di
     return out
 
 
-def fetch_x(per_high: int = 8, per_norm: int = 3) -> list[dict]:
-    """推特/X:twikit + 小号 cookie(.env 的 X_AUTH_TOKEN/X_CT0)。未配置则跳过不阻塞。"""
+def fetch_x(per_high: int = 8, per_norm: int = 3) -> tuple[list[dict], str]:
+    """推特/X:twikit + 小号 cookie(.env 的 X_AUTH_TOKEN/X_CT0)。未配置则跳过不阻塞。
+    返回 (items, 错误串);错误串非空=本轮 X 不可用,供信源面板可视化(X 会不定期挂)。"""
     auth, ct0 = os.environ.get("X_AUTH_TOKEN"), os.environ.get("X_CT0")
     if not (auth and ct0):
         print("  ! X 未配置 cookie(.env 缺 X_AUTH_TOKEN/X_CT0),跳过 X")
-        return []
+        return [], "未配置 cookie"
     try:
-        return asyncio.run(_fetch_x_async({"auth_token": auth, "ct0": ct0}, per_high, per_norm))
+        return asyncio.run(_fetch_x_async({"auth_token": auth, "ct0": ct0}, per_high, per_norm)), ""
     except Exception as e:  # noqa: BLE001 X 整体失败(cookie 失效等)不阻塞其余源
         print(f"  ! X 抓取整体失败,跳过: {str(e)[:80]}")
-        return []
+        return [], str(e)[:120]
 
 
 def fetch_wire(per_source: int = 12, rss_cap: int = 48) -> list[dict]:
+    import source_status
     seen: set[str] = set()
     items: list[dict] = []
-    for name, group, url, kind in SOURCES:
+    stats: list[dict] = []
+    for skey, name, group, url, kind in SOURCES:
+        if not source_status.enabled(skey):
+            print(f"  · 已停用(注册表),跳过: {name}")
+            continue
         xml_text = _get(url)
         if not xml_text:
             print(f"  ! wire 源取失败,跳过: {name}")
+            stats.append({"key": skey, "ok": False, "n": 0, "err": "取不到(超时/非200)"})
             continue
         kept = 0
         for it in _parse(xml_text, kind):
@@ -317,8 +325,16 @@ def fetch_wire(per_source: int = 12, rss_cap: int = 48) -> list[dict]:
             if kept >= per_source:
                 break
         print(f"  {name}({group}): {kept} 条")
+        stats.append({"key": skey, "ok": True, "n": kept})
     # RSS 部分单独限量,X 全量保留(尤其 serenity 重点号不能被截掉)
-    return items[:rss_cap] + fetch_x()
+    if source_status.enabled("wire_x"):
+        xs, xerr = fetch_x()
+        stats.append({"key": "wire_x", "ok": not xerr, "n": len(xs), "err": xerr})
+    else:
+        xs = []
+        print("  · 已停用(注册表),跳过: X推特")
+    source_status.report(stats)
+    return items[:rss_cap] + xs
 
 
 if __name__ == "__main__":

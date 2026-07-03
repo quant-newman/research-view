@@ -32,7 +32,7 @@ if ! ./.venv-taipei/bin/python scripts/build_us.py "$DATE"; then
 fi
 
 echo "[premarket] 2/4 推美股文件到阿里云 ..."
-for f in "us_overnight_${DATE}.json" "us_${DATE}.json"; do
+for f in "us_overnight_${DATE}.json" "us_${DATE}.json" "source_status.json"; do
   if [ -f "exports/$f" ]; then
     rsync -az "exports/$f" "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/" 2>&1 | grep -v "Warning: Permanently" || true
   fi

@@ -1,0 +1,31 @@
+{
+  "_doc": [
+    "信源注册表:台北侧外网信源的单点清单(舆情RSS/X/yfinance/基金信函)。",
+    "enabled=false → 抓取脚本跳过该源(源坏了在这里关,不用改代码);",
+    "threshold_hours → 距上次成功抓取超过该小时数视为停更(阈值按各源 cron 节奏+周末空窗放宽);",
+    "状态汇报:各抓取脚本逐源写 exports/source_status.json(scripts/source_status.py),",
+    "由 export.build_dashboard 合并本表挂 dash.sources,前端系统页信源面板可视化。",
+    "阿里云DB侧源(Tushare major_news/report_rc、marketdata 各表)不在此表——",
+    "它们的新鲜度由 monitor.health() 按最近开市日+落地时点判定,系统页「数据源新鲜度」已覆盖。"
+  ],
+  "sources": [
+    {"key": "wire_wsj_tech", "name": "WSJ科技", "layer": "舆情RSS", "cadence": "美股时段每小时+盘前", "threshold_hours": 60, "enabled": true},
+    {"key": "wire_wsj_markets", "name": "WSJ市场", "layer": "舆情RSS", "cadence": "美股时段每小时+盘前", "threshold_hours": 60, "enabled": true},
+    {"key": "wire_reuters", "name": "路透(Google News)", "layer": "舆情RSS", "cadence": "美股时段每小时+盘前", "threshold_hours": 60, "enabled": true},
+    {"key": "wire_techcrunch", "name": "TechCrunch", "layer": "舆情RSS", "cadence": "美股时段每小时+盘前", "threshold_hours": 60, "enabled": true},
+    {"key": "wire_ars", "name": "Ars Technica", "layer": "舆情RSS", "cadence": "美股时段每小时+盘前", "threshold_hours": 60, "enabled": true},
+    {"key": "wire_reddit_wsb", "name": "r/wallstreetbets", "layer": "舆情RSS", "cadence": "美股时段每小时+盘前", "threshold_hours": 60, "enabled": true},
+    {"key": "wire_reddit_stocks", "name": "r/stocks", "layer": "舆情RSS", "cadence": "美股时段每小时+盘前", "threshold_hours": 60, "enabled": true},
+    {"key": "wire_reddit_tech", "name": "r/technology", "layer": "舆情RSS", "cadence": "美股时段每小时+盘前", "threshold_hours": 60, "enabled": true},
+    {"key": "wire_reddit_hw", "name": "r/hardware", "layer": "舆情RSS", "cadence": "美股时段每小时+盘前", "threshold_hours": 60, "enabled": true},
+    {"key": "wire_x", "name": "X推特(twikit)", "layer": "舆情X", "cadence": "美股时段每小时+盘前", "threshold_hours": 60, "enabled": true},
+    {"key": "us_board", "name": "美股行情(yfinance)", "layer": "美股", "cadence": "美股时段每小时+盘前", "threshold_hours": 60, "enabled": true},
+    {"key": "us_news", "name": "美股新闻(yfinance)", "layer": "美股", "cadence": "美股时段每小时+盘前", "threshold_hours": 60, "enabled": true},
+    {"key": "us_trends", "name": "美股走势(yfinance)", "layer": "美股", "cadence": "美股时段每小时+盘前", "threshold_hours": 60, "enabled": true},
+    {"key": "us_overnight", "name": "隔夜美股(yfinance)", "layer": "美股", "cadence": "盘前08:30", "threshold_hours": 80, "enabled": true},
+    {"key": "letter_oaktree", "name": "Oaktree备忘录", "layer": "信函", "cadence": "每周三07:00", "threshold_hours": 192, "enabled": true},
+    {"key": "letter_blackrock", "name": "BlackRock BII周评", "layer": "信函", "cadence": "每周三07:00", "threshold_hours": 192, "enabled": true},
+    {"key": "letter_gs", "name": "GS Insights", "layer": "信函", "cadence": "每周三07:00", "threshold_hours": 192, "enabled": true},
+    {"key": "letter_ms", "name": "MS Insights", "layer": "信函", "cadence": "每周三07:00", "threshold_hours": 192, "enabled": true}
+  ]
+}

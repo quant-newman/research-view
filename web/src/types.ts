@@ -49,6 +49,11 @@ export interface HealthFlag { kind: string; count: number; }
 export interface Health {
   level: string; sources: HealthSource[]; tasks: HealthTask[]; flags: HealthFlag[];
 }
+// 台北侧外网信源(注册表×逐源上报,dash.sources.taipei)
+export interface TaipeiSource {
+  key: string; name: string; layer?: string; cadence?: string; enabled: boolean;
+  ok: boolean | null; n: number | null; err: string; fetched_at?: string | null; stale: boolean;
+}
 
 export interface ResearchReport {
   date: string; code: string; name: string; org: string; rating: string;
@@ -131,4 +136,5 @@ export interface Dashboard {
   news_by_node: NewsNode[]; stock_events: StockEvent[];
   heatmap?: Heatmap; health?: Health; research?: Research; ledger?: Ledger;
   us?: UsData | null; hotspot?: Hotspot | null;
+  sources?: { taipei: TaipeiSource[] };
 }

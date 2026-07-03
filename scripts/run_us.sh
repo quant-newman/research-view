@@ -27,7 +27,7 @@ echo "[us] 1/3 台北构建美股全量数据 $DATE ..."
 ./.venv-taipei/bin/python scripts/build_us.py "$DATE"
 
 echo "[us] 2/3 推送 us_${DATE}.json → 阿里云 ..."
-rsync -az "exports/us_${DATE}.json" "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/" 2>&1 | grep -v "Warning: Permanently" || true
+rsync -az "exports/us_${DATE}.json" exports/source_status.json "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/" 2>&1 | grep -v "Warning: Permanently" || true
 
 echo "[us] 3/3 重建 dashboard + 拉回 ..."
 $SSH "cd $REMOTE && ./.venv/bin/python -c \"import sys;sys.path.insert(0,'src');from research_view import export;print(export.build_dashboard('$DATE'))\"" 2>&1 | grep -v "Warning: Permanently"

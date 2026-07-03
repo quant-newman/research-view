@@ -145,7 +145,7 @@ export default function App() {
           <div className="flex-1 p-5 overflow-auto"><LettersView r={d.research} /></div>
         )}
         {view === "system" && (
-          <div className="flex-1 p-5 overflow-auto"><SystemView h={d.health} /></div>
+          <div className="flex-1 p-5 overflow-auto"><SystemView h={d.health} sources={d.sources?.taipei} /></div>
         )}
       </div>
     </div>

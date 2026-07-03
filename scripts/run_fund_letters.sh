@@ -19,7 +19,7 @@ echo "[letters] 1/3 台北抓信函 + B5 摘要 ($SRC, 每源$LIMIT篇) ..."
 ./.venv-taipei/bin/python scripts/fetch_fund_letters.py "$DATE" "$SRC" "$LIMIT"
 
 echo "[letters] 2/3 推送 + 阿里云入库 ..."
-rsync -az "exports/fund_letters_${DATE}.json" \
+rsync -az "exports/fund_letters_${DATE}.json" exports/source_status.json \
   "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/" 2>&1 | grep -v "Warning: Permanently" || true
 $SSH "cd $REMOTE && ./.venv/bin/python -c \"import sys;sys.path.insert(0,'src');from research_view import fund_letters;print('入库:',fund_letters.ingest(date_utc8='$DATE'))\"" 2>&1 | grep -v "Warning: Permanently"
 
