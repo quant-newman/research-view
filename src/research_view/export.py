@@ -313,9 +313,11 @@ def build_dashboard(date_utc8: str) -> Path:
     except Exception:  # noqa: BLE001
         taipei_src = []
     try:
-        # A股资金面(节点主力净额聚合+个股字典):报告页面板/热点信号/个股详情用
+        # A股资金面(节点主力净额聚合+个股字典):报告页面板/热点信号/个股详情/资金页用
         from . import moneyflow as _mf
         mflow = _mf.latest()
+        if mflow:
+            mflow["intraday"] = _mf.intraday_series()  # 当日节点累计曲线(资金页多线图)
     except Exception:  # noqa: BLE001 资金面失败不阻塞导出
         mflow = None
 

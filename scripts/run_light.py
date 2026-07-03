@@ -46,6 +46,7 @@ def main() -> None:
     # 盘中资金流补采:DC 监控池(agu产业表)未覆盖的核心池票走东财 push2delay 自采
     # (非交易日/DC未开盘零开销);报告/热点/export 通过 moneyflow.latest() 自动用上
     step("moneyflow_rt_extra", moneyflow.collect_rt_extra)
+    step("mf_snapshot", moneyflow.snapshot_intraday)  # 盘中累计曲线追点(资金页)
     step("research", lambda: research.collect_reports(3))
     step("research_digest", lambda: research_digest.persist(date))
     # 盘中重生成 B3 报告(基于截至此刻的新闻/研报/事件),让报告页盘中也"活"

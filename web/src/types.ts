@@ -135,11 +135,19 @@ export interface Hotspot { headline: string; items: HotspotItem[]; date?: string
 export interface MfStock { code: string; name: string; main: number; }
 export interface MfNode {
   node_id: string; chain: string; node: string; main: number; n: number;
-  top_in: MfStock[]; top_out: MfStock[];
+  top_in: MfStock[]; top_out: MfStock[]; members?: MfStock[];
+}
+export interface MfIntradaySeries {
+  node_id: string; chain: string; node: string; values: (number | null)[]; last: number;
+}
+export interface MfIntraday {
+  date: string; times: string[]; series: MfIntradaySeries[];
+  pool?: { values: (number | null)[]; last: number } | null;
 }
 export interface Moneyflow {
   kind: string; date: string; stamp?: string | null;
   nodes: MfNode[]; pool_main: number; stocks: Record<string, number>;
+  intraday?: MfIntraday | null;
 }
 
 export interface Dashboard {

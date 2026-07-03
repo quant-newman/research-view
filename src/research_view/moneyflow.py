@@ -70,6 +70,7 @@ def _aggregate(flows: dict[str, float], name_of, nodes_of) -> dict:
         g["main"] = round(g["main"], 2)
         g["top_in"] = [s for s in ss[:2] if s["main"] > 0]
         g["top_out"] = [s for s in ss[-2:] if s["main"] < 0][::-1]
+        g["members"] = ss  # 全部成分(资金页下钻用,已按主力净额降序)
         nodes.append(g)
     nodes.sort(key=lambda x: -x["main"])
     pool_ts = set(nodes_of)
@@ -190,6 +191,94 @@ def collect_rt_extra() -> dict:
                 continue
         conn.commit()
     return {"missing": len(missing), "fetched": ok}
+
+
+# ---------- 盘中累计曲线(资金页,sql/018) ----------
+
+def snapshot_intraday() -> dict:
+    """把当日 rt 聚合追加为曲线上的一个时点(run_light 每15min调,分辨率=采集节奏)。
+    同一 last_min 时点幂等跳过——午休/收盘后 stamp 不再前进,自然不重复落点。"""
+    r = rt()
+    if not r or not r.get("stamp"):
+        return {"skip": "无盘中数据"}
+    with db.rv_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT 1 FROM mf_intraday_node WHERE trade_date=%s AND hhmm=%s AND node_id='POOL'",
+                    (r["date"], r["stamp"]))
+        if cur.fetchone():
+            return {"skip": f"时点 {r['stamp']} 已记录"}
+        rows = [(r["date"], r["stamp"], g["node_id"], g["main"]) for g in r["nodes"]]
+        rows.append((r["date"], r["stamp"], "POOL", r["pool_main"]))
+        cur.executemany("""INSERT INTO mf_intraday_node(trade_date,hhmm,node_id,main)
+            VALUES(%s,%s,%s,%s) ON CONFLICT DO NOTHING""", rows)
+        conn.commit()
+    return {"date": r["date"], "hhmm": r["stamp"], "nodes": len(rows) - 1}
+
+
+def seed_today_from_hourly() -> dict:
+    """部署当日回填种子:用 DC hourly 4 小时桶(10:30/11:30/14:00/15:00 锚点)拼当日曲线,
+    次一交易日起由 15min 快照自然积累,此函数即失去意义(幂等,可重跑)。"""
+    name_of, nodes_of, _all_ts = _mapping()
+    with db.marketdata_conn() as mc:
+        cur = mc.cursor()
+        cur.execute("SELECT ts_code, hourly FROM md.moneyflow_rt WHERE trade_date=current_date")
+        rows = [(t, h) for t, h in cur.fetchall() if h]
+    if not rows:
+        return {"skip": "无 hourly"}
+    anchors = ["10:30", "11:30", "14:00", "15:00"]
+    per_anchor: dict[str, dict[str, float]] = {a: {} for a in anchors}
+    for ts, hourly in rows:
+        if ts not in name_of:  # DC 监控池含我们域外票(agu 产业表口径更宽),跳过
+            continue
+        run = 0.0
+        for b in hourly:
+            run += float(b.get("main") or 0)
+            end = (b.get("label") or "").split("-")[-1]
+            if end in per_anchor:
+                per_anchor[end][ts] = run / 1e8
+    n = 0
+    with db.rv_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT to_char(current_date,'YYYY-MM-DD')")
+        today = cur.fetchone()[0]
+        for a in anchors:
+            if not per_anchor[a]:
+                continue
+            agg = _aggregate(per_anchor[a], name_of, nodes_of)
+            rows2 = [(today, a, g["node_id"], g["main"]) for g in agg["nodes"]]
+            rows2.append((today, a, "POOL", agg["pool_main"]))
+            cur.executemany("""INSERT INTO mf_intraday_node(trade_date,hhmm,node_id,main)
+                VALUES(%s,%s,%s,%s) ON CONFLICT DO NOTHING""", rows2)
+            n += len(rows2)
+        conn.commit()
+    return {"seeded": n}
+
+
+def intraday_series() -> dict | None:
+    """最近一个有快照的交易日的节点累计曲线。{date, times, series(按终值降序), pool}。"""
+    with db.rv_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT max(trade_date) FROM mf_intraday_node")
+        d = cur.fetchone()[0]
+        if d is None:
+            return None
+        cur.execute("SELECT hhmm, node_id, main FROM mf_intraday_node WHERE trade_date=%s", (d,))
+        rows = cur.fetchall()
+        cur.execute("SELECT node_id, chain, node FROM node")
+        meta = {r[0]: (r[1], r[2]) for r in cur.fetchall()}
+    times = sorted({h for h, _, _ in rows})
+    val = {(h, n): float(m) for h, n, m in rows}
+    series, pool = [], None
+    for nid in {n for _, n, _ in rows}:
+        values = [(round(val[(h, nid)], 2) if (h, nid) in val else None) for h in times]
+        last = next((v for v in reversed(values) if v is not None), 0.0)
+        if nid == "POOL":
+            pool = {"values": values, "last": last}
+            continue
+        chain, node = meta.get(nid, ("", nid))
+        series.append({"node_id": nid, "chain": chain, "node": node, "values": values, "last": last})
+    series.sort(key=lambda s: -s["last"])
+    return {"date": str(d), "times": times, "series": series, "pool": pool}
 
 
 # ---------- 报告用文本行 ----------

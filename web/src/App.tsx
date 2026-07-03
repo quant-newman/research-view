@@ -8,6 +8,7 @@ import { UsBoardView } from "./UsBoard";
 import { UsResearchView } from "./UsResearch";
 import { TechWireX } from "./TechWire";
 import { HotspotView } from "./Hotspot";
+import { MoneyflowView } from "./Moneyflow";
 import { StockDetail } from "./StockDetail";
 import { StockCtx, type StockSel } from "./stockCtx";
 import { StatusBar, type Market } from "./StatusBar";
@@ -16,6 +17,7 @@ import { ReportPageView } from "./Report";
 const NAV = [
   { key: "report", label: "报告" },
   { key: "hotspot", label: "热点" },
+  { key: "flow", label: "资金" },
   { key: "heatmap", label: "热力" },
   { key: "news", label: "新闻" },
   { key: "research", label: "研究" },
@@ -82,7 +84,7 @@ export default function App() {
   if (!d) return <div className="p-6 text-muted">加载中…</div>;
 
   const isUS = market === "US";
-  const enabled = new Set(["report", "hotspot", "heatmap", "news", "research", "letters", "system"]);
+  const enabled = new Set(["report", "hotspot", "flow", "heatmap", "news", "research", "letters", "system"]);
 
   return (
     <StockCtx.Provider value={setStock}>
@@ -121,6 +123,9 @@ export default function App() {
               </div>
             )}
           </div>
+        )}
+        {view === "flow" && (
+          <div className="flex-1 p-5 overflow-auto"><MoneyflowView mf={d.moneyflow} isUS={isUS} /></div>
         )}
         {view === "heatmap" && (
           <div className="flex-1 p-5 overflow-auto space-y-4">
