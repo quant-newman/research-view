@@ -318,6 +318,7 @@ def build_dashboard(date_utc8: str) -> Path:
         mflow = _mf.latest()
         if mflow:
             mflow["intraday"] = _mf.intraday_series()  # 当日节点累计曲线(资金页多线图)
+            mflow["multi"] = _mf.multi_day()  # 5/20日累计+连续天数+背离(资金页多日表)
     except Exception:  # noqa: BLE001 资金面失败不阻塞导出
         mflow = None
 

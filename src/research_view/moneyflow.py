@@ -281,6 +281,57 @@ def intraday_series() -> dict | None:
     return {"date": str(d), "times": times, "series": series, "pool": pool}
 
 
+# ---------- 多日资金(EOD 历史,md.moneyflow 2010 起全量) ----------
+
+def multi_day(windows: tuple[int, int] = (5, 20)) -> dict | None:
+    """节点多日资金:近5/20交易日累计主力净额 + 连续净流入/流出天数(streak,±号=方向)
+    + 资金×涨幅背离(5日资金与 heatmap 周涨幅方向相反且都显著→客观标注,不下结论)。"""
+    _name_of, nodes_of, _ = _mapping()
+    pool_ts = list(nodes_of)
+    with db.marketdata_conn() as mc:
+        cur = mc.cursor()
+        cur.execute("SELECT DISTINCT trade_date FROM md.moneyflow ORDER BY trade_date DESC LIMIT %s",
+                    (max(windows) + 5,))
+        dates = sorted(r[0] for r in cur.fetchall())
+        if len(dates) < min(windows):
+            return None
+        cur.execute("""SELECT trade_date, ts_code,
+                (coalesce(buy_lg_amount,0)-coalesce(sell_lg_amount,0)
+                 +coalesce(buy_elg_amount,0)-coalesce(sell_elg_amount,0))/1e4
+            FROM md.moneyflow WHERE trade_date>=%s AND ts_code=ANY(%s)""", (dates[0], pool_ts))
+        rows = cur.fetchall()
+    nd: dict[str, dict] = {}
+    for d, ts, main in rows:
+        for nid, _c, _n in nodes_of.get(ts, ()):
+            g = nd.setdefault(nid, {})
+            g[d] = g.get(d, 0.0) + float(main)
+    with db.rv_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT node_id, chain, node, ret_1w FROM heatmap_node")
+        meta = {r[0]: (r[1], r[2], float(r[3]) if r[3] is not None else None) for r in cur.fetchall()}
+    out = []
+    for nid, series in nd.items():
+        daily = [series.get(d, 0.0) for d in dates]
+        d5, d20 = sum(daily[-windows[0]:]), sum(daily[-windows[1]:])
+        streak = 0
+        if daily and abs(daily[-1]) > 0.05:  # 当日≈0 不起算,免噪音连续
+            sign = 1 if daily[-1] > 0 else -1
+            for v in reversed(daily):
+                if abs(v) > 0.05 and ((v > 0) == (sign > 0)):
+                    streak += 1
+                else:
+                    break
+            streak *= sign
+        chain, node, ret1w = meta.get(nid) or ("", nid, None)
+        div = (ret1w is not None and abs(d5) >= 2 and abs(ret1w) >= 2
+               and (d5 > 0) != (ret1w > 0))
+        out.append({"node_id": nid, "chain": chain, "node": node,
+                    "d5": round(d5, 1), "d20": round(d20, 1), "streak": streak,
+                    "ret_1w": ret1w, "divergence": div})
+    out.sort(key=lambda x: -x["d5"])
+    return {"asof": str(dates[-1]), "nodes": out}
+
+
 # ---------- 报告用文本行 ----------
 
 def lines(mf: dict, top: int = 8) -> list[str]:

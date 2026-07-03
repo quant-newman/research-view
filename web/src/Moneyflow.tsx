@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import * as echarts from "echarts";
-import type { Moneyflow, MfStock } from "./types";
+import type { Moneyflow, MfMultiNode, MfStock } from "./types";
 import { useOpenStock } from "./stockCtx";
 import { MoreList, pctCls } from "./ui";
 
@@ -68,6 +68,41 @@ function FlowChart({ intraday, onPick }: {
   return <div ref={ref} className="w-full h-[300px] md:h-[430px]" />;
 }
 
+// 多日资金表行:按|5日|排序前N,背离行加 ⚠ 琥珀标;点节点名下钻成分股
+function MultiRows({ nodes, onPick }: { nodes: MfMultiNode[]; onPick: (nid: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const ranked = [...nodes].sort((a, b) => Math.abs(b.d5) - Math.abs(a.d5))
+    .filter((g) => Math.abs(g.d5) >= 0.1 || Math.abs(g.d20) >= 0.5);
+  const shown = open ? ranked : ranked.slice(0, 10);
+  const v = (x: number) => `${x > 0 ? "+" : ""}${x}`;
+  return (
+    <>
+      {shown.map((g) => (
+        <tr key={g.node_id} className="border-t hairline">
+          <td className="py-1">
+            <button onClick={() => onPick(g.node_id)} className="text-primary hover:text-accent text-left">
+              {g.chain}/{g.node}{g.divergence && <span className="text-accent ml-1">⚠背离</span>}
+            </button>
+          </td>
+          <td className={`text-right ${pctCls(g.d5)}`}>{v(g.d5)}亿</td>
+          <td className={`text-right ${pctCls(g.d20)}`}>{v(g.d20)}亿</td>
+          <td className={`text-right ${g.streak > 0 ? "text-up" : g.streak < 0 ? "text-down" : "text-dim"}`}>
+            {Math.abs(g.streak) >= 2 ? `${Math.abs(g.streak)}日${g.streak > 0 ? "流入" : "流出"}` : "—"}
+          </td>
+          <td className={`text-right ${pctCls(g.ret_1w)}`}>{g.ret_1w != null ? `${v(g.ret_1w)}%` : "—"}</td>
+        </tr>
+      ))}
+      {ranked.length > 10 && (
+        <tr><td colSpan={5}>
+          <button onClick={() => setOpen(!open)} className="text-info text-[13px] py-1 hover:underline">
+            {open ? "收起 ▴" : `展开剩余 ${ranked.length - 10} 个节点 ▾`}
+          </button>
+        </td></tr>
+      )}
+    </>
+  );
+}
+
 function StockRow({ s, onOpen }: { s: MfStock; onOpen: () => void }) {
   return (
     <button onClick={onOpen} className="flex items-center gap-2 w-full text-left py-1 border-t hairline hover:bg-elevated/40 text-[14px]">
@@ -113,6 +148,29 @@ export function MoneyflowView({ mf, isUS }: { mf?: Moneyflow | null; isUS: boole
       ) : (
         <div className="border hairline rounded bg-surface p-4 text-dim text-[14px]">
           盘中累计曲线自下一交易日开始积累(每 15 分钟一个点,随盘中刷新生长)。
+        </div>
+      )}
+
+      {/* 多日资金:5/20日累计 + 连续天数 + 资金×涨幅背离(EOD口径,与当日截面互补) */}
+      {mf.multi && mf.multi.nodes.length > 0 && (
+        <div className="border hairline rounded bg-surface p-3">
+          <div className="text-[13px] text-muted mb-2">
+            多日资金 · 截至 {mf.multi.asof}(EOD)· <span className="text-accent">⚠背离</span>=近一周涨跌与5日资金方向相反
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[560px] text-[14px] mono">
+              <thead><tr className="text-muted text-left text-[12px]">
+                <th className="py-1 font-normal">节点</th>
+                <th className="font-normal text-right">5日</th>
+                <th className="font-normal text-right">20日</th>
+                <th className="font-normal text-right">连续</th>
+                <th className="font-normal text-right">周涨跌</th>
+              </tr></thead>
+              <tbody>
+                <MultiRows nodes={mf.multi.nodes} onPick={setNid} />
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

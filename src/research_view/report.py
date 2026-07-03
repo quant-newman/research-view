@@ -137,8 +137,24 @@ def _moneyflow_block() -> str:
     if not mf:
         return "【资金面·主力净额】\n(无)"
     label = f"{mf['date']} 收盘EOD" if mf["kind"] == "eod" else f"{mf['date']} 盘中截至{mf['stamp']}"
-    return (f"【资金面·主力净额(大单+超大单,亿元;口径:{label})】\n"
-            + "\n".join(moneyflow.lines(mf)))
+    block = (f"【资金面·主力净额(大单+超大单,亿元;口径:{label})】\n"
+             + "\n".join(moneyflow.lines(mf)))
+    # 多日维度:资金持续性(连续N日)+ 资金×涨幅背离(客观标注,LLM 只转述不判断)
+    try:
+        md_ = moneyflow.multi_day()
+    except Exception:  # noqa: BLE001
+        md_ = None
+    if md_:
+        picked = sorted(md_["nodes"], key=lambda x: -abs(x["d5"]))[:6]
+        ml = [f"- {g['chain']}/{g['node']} 5日{g['d5']:+.1f}亿/20日{g['d20']:+.1f}亿"
+              + (f",连续{abs(g['streak'])}日净{'流入' if g['streak'] > 0 else '流出'}"
+                 if abs(g["streak"]) >= 3 else "")
+              for g in picked]
+        ml += [f"- 资金价格背离:{g['chain']}/{g['node']} 近一周涨跌{g['ret_1w']:+.1f}%"
+               f"而主力5日{g['d5']:+.1f}亿(方向相反,仅客观标注)"
+               for g in md_["nodes"] if g["divergence"]][:4]
+        block += f"\n\n【多日资金(截至{md_['asof']},EOD口径)】\n" + "\n".join(ml)
+    return block
 
 
 def generate_afterhours(date_utc8: str) -> dict:
