@@ -6,6 +6,14 @@ export interface Temperature {
 export interface Headline { fact: string; user_judgment: string; confidence: string; }
 export interface Top3Item { change: string; evidence: string; node_ids: string[]; related_stocks: string[]; delta?: string; streak_days?: number; }
 export interface ReportIncrement { hhmm: string; entry: string; tags: string[]; }
+export interface MarketGauge {
+  trade_date: string;
+  indexes: { code: string; name: string; close: number; pct: number }[];
+  breadth: { up: number; down: number; flat: number; limit_up: number; limit_down: number };
+  turnover: number; turnover_chg: number | null;
+  margin: { date: string; balance: number; chg: number | null } | null;
+  moneyflow: { date: string; main: number } | null;
+}
 export interface Sector { chain: string; status: string; }
 export interface Falsification { claim: string; condition: string; draft_by: string; pinned_id?: number; pinned_falsified?: boolean; }
 export interface UsItem { ticker: string; name: string; mapping: string; close: number | null; pct: number | null; }
@@ -164,4 +172,5 @@ export interface Dashboard {
   us?: UsData | null; hotspot?: Hotspot | null;
   sources?: { taipei: TaipeiSource[] };
   moneyflow?: Moneyflow | null;
+  market?: MarketGauge | null;
 }

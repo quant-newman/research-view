@@ -12,7 +12,7 @@ from decimal import Decimal
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from . import config, db
+from . import config, db, market
 
 EXPORT_DIR = config.ROOT / "exports"
 
@@ -349,10 +349,18 @@ def build_dashboard(date_utc8: str) -> Path:
         except Exception:  # noqa: BLE001 美股文件损坏不阻塞导出
             us = None
 
+    # 大盘仪表(三层漏斗第一层·环境读数):指数/全A宽度/成交额/两融/全A主力
+    try:
+        market_gauge = market.gauge()
+    except Exception as e:  # noqa: BLE001 行情库不可用降级,不阻塞导出
+        print(f"  ! market 仪表降级: {e}")
+        market_gauge = None
+
     dash = {"meta": ev["meta"], "report": report, "temperature": ev["temperature"],
             "news_by_node": ev["news_by_node"], "stock_events": ev["stock_events"],
             "heatmap": heatmap, "health": health, "research": research, "ledger": ledger,
-            "us": us, "hotspot": hotspot, "sources": {"taipei": taipei_src}, "moneyflow": mflow}
+            "us": us, "hotspot": hotspot, "sources": {"taipei": taipei_src}, "moneyflow": mflow,
+            "market": market_gauge}
     path = EXPORT_DIR / "dashboard.json"
     path.write_text(_dump(dash), encoding="utf-8")
 

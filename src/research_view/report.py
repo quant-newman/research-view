@@ -12,7 +12,7 @@ import json
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from . import config, db, llm, moneyflow
+from . import config, db, llm, market, moneyflow
 
 SYSTEM = """你是投研信息整理器,为一位每日做决策的A股AI科技投资者服务。
 你的职责:呈现"发生了什么变化",不做投资判断。
@@ -175,6 +175,7 @@ def _gather(date_utc8: str) -> tuple[str, str]:
     inc_seg = ("【当日盘中增量时间线(供叙述「日内节奏」,数字仍以上方数据块为准)】\n"
                + "\n".join(f"- {h} {e}" for h, e in incs)) if incs else ""
     block = "\n\n".join(x for x in [
+        _market_block(),
         "【相关产业链新闻(按链/行业)】\n" + ("\n".join(_news_lines(news, node_meta)) or "(无)"),
         "【个股事件(近7日,来自公告/龙虎榜)】\n" + ("\n".join(ev_lines) or "(无)"),
         _moneyflow_block(),
@@ -184,6 +185,18 @@ def _gather(date_utc8: str) -> tuple[str, str]:
         _prev_block(prev),
     ] if x)
     return _now_ts(), block
+
+
+def _market_block() -> str:
+    """大盘仪表块(结构化,narrative 第①段以此为准,不再从新闻文本转述指数)。"""
+    try:
+        g = market.gauge()
+    except Exception:  # noqa: BLE001 行情库不可用不阻塞报告
+        g = None
+    if not g:
+        return ""
+    return ("【大盘仪表(全市场结构化数据——narrative 第①段的指数/宽度/成交额以此为准,"
+            "不要再从新闻文本转述这些数字)】\n" + "\n".join(market.lines(g)))
 
 
 def _moneyflow_block() -> str:
@@ -377,6 +390,7 @@ def _gather_premarket(date_utc8: str) -> tuple[str, str, dict | None]:
     up_lines = [f"- [{et}·{d}] {code} {summ}(事件日{ed})" for et, d, code, summ, ed in upcoming]
     block = "\n\n".join(x for x in [
         us_seg,
+        _market_block(),  # 上一交易日大盘收盘状态(带 trade_date 口径,LLM 须标"昨日收盘")
         "【隔夜至今国内增量新闻(按链/行业)】\n" + ("\n".join(_news_lines(news, node_meta)) or "(无)"),
         "【今日新增卖方研报(机构评级=客观事实,非你的判断)】\n" + ("\n".join(_report_lines(reports)) or "(无)"),
         "【未来7日临近事件(解禁/预约披露等)】\n" + ("\n".join(up_lines) or "(无)"),

@@ -1,10 +1,66 @@
 import { useState } from "react";
-import type { Dashboard, Moneyflow, NewsItem, Report, StockEvent } from "./types";
+import type { Dashboard, MarketGauge, Moneyflow, NewsItem, Report, StockEvent } from "./types";
 import { TechWire } from "./TechWire";
 import { useOpenStock } from "./stockCtx";
 import { Badge, MoreList, StaleBadge, pctCls, sentDot, sentTx, timeHour } from "./ui";
 
 const confDot: Record<string, string> = { 高: "bg-up", 中: "bg-accent", 低: "bg-muted" };
+
+// 大盘仪表(三层漏斗第一层·环境读数,EOD口径带日期标注)
+function GaugeBar({ g }: { g: MarketGauge | null | undefined }) {
+  if (!g) return null;
+  const b = g.breadth;
+  const fmtWan = (v: number) => (v >= 10000 ? `${(v / 10000).toFixed(2)}万亿` : `${v.toFixed(0)}亿`);
+  return (
+    <section className="border hairline rounded bg-surface px-3 py-2.5">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+        <span className="text-dim text-[12px]">大盘 · {g.trade_date} 收盘</span>
+        {g.indexes.map((i) => (
+          <span key={i.code} className="text-[13px] whitespace-nowrap">
+            <span className="text-muted">{i.name}</span>{" "}
+            <span className={`mono ${pctCls(i.pct)}`}>{i.pct > 0 ? "+" : ""}{i.pct.toFixed(2)}%</span>
+          </span>
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-1.5 text-[13px]">
+        <span className="whitespace-nowrap">
+          <span className="text-dim">宽度</span>{" "}
+          <span className="text-up mono">{b.up}涨</span><span className="text-dim">/</span>
+          <span className="text-down mono">{b.down}跌</span>
+          <span className="text-dim text-[12px] ml-1">涨停{b.limit_up} 跌停{b.limit_down}</span>
+        </span>
+        <span className="whitespace-nowrap">
+          <span className="text-dim">成交</span>{" "}
+          <span className="mono text-muted">{fmtWan(g.turnover)}</span>
+          {g.turnover_chg != null && (
+            <span className={`mono text-[12px] ml-1 ${pctCls(g.turnover_chg)}`}>
+              {g.turnover_chg > 0 ? "+" : ""}{g.turnover_chg.toFixed(0)}亿
+            </span>
+          )}
+        </span>
+        {g.margin && (
+          <span className="whitespace-nowrap">
+            <span className="text-dim">两融</span>{" "}
+            <span className="mono text-muted">{fmtWan(g.margin.balance)}</span>
+            {g.margin.chg != null && (
+              <span className={`mono text-[12px] ml-1 ${pctCls(g.margin.chg)}`}>
+                {g.margin.chg > 0 ? "+" : ""}{g.margin.chg.toFixed(0)}亿
+              </span>
+            )}
+          </span>
+        )}
+        {g.moneyflow && (
+          <span className="whitespace-nowrap">
+            <span className="text-dim">全A主力</span>{" "}
+            <span className={`mono ${pctCls(g.moneyflow.main)}`}>
+              {g.moneyflow.main > 0 ? "+" : ""}{g.moneyflow.main.toFixed(0)}亿
+            </span>
+          </span>
+        )}
+      </div>
+    </section>
+  );
+}
 
 function DailyReport({ report }: { report: Report | null | undefined }) {
   const r = report;
@@ -321,6 +377,7 @@ export function ReportPageView({ d, isUS, usNewsNodes }: { d: Dashboard; isUS: b
   return (
     <div className="flex-1 grid grid-cols-1 md:grid-cols-[1.6fr_1fr] gap-4 md:gap-6 p-3 md:p-6 overflow-auto">
       <div className="space-y-6">
+        {!isUS && <GaugeBar g={d.market} />}
         <DailyReport report={isUS ? d.us?.report : d.report} />
         {!isUS && d.stock_events.length > 0 && (
           <Panel title="个股事件 · 公告 / 龙虎榜" count={d.stock_events.length} collapsible>
