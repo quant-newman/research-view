@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import time
 from contextlib import contextmanager
+from datetime import time as dtime
 
 from . import db
 
@@ -78,26 +79,39 @@ def health() -> dict:
     out: dict = {"sources": [], "tasks": [], "flags": [], "level": "green"}
     with db.marketdata_conn() as mc, mc.cursor() as cur:
         # 基准 = 交易日历上"最近的开市日"。行情类表本应更新到此日,落后即滞后(能抓到"上游停更")。
+        # 但 EOD 表当日数据有落地时点(行情/估值~16:40,资金流/龙虎榜~22:00),
+        # 交易日未到时点前只能停在上一开市日——此时基准退回上一开市日,否则盘中整天误报。
         cur.execute("SELECT max(cal_date) FROM md.trade_calendar WHERE is_open AND cal_date<=current_date")
         ltd = cur.fetchone()[0]
-        for tbl, col in [("bar_daily_raw", "trade_date"), ("daily_basic", "trade_date"),
-                         ("moneyflow", "trade_date"), ("top_list", "trade_date")]:
+        cur.execute("SELECT max(cal_date) FROM md.trade_calendar WHERE is_open AND cal_date<current_date")
+        prev_open = cur.fetchone()[0]
+        cur.execute("SELECT current_date, localtime")
+        today, now_t = cur.fetchone()
+        for tbl, col, landed in [("bar_daily_raw", "trade_date", dtime(17, 30)),
+                                 ("daily_basic", "trade_date", dtime(17, 30)),
+                                 ("moneyflow", "trade_date", dtime(22, 15)),
+                                 ("top_list", "trade_date", dtime(22, 15))]:
+            expect = prev_open if (ltd == today and now_t < landed) else ltd
             cur.execute(f"SELECT max({col}) FROM md.{tbl}")
             mx = cur.fetchone()[0]
-            stale = mx is None or (ltd is not None and mx < ltd)
+            stale = mx is None or (expect is not None and mx < expect)
             out["sources"].append({"name": f"marketdata.{tbl}", "latest": str(mx), "stale": stale})
 
     with db.rv_conn() as conn, conn.cursor() as cur:
-        # research_view 侧新鲜度(用我方落库/生成时点判"今天有没有跑")
-        for label, q in [("raw_news", "SELECT max(pub_time)::date FROM raw_news"),
-                         ("stock_event", "SELECT max(created_at)::date FROM stock_event"),
-                         ("research_report", "SELECT max(created_at)::date FROM research_report"),
-                         ("daily_report", "SELECT max(generated_at)::date FROM daily_report"),
-                         ("heatmap", "SELECT max(updated_at)::date FROM heatmap_node")]:
+        # research_view 侧新鲜度(我方落库/生成时点)。基准=最近开市日+各自落地时点(同上 md 逻辑):
+        # 周末/节假日停在上一开市日是正常态;盘中要求"必须等于今天"会对只在盘后 22:30
+        # 全管道更新的源(事件/研报/热力)整天误报。raw_news/daily_report 盘前 08:30 起就该有今日数据。
+        for label, q, landed in [
+                ("raw_news", "SELECT max(pub_time)::date FROM raw_news", dtime(9, 0)),
+                ("stock_event", "SELECT max(created_at)::date FROM stock_event", dtime(23, 30)),
+                ("research_report", "SELECT max(created_at)::date FROM research_report", dtime(23, 30)),
+                ("daily_report", "SELECT max(generated_at)::date FROM daily_report", dtime(9, 0)),
+                ("heatmap", "SELECT max(updated_at)::date FROM heatmap_node", dtime(23, 30))]:
+            expect = prev_open if (ltd == today and now_t < landed) else ltd
             cur.execute(q)
             mx = cur.fetchone()[0]
             out["sources"].append({"name": label, "latest": str(mx),
-                                   "stale": mx is None or str(mx) != _today(cur)})
+                                   "stale": mx is None or (expect is not None and mx < expect)})
         # 基金信函:采集器未接入,标 pending(计入展示但不拉红黄,避免已知待办长期告警)
         cur.execute("SELECT count(*) FROM fund_letter")
         fl = cur.fetchone()[0]
@@ -117,8 +131,3 @@ def health() -> dict:
     any_stale = any(s["stale"] for s in out["sources"] if not s.get("pending"))
     out["level"] = "red" if any_fail else "yellow" if (any_stale or out["flags"]) else "green"
     return out
-
-
-def _today(cur) -> str:
-    cur.execute("SELECT current_date")
-    return str(cur.fetchone()[0])
