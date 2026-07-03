@@ -19,7 +19,6 @@ const NAV = [
   { key: "hotspot", label: "热点" },
   { key: "flow", label: "资金" },
   { key: "heatmap", label: "热力" },
-  { key: "news", label: "新闻" },
   { key: "research", label: "研究" },
   { key: "letters", label: "信函" },
   { key: "system", label: "系统" },
@@ -32,6 +31,8 @@ export default function App() {
   const [market, setMarket] = useState<Market>("A");
   const [stock, setStock] = useState<StockSel | null>(null);
   const [alert, setAlert] = useState<{ job?: string; at?: string; msg?: string } | null>(null);
+  // 热点卡下钻 → 新闻流定位(ts 保证重复点击同一节点也重新触发滚动)
+  const [newsFocus, setNewsFocus] = useState<{ id: string; ts: number } | null>(null);
   useEffect(() => {
     // 核心键缺失时补默认值:后端某天少发一个键不该让整页白屏
     fetch("/data/dashboard.json").then((r) => r.json()).then((raw) => setD({
@@ -80,11 +81,16 @@ export default function App() {
     return { headline: "美股科技新闻热度(按板块新闻量)", items };
   }, [d]);
 
+  // 下钻按钮只在该节点确有新闻分组时出现(热度可纯来自涨跌/龙虎榜,无新闻则无处可跳)
+  const newsIds = useMemo(
+    () => new Set((market === "US" ? usNewsNodes : d?.news_by_node || []).map((g) => g.node_id)),
+    [d, market, usNewsNodes]);
+
   if (err) return <div className="p-6 text-down">加载失败：{err}</div>;
   if (!d) return <div className="p-6 text-muted">加载中…</div>;
 
   const isUS = market === "US";
-  const enabled = new Set(["report", "hotspot", "flow", "heatmap", "news", "research", "letters", "system"]);
+  const enabled = new Set(["report", "hotspot", "flow", "heatmap", "research", "letters", "system"]);
 
   return (
     <StockCtx.Provider value={setStock}>
@@ -128,16 +134,30 @@ export default function App() {
         )}
         <StatusBar d={d} market={market} onMarket={setMarket} onHealth={() => setView("system")} />
         {view === "report" && <ReportPageView d={d} isUS={isUS} usNewsNodes={usNewsNodes} />}
-        {view === "hotspot" && (
-          <div className="flex-1 flex flex-col md:flex-row gap-5 p-3 md:p-5 overflow-auto">
-            <div className="flex-1 min-w-0"><HotspotView hotspot={isUS ? usHotspot : d.hotspot} /></div>
-            {isUS && (d.us?.wire?.some((w) => w.group === "推特X")) && (
-              <div className="w-full md:w-[52%] shrink-0 min-w-0 border-t md:border-t-0 md:border-l hairline pt-4 md:pt-0 md:pl-5">
-                <TechWireX wire={d.us?.wire || []} />
+        {view === "hotspot" && (() => {
+          const hasWire = isUS && !!d.us?.wire?.some((w) => w.group === "推特X");
+          return (
+            <div className="flex-1 flex flex-col md:flex-row gap-5 p-3 md:p-5 overflow-auto">
+              {/* 左列 = 热点排名 + 全量新闻流(下钻联动);右列 = 美股X舆情(手机版内联在热点后,免得沉底) */}
+              <div className="flex-1 min-w-0 space-y-4">
+                <HotspotView hotspot={isUS ? usHotspot : d.hotspot} newsIds={newsIds}
+                  onDrill={(id) => setNewsFocus({ id, ts: Date.now() })} />
+                {hasWire && (
+                  <div className="md:hidden border-t hairline pt-4"><TechWireX wire={d.us?.wire || []} /></div>
+                )}
+                <div className="border-t hairline pt-4 space-y-2">
+                  <div className="text-[13px] text-muted">全量新闻流 · 点热点卡「查看该节点新闻」可直达对应分组</div>
+                  <NewsView nodes={isUS ? usNewsNodes : d.news_by_node} focus={newsFocus} />
+                </div>
               </div>
-            )}
-          </div>
-        )}
+              {hasWire && (
+                <div className="hidden md:block w-[52%] shrink-0 min-w-0 border-l hairline pl-5">
+                  <TechWireX wire={d.us?.wire || []} />
+                </div>
+              )}
+            </div>
+          );
+        })()}
         {view === "flow" && (
           <div className="flex-1 p-3 md:p-5 overflow-auto"><MoneyflowView mf={d.moneyflow} isUS={isUS} /></div>
         )}
@@ -151,9 +171,6 @@ export default function App() {
               </div>
             )}
           </div>
-        )}
-        {view === "news" && (
-          <div className="flex-1 p-3 md:p-5 overflow-auto"><NewsView nodes={isUS ? usNewsNodes : d.news_by_node} /></div>
         )}
         {view === "research" && (
           <div className="flex-1 p-3 md:p-5 overflow-auto">

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { NewsNode, NewsItem } from "./types";
 import { useOpenStock } from "./stockCtx";
 import { Section, MoreList, sentColor, timeHour } from "./ui";
@@ -43,12 +43,22 @@ function NewsRow({ n }: { n: Flat }) {
 
 const EVTS = ["公告", "政策", "涨跌异动", "研报", "外盘", "其他"];
 
-export function NewsView({ nodes }: { nodes: NewsNode[] }) {
+// focus = 热点卡下钻:切「按链」清过滤器,滚动定位并展开该节点分组(ts 变化即重新触发)
+export function NewsView({ nodes, focus }: { nodes: NewsNode[]; focus?: { id: string; ts: number } | null }) {
   const [sent, setSent] = useState<Set<string>>(new Set());
   const [evt, setEvt] = useState<Set<string>>(new Set());
   const [mineOnly, setMineOnly] = useState(false);
   const [scope, setScope] = useState<"all" | "核心链" | "泛科技">("all");
   const [mode, setMode] = useState<"chain" | "event" | "time">("chain");
+
+  useEffect(() => {
+    if (!focus) return;
+    setMode("chain"); setScope("all"); setSent(new Set()); setEvt(new Set()); setMineOnly(false);
+    const t = setTimeout(() => {
+      document.getElementById(`news-node-${focus.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 60);
+    return () => clearTimeout(t);
+  }, [focus?.ts]);
 
   const flat: Flat[] = useMemo(() =>
     nodes.flatMap((g) => g.items.map((it) => ({
@@ -120,14 +130,21 @@ export function NewsView({ nodes }: { nodes: NewsNode[] }) {
         </div>
       ) : (
         <div className="space-y-3">
-          {groups.map((g, gi) => (
-            <Section key={g.key} title={g.title} count={g.items.length} defaultOpen={gi < 4}
-              right={g.scope ? <span className={`px-1.5 py-0.5 rounded text-[12px] ${g.scope === "泛科技" ? "text-muted bg-muted/10" : "text-accent bg-accent/10"}`}>{g.scope}</span> : undefined}>
-              <div className="space-y-1.5">
-                <MoreList items={g.items} initial={5}>{(it, i) => <NewsRow key={i} n={it} />}</MoreList>
+          {groups.map((g, gi) => {
+            const focused = focus?.id === g.key;
+            return (
+              <div key={g.key} id={`news-node-${g.key}`} className="scroll-mt-2">
+                {/* focused 时 key 掺 ts 强制重挂载,让 Section 以展开态重新初始化 */}
+                <Section key={focused ? `${g.key}:${focus!.ts}` : g.key} title={g.title} count={g.items.length}
+                  defaultOpen={gi < 4 || focused}
+                  right={g.scope ? <span className={`px-1.5 py-0.5 rounded text-[12px] ${g.scope === "泛科技" ? "text-muted bg-muted/10" : "text-accent bg-accent/10"}`}>{g.scope}</span> : undefined}>
+                  <div className="space-y-1.5">
+                    <MoreList items={g.items} initial={5}>{(it, i) => <NewsRow key={i} n={it} />}</MoreList>
+                  </div>
+                </Section>
               </div>
-            </Section>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

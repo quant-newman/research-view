@@ -1,4 +1,3 @@
-import { useState } from "react";
 import type { Hotspot, HotspotItem } from "./types";
 import { useOpenStock } from "./stockCtx";
 import { MoreList, StaleBadge, pctCls, timeHour } from "./ui";
@@ -7,8 +6,7 @@ const trendCls: Record<string, string> = {
   升温: "text-up bg-up/10", 降温: "text-down bg-down/10", 持平: "text-muted bg-muted/10",
 };
 
-function Card({ it, rank }: { it: HotspotItem; rank: number }) {
-  const [open, setOpen] = useState(rank <= 2);
+function Card({ it, rank, onDrill }: { it: HotspotItem; rank: number; onDrill?: () => void }) {
   const openStock = useOpenStock();
   return (
     <div className="border hairline rounded bg-surface">
@@ -34,21 +32,10 @@ function Card({ it, rank }: { it: HotspotItem; rank: number }) {
               {it.stocks.slice(0, 6).map((s) => <button key={s} onClick={() => openStock({ name: s })} className="text-[12px] text-muted bg-elevated/60 px-1.5 py-0.5 rounded hover:text-accent">{s}</button>)}
             </div>
           )}
-          {it.news?.length > 0 && (
-            <>
-              <button onClick={() => setOpen(!open)} className="text-info text-[12px] mt-1.5 hover:underline">
-                {open ? "收起" : `展开 ${it.news.length} 条驱动新闻`}
-              </button>
-              {open && (
-                <ul className="mt-1 space-y-1">
-                  {it.news.map((n, i) => (
-                    <li key={i} className="text-[13px] text-muted leading-relaxed flex gap-1.5">
-                      <span className="text-accent shrink-0">·</span><span>{n}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </>
+          {onDrill && (
+            <button onClick={onDrill} className="text-info text-[12px] mt-1.5 hover:underline">
+              ↓ 查看该节点新闻{it.news_today ? `(今日 ${it.news_today} 条)` : ""}
+            </button>
           )}
         </div>
       </div>
@@ -56,7 +43,9 @@ function Card({ it, rank }: { it: HotspotItem; rank: number }) {
   );
 }
 
-export function HotspotView({ hotspot }: { hotspot: Hotspot | null | undefined }) {
+// onDrill+newsIds:合并页下钻——卡片跳转到下方新闻流对应节点分组(仅当该节点在新闻流里存在)
+export function HotspotView({ hotspot, onDrill, newsIds }:
+  { hotspot: Hotspot | null | undefined; onDrill?: (nodeId: string) => void; newsIds?: Set<string> }) {
   if (!hotspot || !hotspot.items?.length) {
     return <div className="text-muted p-4 text-[14px]">今日暂无热点数据(盘中/盘后自动刷新)。</div>;
   }
@@ -72,7 +61,10 @@ export function HotspotView({ hotspot }: { hotspot: Hotspot | null | undefined }
       </div>
       <div className="space-y-2">
         <MoreList items={hotspot.items} initial={6}>
-          {(it, i) => <Card key={it.node_id + i} it={it} rank={i + 1} />}
+          {(it, i) => (
+            <Card key={it.node_id + i} it={it} rank={i + 1}
+              onDrill={onDrill && newsIds?.has(it.node_id) ? () => onDrill(it.node_id) : undefined} />
+          )}
         </MoreList>
       </div>
     </div>
