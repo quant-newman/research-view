@@ -318,6 +318,28 @@ def build_dashboard(date_utc8: str) -> Path:
             judgment = {"date": str(jd), "cards": cards,
                         "fallback": jd.strftime("%Y%m%d") != date_utc8}
 
+    # B8 个股决策卡(影子运行:取最新一日、每股最新一张;当日无回退最近标 fallback)
+    with db.rv_conn() as conn, conn.cursor() as cur:
+        cur.execute("SELECT max(trade_date) FROM decision_card")
+        dd = cur.fetchone()[0]
+        decision = None
+        if dd:
+            cur.execute("""SELECT DISTINCT ON (dc.code) dc.card_id, dc.code, dc.name,
+                    dc.node_id, n.chain, n.node, dc.direction, dc.confidence, dc.horizon_days,
+                    dc.thesis, dc.entry_cond, dc.exit_cond, dc.evidence, dc.falsify,
+                    dc.matrix, dc.alignment, dc.close
+                FROM decision_card dc LEFT JOIN node n USING(node_id)
+                WHERE dc.trade_date=%s ORDER BY dc.code, dc.card_id DESC""", (dd,))
+            dcards = [{"card_id": r[0], "code": r[1], "name": r[2], "node_id": r[3],
+                       "chain": r[4], "node": r[5], "direction": r[6], "confidence": r[7],
+                       "horizon_days": r[8], "thesis": r[9], "entry": r[10], "exit": r[11],
+                       "evidence": r[12] or [], "falsify": r[13], "matrix": r[14] or {},
+                       "alignment": fnum(r[15]), "close": fnum(r[16])}
+                      for r in cur.fetchall()]
+            dcards.sort(key=lambda c: -abs(c["alignment"] or 0))
+            decision = {"date": str(dd), "cards": dcards,
+                        "fallback": dd.strftime("%Y%m%d") != date_utc8}
+
     # B7 成绩单(命中率/分源归因/曲线,对错都晒;未发过卡=None 前端不显)
     try:
         from . import scorecard as _sc
@@ -389,7 +411,8 @@ def build_dashboard(date_utc8: str) -> Path:
             "news_by_node": ev["news_by_node"], "stock_events": ev["stock_events"],
             "heatmap": heatmap, "health": health, "research": research, "ledger": ledger,
             "us": us, "hotspot": hotspot, "sources": {"taipei": taipei_src}, "moneyflow": mflow,
-            "market": market_gauge, "judgment": judgment, "scorecard": sc_block}
+            "market": market_gauge, "judgment": judgment, "scorecard": sc_block,
+            "decision": decision}
     path = EXPORT_DIR / "dashboard.json"
     path.write_text(_dump(dash), encoding="utf-8")
 

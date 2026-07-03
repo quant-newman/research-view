@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Dashboard, JudgmentBlock, JudgmentCard, MarketGauge, Moneyflow, NewsItem, Report, Scorecard, StockEvent } from "./types";
+import type { Dashboard, DecisionBlock, DecisionCard, JudgmentBlock, JudgmentCard, MarketGauge, Moneyflow, NewsItem, Report, Scorecard, StockEvent } from "./types";
 import { TechWire } from "./TechWire";
 import { useOpenStock } from "./stockCtx";
 import { Badge, DIM_HEX, DOWN_HEX, MoreList, StaleBadge, UP_HEX, pctCls, sentDot, sentTx, timeHour } from "./ui";
@@ -196,7 +196,71 @@ function JudgmentCards({ jb }: { jb: JudgmentBlock | null | undefined }) {
   );
 }
 
-function DailyReport({ report, cards }: { report: Report | null | undefined; cards?: JudgmentBlock | null }) {
+// —— B8 个股决策卡(影子运行=校准期:每张卡进 B7 记分,首份引擎成绩单前仅供观察) ——
+function DecisionRow({ c }: { c: DecisionCard }) {
+  const open = useOpenStock();
+  return (
+    <div className="border hairline rounded bg-surface px-3 py-2.5">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className={`px-1.5 py-0.5 rounded text-[12px] font-medium ${dirBadge[c.direction] || dirBadge.中性}`}>
+          {c.direction === "中性" ? "放弃" : c.direction}
+        </span>
+        <button onClick={() => open({ code: c.code, name: c.name })}
+          className="text-primary text-[14px] font-semibold hover:text-accent">
+          {c.name} <span className="mono text-muted text-[12px]">{c.code}</span>
+        </button>
+        {c.confidence && <span className="text-dim text-[12px]">置信{c.confidence}</span>}
+        <span className={`mono text-[12px] ${zCls(c.alignment ?? 0)}`}>对齐{(c.alignment ?? 0) > 0 ? "+" : ""}{c.alignment}</span>
+        {c.chain && <span className="text-dim text-[12px]">▸{c.chain}/{c.node}</span>}
+        {c.close != null && <span className="mono text-dim text-[12px] ml-auto">现价{c.close}</span>}
+      </div>
+      <p className="text-primary text-[14px] leading-relaxed mt-1.5">{c.thesis}</p>
+      {(c.entry || c.exit) && (
+        <div className="mt-1.5 space-y-0.5 text-[13px]">
+          {c.entry && <p className="text-muted"><span className="text-up">入场：</span>{c.entry}</p>}
+          {c.exit && <p className="text-muted"><span className="text-accent">退出/止损：</span>{c.exit}</p>}
+        </div>
+      )}
+      {c.falsify && (
+        <p className="text-[13px] text-muted mt-1"><span className="text-down">证伪：</span>{c.falsify}</p>
+      )}
+      {c.evidence.length > 0 && (
+        <ul className="mt-1.5 space-y-0.5">
+          {c.evidence.map((e, i) => (
+            <li key={i} className="text-[13px] text-muted leading-snug">
+              <span className="text-dim">[{e.src}]</span> {e.fact}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function DecisionCards({ db }: { db: DecisionBlock | null | undefined }) {
+  if (!db || db.cards.length === 0) return null;
+  return (
+    <section className="border-t hairline pt-4">
+      <div className="flex items-center gap-2 mb-2 flex-wrap">
+        <div className="w-0.5 h-4 bg-accent" />
+        <h2 className="font-semibold">个股决策 · B8</h2>
+        <span className="text-dim text-[12px]">板块方向卡→成分共振 · 每张卡进 B7 记分</span>
+        {db.fallback && <StaleBadge date={db.date} label="今日决策卡未生成 · 显示" />}
+      </div>
+      <div className="border border-accent/40 bg-accent/5 rounded px-3 py-2 mb-2 text-[13px] text-accent">
+        ⚠ 校准期(影子运行)：引擎命中率尚无战绩验证——首份 B7 成绩单出炉前，以下输出仅供观察，不构成操作依据。
+      </div>
+      <div className="space-y-2">
+        <MoreList items={db.cards} initial={3}>
+          {(c) => <DecisionRow key={c.card_id} c={c} />}
+        </MoreList>
+      </div>
+    </section>
+  );
+}
+
+function DailyReport({ report, cards, decision }: {
+  report: Report | null | undefined; cards?: JudgmentBlock | null; decision?: DecisionBlock | null }) {
   const r = report;
   if (!r) return <div className="text-muted p-4">今日暂无报告</div>;
   return (
@@ -253,6 +317,9 @@ function DailyReport({ report, cards }: { report: Report | null | undefined; car
 
       {/* 节点研判卡(B6·第2屏:六源共振,带方向的可追责判断,紧跟三件事) */}
       <JudgmentCards jb={cards} />
+
+      {/* 个股决策卡(B8·影子运行:漏斗收口,校准期横幅强制在场) */}
+      <DecisionCards db={decision} />
 
       {/* 证伪与风险(纪律锚,提到第2屏:结论旁边就是"什么情况下它错了") */}
       <section className="border-t hairline pt-4">
@@ -471,6 +538,20 @@ function ScorecardPanel({ sc }: { sc: Scorecard }) {
           <span className="text-dim text-[12px]">待记分 {sc.pending} 张 · 发卡后第5个交易日到期</span>
         )}
       </div>
+      {sc.stock && (
+        <div className="flex items-center gap-3 flex-wrap text-[13px]">
+          <span className="text-dim">个股卡(B8)</span>
+          {sc.stock.cum.hit_rate != null ? (
+            <span className="text-primary">命中率 {sc.stock.cum.hit_rate}%</span>
+          ) : (
+            <span className="text-dim">暂无到期</span>
+          )}
+          <span className="text-up">对 {sc.stock.cum.right}</span>
+          <span className="text-down">错 {sc.stock.cum.wrong}</span>
+          <span className="text-dim">平 {sc.stock.cum.flat}</span>
+          {sc.stock.pending > 0 && <span className="text-dim text-[12px]">待记分 {sc.stock.pending}</span>}
+        </div>
+      )}
       {sc.curve.length > 0 && (
         <div className="flex flex-wrap gap-1.5 text-[12px] mono">
           {sc.curve.map((w) => (
@@ -589,7 +670,8 @@ export function ReportPageView({ d, isUS, usNewsNodes }: { d: Dashboard; isUS: b
     <div className="flex-1 grid grid-cols-1 md:grid-cols-[1.6fr_1fr] gap-4 md:gap-6 p-3 md:p-6 overflow-auto">
       <div className="space-y-6">
         {isUS ? <UsIndexBar us={d.us} /> : <GaugeBar g={d.market} />}
-        <DailyReport report={isUS ? d.us?.report : d.report} cards={isUS ? null : d.judgment} />
+        <DailyReport report={isUS ? d.us?.report : d.report} cards={isUS ? null : d.judgment}
+          decision={isUS ? null : d.decision} />
         {/* 推特X观点综述:左栏主阅读流(原在右栏,手机沉底刷不到) */}
         {isUS && (d.us?.report?.x_takes?.us_global || d.us?.report?.x_takes?.a_share) && (
           <Panel title="推特X 观点综述 · serenity等17号(完整流见「热点」页)" collapsible>

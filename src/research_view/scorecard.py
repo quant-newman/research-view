@@ -61,8 +61,8 @@ def _verdict(direction: str, excess: float) -> str:
 
 
 def score_mature(conn=None) -> dict:
-    """给所有已到期未记分的卡记分(每节点每日只认最新 card_id,旧重跑卡不记分)。
-    conn 传入时由调用方管事务(测试用);缺省自管。"""
+    """给所有已到期未记分的卡记分——节点卡(B6)与个股卡(B8)同一套口径,同窗口共享行情查询。
+    每节点/每股每日只认最新 card_id(旧重跑卡不记分)。conn 传入时由调用方管事务(测试用)。"""
     own = conn is None
     if own:
         ctx = db.rv_conn()
@@ -76,9 +76,18 @@ def score_mature(conn=None) -> dict:
             SELECT l.card_id, l.trade_date, l.node_id, l.direction, l.horizon_days FROM latest l
             WHERE NOT EXISTS (SELECT 1 FROM card_score cs WHERE cs.card_id = l.card_id)
             ORDER BY l.trade_date""")
-        todo = cur.fetchall()
-        if not todo:
-            return {"scored": 0, "pending": 0}
+        ntodo = [("node", *r) for r in cur.fetchall()]
+        cur.execute("""WITH latest AS (
+                SELECT DISTINCT ON (trade_date, code)
+                       card_id, trade_date, code, ts_code, direction, horizon_days
+                FROM decision_card ORDER BY trade_date, code, card_id DESC)
+            SELECT l.card_id, l.trade_date, l.code, l.ts_code, l.direction, l.horizon_days
+            FROM latest l
+            WHERE NOT EXISTS (SELECT 1 FROM decision_score ds WHERE ds.card_id = l.card_id)
+            ORDER BY l.trade_date""")
+        stodo = [("stock", *r) for r in cur.fetchall()]
+        if not ntodo and not stodo:
+            return {"scored": 0, "pending": 0, "stock_scored": 0, "stock_pending": 0}
         # 成分映射 + 全池
         cur.execute("""SELECT sn.node_id, s.ts_code FROM stock_node sn
             JOIN stock s USING(code) WHERE s.ts_code IS NOT NULL""")
@@ -87,42 +96,60 @@ def score_mature(conn=None) -> dict:
             members.setdefault(nid, []).append(ts)
         pool_ts = sorted({t for v in members.values() for t in v})
 
-        scored = pending = 0
+        n = {"scored": 0, "pending": 0, "stock_scored": 0, "stock_pending": 0}
         with db.marketdata_conn() as mc, mc.cursor() as mcur:
             mcur.execute("SELECT max(trade_date) FROM md.bar_daily_raw")
             latest_bar = mcur.fetchone()[0]
-            # 同发卡日同 horizon 的卡共享一次行情查询
+            # 同发卡日同 horizon 的卡(不分层)共享一次行情查询
             by_window: dict[tuple, list] = {}
-            for card in todo:
-                by_window.setdefault((card[1], card[4]), []).append(card)
+            for card in ntodo:
+                by_window.setdefault((card[2], card[5]), []).append(card)
+            for card in stodo:
+                by_window.setdefault((card[2], card[6]), []).append(card)
             for (d0, horizon), cards in by_window.items():
                 d1 = _horizon_end(mcur, d0, horizon)
-                if d1 is None or latest_bar is None or d1 > latest_bar:
-                    pending += len(cards)
-                    continue
-                rets = _interval_rets(mcur, pool_ts, d0, d1)
+                ok_window = not (d1 is None or latest_bar is None or d1 > latest_bar)
+                rets = _interval_rets(mcur, pool_ts, d0, d1) if ok_window else {}
                 if not rets:
-                    pending += len(cards)
+                    for card in cards:
+                        n["pending" if card[0] == "node" else "stock_pending"] += 1
                     continue
                 pool_ret = sum(rets.values()) / len(rets)
-                for card_id, _d0, nid, direction, _h in cards:
-                    node_rets = [rets[t] for t in members.get(nid, []) if t in rets]
-                    if not node_rets:  # 成分无行情(不该发生:发卡有 scorable 门)
-                        pending += 1
-                        continue
-                    node_ret = sum(node_rets) / len(node_rets)
-                    excess = node_ret - pool_ret
-                    cur.execute("""INSERT INTO card_score(card_id,trade_date,node_id,end_date,
-                            node_ret,pool_ret,excess,n_members,verdict)
-                        VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                        ON CONFLICT(card_id) DO UPDATE SET end_date=EXCLUDED.end_date,
-                            node_ret=EXCLUDED.node_ret, pool_ret=EXCLUDED.pool_ret,
-                            excess=EXCLUDED.excess, n_members=EXCLUDED.n_members,
-                            verdict=EXCLUDED.verdict, created_at=now()""",
-                        (card_id, d0, nid, d1, round(node_ret, 2), round(pool_ret, 2),
-                         round(excess, 2), len(node_rets), _verdict(direction, excess)))
-                    scored += 1
-        return {"scored": scored, "pending": pending}
+                for card in cards:
+                    if card[0] == "node":
+                        _k, card_id, _d0, nid, direction, _h = card
+                        node_rets = [rets[t] for t in members.get(nid, []) if t in rets]
+                        if not node_rets:  # 成分无行情(不该发生:发卡有 scorable 门)
+                            n["pending"] += 1
+                            continue
+                        node_ret = sum(node_rets) / len(node_rets)
+                        excess = node_ret - pool_ret
+                        cur.execute("""INSERT INTO card_score(card_id,trade_date,node_id,end_date,
+                                node_ret,pool_ret,excess,n_members,verdict)
+                            VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                            ON CONFLICT(card_id) DO UPDATE SET end_date=EXCLUDED.end_date,
+                                node_ret=EXCLUDED.node_ret, pool_ret=EXCLUDED.pool_ret,
+                                excess=EXCLUDED.excess, n_members=EXCLUDED.n_members,
+                                verdict=EXCLUDED.verdict, created_at=now()""",
+                            (card_id, d0, nid, d1, round(node_ret, 2), round(pool_ret, 2),
+                             round(excess, 2), len(node_rets), _verdict(direction, excess)))
+                        n["scored"] += 1
+                    else:
+                        _k, card_id, _d0, code, ts, direction, _h = card
+                        if ts not in rets:  # 停牌/退市等无区间行情
+                            n["stock_pending"] += 1
+                            continue
+                        excess = rets[ts] - pool_ret
+                        cur.execute("""INSERT INTO decision_score(card_id,trade_date,code,end_date,
+                                stock_ret,pool_ret,excess,verdict)
+                            VALUES(%s,%s,%s,%s,%s,%s,%s,%s)
+                            ON CONFLICT(card_id) DO UPDATE SET end_date=EXCLUDED.end_date,
+                                stock_ret=EXCLUDED.stock_ret, pool_ret=EXCLUDED.pool_ret,
+                                excess=EXCLUDED.excess, verdict=EXCLUDED.verdict, created_at=now()""",
+                            (card_id, d0, code, d1, round(rets[ts], 2), round(pool_ret, 2),
+                             round(excess, 2), _verdict(direction, excess)))
+                        n["stock_scored"] += 1
+        return n
     finally:
         if own:
             ctx.__exit__(None, None, None)
@@ -171,22 +198,25 @@ def _week_rows(cur, week_end: str):
     return cur.fetchall()
 
 
-def _review_wrong(week_end: str, wrong: list) -> dict:
-    """DeepSeek 归纳本周错误卡。无错误卡不烧 LLM。"""
-    if not wrong:
+def _wrong_block(label: str, key: str, direction, conf, thesis, evidence, matrix,
+                 excess, ret, pret) -> str:
+    """一张错误卡的复盘输入块(节点卡/个股卡通用)。"""
+    zs = " ".join(f"{_SRC_CN[k]}z{float((matrix.get(k) or {}).get('z') or 0):+.1f}"
+                  for k in ("news", "mf", "price", "lhb") if k in matrix) if isinstance(matrix, dict) else ""
+    ev = "；".join(f"[{e.get('src')}]{e.get('fact')}" for e in (evidence or []) if isinstance(e, dict))
+    return (f"- {label}(target={key}) 判「{direction}·置信{conf or '—'}」:{thesis}\n"
+            f"  当时证据:{ev or '(无)'}\n  z矩阵:{zs}\n"
+            f"  实际:{float(ret):+.1f}% vs 全池{float(pret):+.1f}%,超额{float(excess):+.1f}pp → 判断错")
+
+
+def _review_wrong(week_end: str, blocks: list[str]) -> dict:
+    """DeepSeek 归纳本周错误卡(节点+个股)。无错误卡不烧 LLM。"""
+    if not blocks:
         return {"review": [], "lessons": []}
-    blocks = []
-    for nid, chain, node, direction, conf, thesis, evidence, matrix, excess, nret, pret, _v in wrong:
-        zs = " ".join(f"{_SRC_CN[k]}z{float((matrix.get(k) or {}).get('z') or 0):+.1f}"
-                      for k in ("news", "mf", "price", "lhb")) if isinstance(matrix, dict) else ""
-        ev = "；".join(f"[{e.get('src')}]{e.get('fact')}" for e in (evidence or []) if isinstance(e, dict))
-        blocks.append(f"- 【{chain}/{node}】(node_id={nid}) 判「{direction}·置信{conf or '—'}」:{thesis}\n"
-                      f"  当时证据:{ev or '(无)'}\n  z矩阵:{zs}\n"
-                      f"  实际:节点{float(nret):+.1f}% vs 全池{float(pret):+.1f}%,超额{float(excess):+.1f}pp → 判断错")
-    user = f"""下面是截至 {week_end} 一周内到期且判错的节点研判卡(当时的判断、证据、z矩阵 与 实际超额)。
-逐卡归因错误类型,并给下周研判员可操作的教训。JSON:
+    user = f"""下面是截至 {week_end} 一周内到期且判错的研判卡(【节点】=板块层,【个股】=决策层;
+含当时的判断、证据、z矩阵 与 实际超额)。逐卡归因错误类型,并给下周研判员可操作的教训。JSON:
 {{
-  "review": [{{"node_id":"照抄","error_type":"信息错|逻辑错|纯运气","why":"≤50字,指出具体错在哪(哪个源误导/哪步推理不当)"}}],
+  "review": [{{"target":"照抄 target","error_type":"信息错|逻辑错|纯运气","why":"≤50字,指出具体错在哪(哪个源误导/哪步推理不当)"}}],
   "lessons": ["下周研判注意事项,≤40字,可操作,2-5条(从错误里提炼共性,不逐卡复述)"]
 }}
 只基于给出的信息归因,不引入外部知识。
@@ -199,12 +229,23 @@ def _review_wrong(week_end: str, wrong: list) -> dict:
     return {"review": review, "lessons": lessons}
 
 
+def _week_stock_rows(cur, week_end: str):
+    cur.execute("""SELECT dc.code, dc.name, dc.direction, dc.confidence, dc.thesis,
+               dc.evidence, dc.matrix, ds.excess, ds.stock_ret, ds.pool_ret, ds.verdict
+        FROM decision_score ds JOIN decision_card dc USING(card_id)
+        WHERE ds.end_date > to_date(%s,'YYYYMMDD') - 7 AND ds.end_date <= to_date(%s,'YYYYMMDD')
+        ORDER BY ds.excess""", (week_end, week_end))
+    return cur.fetchall()
+
+
 def weekly(date_utc8: str) -> dict:
-    """周度成绩单:累计+本周命中率、分方向、分源归因(代码算)+错误归纳(DeepSeek)。
-    无已记分卡时落诚实空单(不烧 LLM)。"""
+    """周度成绩单:节点卡+个股卡 累计/本周命中率、分方向、分源归因(代码算)
+    + 双层错误归纳(DeepSeek)。无已记分卡时落诚实空单(不烧 LLM)。"""
     with db.rv_conn() as conn, conn.cursor() as cur:
         cur.execute("SELECT verdict FROM card_score")
         cum = _stats(cur.fetchall())
+        cur.execute("SELECT verdict FROM decision_score")
+        stock_cum = _stats(cur.fetchall())
         cur.execute("""SELECT jc.direction, jc.matrix, cs.verdict
             FROM card_score cs JOIN judgment_card jc USING(card_id)""")
         by_src = source_attrib(cur.fetchall())
@@ -216,9 +257,16 @@ def weekly(date_utc8: str) -> dict:
         by_dir = {d: _stats(rows) for d, rows in by_dir_rows.items()}
         wk = _week_rows(cur, date_utc8)
         week = _stats([(r[-1],) for r in wk])
-        wrong = [r for r in wk if r[-1] == "错"]
+        swk = _week_stock_rows(cur, date_utc8)
+        stock_week = _stats([(r[-1],) for r in swk])
+        blocks = [_wrong_block(f"【节点】{chain}/{node}", nid, d, cf, th, ev, mx, ex, nr, pr)
+                  for nid, chain, node, d, cf, th, ev, mx, ex, nr, pr, v in wk if v == "错"]
+        blocks += [_wrong_block(f"【个股】{name}({code})", code, d, cf, th, ev, mx, ex, sr, pr)
+                   for code, name, d, cf, th, ev, mx, ex, sr, pr, v in swk if v == "错"]
+        wrong = blocks
     rv = _review_wrong(date_utc8, wrong)
-    stats = {"cum": cum, "week": week, "by_direction": by_dir, "by_source": by_src}
+    stats = {"cum": cum, "week": week, "by_direction": by_dir, "by_source": by_src,
+             "stock_cum": stock_cum, "stock_week": stock_week}
     with db.rv_conn() as conn, conn.cursor() as cur:
         cur.execute("""INSERT INTO b7_weekly(week_end, stats, review, lessons)
             VALUES(to_date(%s,'YYYYMMDD'), %s, %s, %s)
@@ -227,8 +275,9 @@ def weekly(date_utc8: str) -> dict:
             (date_utc8, json.dumps(stats, ensure_ascii=False),
              json.dumps(rv["review"], ensure_ascii=False),
              json.dumps(rv["lessons"], ensure_ascii=False)))
-    return {"week_scored": week["n"], "wrong": len(wrong), "lessons": len(rv["lessons"]),
-            "cum_hit": cum["hit_rate"]}
+    return {"week_scored": week["n"], "stock_week_scored": stock_week["n"], "wrong": len(wrong),
+            "lessons": len(rv["lessons"]), "cum_hit": cum["hit_rate"],
+            "stock_cum_hit": stock_cum["hit_rate"]}
 
 
 def dashboard_block() -> dict | None:
@@ -272,8 +321,26 @@ def dashboard_block() -> dict | None:
         row = cur.fetchone()
         weekly_out = ({"week_end": str(row[0]), "review": row[1] or [], "lessons": row[2] or []}
                       if row else None)
+        # 个股卡(B8)子块:待记分/累计/最近
+        cur.execute("""WITH latest AS (
+                SELECT DISTINCT ON (trade_date, code) card_id
+                FROM decision_card ORDER BY trade_date, code, card_id DESC)
+            SELECT count(*) FROM latest l
+            WHERE NOT EXISTS (SELECT 1 FROM decision_score ds WHERE ds.card_id = l.card_id)""")
+        s_pending = cur.fetchone()[0]
+        cur.execute("SELECT verdict FROM decision_score")
+        s_cum = _stats(cur.fetchall())
+        cur.execute("""SELECT ds.card_id, dc.code, dc.name, dc.direction, ds.excess, ds.verdict,
+                ds.trade_date, ds.end_date
+            FROM decision_score ds JOIN decision_card dc USING(card_id)
+            ORDER BY ds.end_date DESC, abs(ds.excess) DESC LIMIT 8""")
+        s_recent = [{"card_id": r[0], "code": r[1], "name": r[2], "direction": r[3],
+                     "excess": float(r[4]), "verdict": r[5], "trade_date": str(r[6]),
+                     "end_date": str(r[7])} for r in cur.fetchall()]
+        stock = ({"pending": s_pending, "cum": s_cum, "recent": s_recent}
+                 if (s_pending or s_cum["n"]) else None)
     return {"pending": pending, "cum": cum, "by_direction": by_dir, "by_source": by_src,
-            "curve": curve, "recent": recent, "weekly": weekly_out}
+            "curve": curve, "recent": recent, "weekly": weekly_out, "stock": stock}
 
 
 def latest_lessons() -> tuple[str, list[str]] | None:

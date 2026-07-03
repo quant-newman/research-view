@@ -112,6 +112,17 @@ export interface JudgmentCard {
 }
 export interface JudgmentBlock { date: string; cards: JudgmentCard[]; fallback?: boolean; }
 
+// B8 个股决策卡(影子运行=校准期;候选来自当日方向节点卡成分股,每张进 B7 记分)
+export interface DecisionCard {
+  card_id: number; code: string; name: string; node_id: string;
+  chain?: string | null; node?: string | null;
+  direction: string; confidence: string | null; horizon_days: number;
+  thesis: string; entry?: string | null; exit?: string | null;
+  evidence: CardEvidence[]; falsify?: string | null;
+  matrix: Record<string, any>; alignment: number | null; close: number | null;
+}
+export interface DecisionBlock { date: string; cards: DecisionCard[]; fallback?: boolean; }
+
 // B7 周度成绩单(卡到期按 horizon 内相对全池超额记分,对错都晒)
 export interface ScoreStats { n: number; right: number; wrong: number; flat: number; hit_rate: number | null; }
 export interface ScoredCard {
@@ -124,7 +135,11 @@ export interface Scorecard {
   by_source: Record<string, { n: number; right: number }>;
   curve: ({ week: string } & ScoreStats)[];
   recent: ScoredCard[];
-  weekly?: { week_end: string; review: { node_id: string; error_type: string; why: string }[]; lessons: string[] } | null;
+  weekly?: { week_end: string; review: { error_type: string; why: string; [k: string]: any }[]; lessons: string[] } | null;
+  stock?: {
+    pending: number; cum: ScoreStats;
+    recent: { card_id: number; code: string; name: string; direction: string; excess: number; verdict: string; trade_date: string; end_date: string }[];
+  } | null;
 }
 
 export interface Judgment {
@@ -214,4 +229,5 @@ export interface Dashboard {
   market?: MarketGauge | null;
   judgment?: JudgmentBlock | null;
   scorecard?: Scorecard | null;
+  decision?: DecisionBlock | null;
 }
