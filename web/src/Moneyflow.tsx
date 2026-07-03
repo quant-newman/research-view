@@ -7,7 +7,12 @@ import { MoreList, pctCls } from "./ui";
 // A股习惯:流入暖(红) / 流出冷(绿)
 const UP = "#F6465D", DOWN = "#2EBD85";
 
-// 当日节点累计主力净额多线图:零轴居中,终值前8高亮+右端标签(名称+累计值),其余细灰线。
+// 流入(暖)/流出(冷)各一组色阶,同向多条线也能区分
+const WARM = ["#F6465D", "#FA8C16", "#F0B90B", "#E85D75", "#D4380D", "#FF7A45", "#C41D7F", "#AD6800"];
+const COOL = ["#2EBD85", "#13C2C2", "#52C41A", "#36CFC9", "#389E0D", "#5CDBD3", "#1677FF", "#08979C"];
+
+// 当日节点累计主力净额多线图:零轴居中,前12条(手机8)全部右端标注"节点名+累计值"
+// 且防重叠(labelLayout shiftY 自动错开);其余节点合并为一条灰虚线"其他合计"。
 // 点击任意线 → 下钻该节点成分股。x 轴=实际采集时点(午休/未采样区间自然收拢)。
 function FlowChart({ intraday, onPick }: {
   intraday: NonNullable<Moneyflow["intraday"]>; onPick: (nid: string) => void;
@@ -16,14 +21,47 @@ function FlowChart({ intraday, onPick }: {
   useEffect(() => {
     if (!ref.current) return;
     const chart = echarts.init(ref.current, undefined, { renderer: "canvas" });
-    const narrow = ref.current.clientWidth < 640;  // 手机:右端标签收窄、高亮少给几条
-    const sers = intraday.series.filter((s) => Math.abs(s.last) >= 0.05);
-    const ranked = [...sers].sort((a, b) => Math.abs(b.last) - Math.abs(a.last));
-    const hot = new Set(ranked.slice(0, narrow ? 5 : 8).map((s) => s.node_id));
+    const narrow = ref.current.clientWidth < 640;
+    const TOP = narrow ? 8 : 12;
+    const ranked = [...intraday.series].filter((s) => Math.abs(s.last) >= 0.05)
+      .sort((a, b) => Math.abs(b.last) - Math.abs(a.last));
+    const shown = ranked.slice(0, TOP);
+    const rest = ranked.slice(TOP);
+    const restVals = intraday.times.map((_, i) =>
+      Math.round(rest.reduce((acc, s) => acc + (s.values[i] ?? 0), 0) * 100) / 100);
+    const restLast = restVals.length ? restVals[restVals.length - 1] : 0;
     const topAbs = Math.abs(ranked[0]?.last ?? 0);
-    const maxAbs = Math.max(...sers.map((s) => Math.abs(s.last)), 1);
+    const maxAbs = Math.max(...shown.map((s) => Math.abs(s.last)), Math.abs(restLast), 1);
+    let wi = 0, ci = 0;
+    const series = shown.map((s) => {
+      const color = s.last >= 0 ? WARM[wi++ % WARM.length] : COOL[ci++ % COOL.length];
+      return {
+        name: `${s.chain}/${s.node}`, type: "line" as const, data: s.values, connectNulls: true,
+        symbol: "none", triggerLineEvent: true,
+        lineStyle: { width: Math.abs(s.last) === topAbs ? 3 : 1.6, color, opacity: 0.95 },
+        emphasis: { focus: "series" as const, lineStyle: { width: 3.2 } },
+        labelLayout: { moveOverlap: "shiftY" as const },
+        endLabel: {
+          show: true, color, fontSize: narrow ? 9 : 11, distance: 5,
+          formatter: () => `${s.node} ${s.last > 0 ? "+" : ""}${s.last}`,
+        },
+      };
+    });
+    if (rest.length) {
+      series.push({
+        name: `其他${rest.length}节点合计`, type: "line" as const, data: restVals, connectNulls: true,
+        symbol: "none", triggerLineEvent: true,
+        lineStyle: { width: 1, color: "#5A6474", opacity: 0.8, type: "dashed" } as never,
+        emphasis: { focus: "series" as const, lineStyle: { width: 2 } },
+        labelLayout: { moveOverlap: "shiftY" as const },
+        endLabel: {
+          show: true, color: "#5A6474", fontSize: narrow ? 9 : 11, distance: 5,
+          formatter: () => `其他${rest.length}节点 ${restLast > 0 ? "+" : ""}${restLast}`,
+        },
+      });
+    }
     chart.setOption({
-      grid: { left: narrow ? 40 : 52, right: narrow ? 88 : 140, top: 18, bottom: 30 },
+      grid: { left: narrow ? 40 : 52, right: narrow ? 96 : 150, top: 18, bottom: 30 },
       xAxis: {
         type: "category", data: intraday.times, boundaryGap: false,
         axisLabel: { color: "#8A93A6", fontSize: 11 }, axisLine: { lineStyle: { color: "#2A3040" } },
@@ -39,27 +77,11 @@ function FlowChart({ intraday, onPick }: {
         formatter: (p: { seriesName: string; dataIndex: number; value: number }) =>
           `${p.seriesName}<br/>${intraday.times[p.dataIndex]} 累计 <b>${p.value > 0 ? "+" : ""}${p.value}亿</b>`,
       },
-      series: sers.map((s) => {
-        const isHot = hot.has(s.node_id);
-        const color = s.last >= 0 ? UP : DOWN;
-        return {
-          name: `${s.chain}/${s.node}`, type: "line", data: s.values, connectNulls: true,
-          symbol: "none", triggerLineEvent: true,
-          lineStyle: {
-            width: isHot ? (Math.abs(s.last) === topAbs ? 3 : 1.8) : 0.8,
-            color: isHot ? color : "#3A4254", opacity: isHot ? 0.95 : 0.55,
-          },
-          emphasis: { focus: "series", lineStyle: { width: 3 } },
-          endLabel: isHot ? {
-            show: true, color, fontSize: narrow ? 9 : 11, distance: 4,
-            formatter: () => `${s.node} ${s.last > 0 ? "+" : ""}${s.last}`,
-          } : undefined,
-        };
-      }),
+      series,
     });
     chart.on("click", (p) => {
-      const s = sers[(p as { seriesIndex: number }).seriesIndex];
-      if (s) onPick(s.node_id);
+      const s = shown[(p as { seriesIndex: number }).seriesIndex];
+      if (s) onPick(s.node_id);  // "其他合计"线在 shown 之外,点击自然无操作
     });
     const onResize = () => chart.resize();
     window.addEventListener("resize", onResize);
