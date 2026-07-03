@@ -28,22 +28,45 @@ def gauge() -> dict | None:
         d = cur.fetchone()[0]
         if d is None:
             return None
-        cur.execute("""SELECT ts_code, close, pct_chg FROM md.index_daily
-            WHERE ts_code = ANY(%s) AND trade_date = %s""",
+        # 指数:当日读数 + 近20交易日收盘(前端 sparkline)
+        cur.execute("""SELECT ts_code, trade_date, close, pct_chg FROM md.index_daily
+            WHERE ts_code = ANY(%s) AND trade_date >= %s - 40 ORDER BY trade_date""",
             ([c for c, _ in INDEXES], d))
-        got = {ts: (float(cl), float(pc or 0)) for ts, cl, pc in cur.fetchall()}
-        idx = [{"code": c, "name": n, "close": round(got[c][0], 2), "pct": round(got[c][1], 2)}
-               for c, n in INDEXES if c in got]
+        ihist: dict[str, list] = {}
+        for ts, td, cl, pc in cur.fetchall():
+            ihist.setdefault(ts, []).append((td, float(cl), float(pc or 0)))
+        idx = []
+        for c, n in INDEXES:
+            h = ihist.get(c) or []
+            if h and h[-1][0] == d:
+                idx.append({"code": c, "name": n, "close": round(h[-1][1], 2),
+                            "pct": round(h[-1][2], 2),
+                            "spark": [round(x[1], 2) for x in h[-20:]]})
 
-        # 全A宽度 + 成交额(近两日,千元→亿)
-        cur.execute("""SELECT trade_date, sum(amount)/1e5 FROM md.bar_daily_raw
-            WHERE trade_date >= %s - 7 GROUP BY 1 ORDER BY 1 DESC LIMIT 2""", (d,))
-        trows = cur.fetchall()
-        turnover = float(trows[0][1]) if trows else 0.0
-        turn_chg = turnover - float(trows[1][1]) if len(trows) > 1 else None
+        # 全A宽度 + 成交额:近20交易日逐日(当日读数=末位;千元→亿)
+        cur.execute("""SELECT trade_date,
+                count(*) FILTER (WHERE (close-pre_close)/pre_close*100 > 0.05)  AS up,
+                count(*) FILTER (WHERE (close-pre_close)/pre_close*100 < -0.05) AS down,
+                count(*) FILTER (WHERE abs((close-pre_close)/pre_close*100) <= 0.05) AS flat,
+                sum(amount)/1e5 AS turnover
+            FROM md.bar_daily_raw WHERE trade_date >= %s - 40 AND pre_close > 0
+            GROUP BY 1 ORDER BY 1""", (d,))
+        days = cur.fetchall()[-20:]
+        up = down = flat = 0
+        turnover, turn_chg = 0.0, None
+        net_hist: list[int] = []
+        turn_hist: list[float] = []
+        if days:
+            up, down, flat = days[-1][1], days[-1][2], days[-1][3]
+            turnover = float(days[-1][4])
+            if len(days) > 1:
+                turn_chg = turnover - float(days[-2][4])
+            net_hist = [int(r[1] - r[2]) for r in days]
+            turn_hist = [round(float(r[4])) for r in days]
+        # 涨停/跌停家数只算当日(阈值逐票判定,不进历史小图)
         cur.execute("""SELECT ts_code, (close-pre_close)/pre_close*100
             FROM md.bar_daily_raw WHERE trade_date=%s AND pre_close>0""", (d,))
-        up = down = flat = lu = ld = 0
+        lu = ld = 0
         for ts, pct in cur.fetchall():
             pct = float(pct)
             thr = _limit_threshold(ts)
@@ -51,38 +74,36 @@ def gauge() -> dict | None:
                 lu += 1
             elif pct <= -thr:
                 ld += 1
-            if pct > 0.05:
-                up += 1
-            elif pct < -0.05:
-                down += 1
-            else:
-                flat += 1
 
-        # 两融余额(常态 T-1;元→亿)
-        cur.execute("""SELECT trade_date, sum(rzrqye) FROM md.margin_detail
-            WHERE trade_date >= %s - 10 GROUP BY 1 ORDER BY 1 DESC LIMIT 2""", (d,))
-        mrows = cur.fetchall()
+        # 两融余额:近20交易日逐日合计(常态 T-1;元→亿)
+        cur.execute("""SELECT trade_date, sum(rzrqye)/1e8 FROM md.margin_detail
+            WHERE trade_date >= %s - 40 GROUP BY 1 ORDER BY 1""", (d,))
+        mrows = cur.fetchall()[-20:]
         margin = None
+        margin_hist: list[float] = []
         if mrows:
-            prev = float(mrows[1][1]) if len(mrows) > 1 else None
-            margin = {"date": str(mrows[0][0]), "balance": round(float(mrows[0][1]) / 1e8),
-                      "chg": round((float(mrows[0][1]) - prev) / 1e8) if prev is not None else None}
+            prev = float(mrows[-2][1]) if len(mrows) > 1 else None
+            margin = {"date": str(mrows[-1][0]), "balance": round(float(mrows[-1][1])),
+                      "chg": round(float(mrows[-1][1]) - prev) if prev is not None else None}
+            margin_hist = [round(float(r[1])) for r in mrows]
 
-        # 全A主力净额(万元→亿)
-        cur.execute("SELECT max(trade_date) FROM md.moneyflow")
-        mfd = cur.fetchone()[0]
+        # 全A主力净额:近20交易日逐日(万元→亿)
+        cur.execute("""SELECT trade_date,
+                sum(buy_lg_amount-sell_lg_amount+buy_elg_amount-sell_elg_amount)/1e4
+            FROM md.moneyflow WHERE trade_date >= %s - 40 GROUP BY 1 ORDER BY 1""", (d,))
+        fr = cur.fetchall()[-20:]
         mf = None
-        if mfd:
-            cur.execute("""SELECT sum(buy_lg_amount-sell_lg_amount+buy_elg_amount-sell_elg_amount)
-                FROM md.moneyflow WHERE trade_date=%s""", (mfd,))
-            v = cur.fetchone()[0]
-            if v is not None:
-                mf = {"date": str(mfd), "main": round(float(v) / 1e4)}
+        main_hist: list[float] = []
+        if fr:
+            mf = {"date": str(fr[-1][0]), "main": round(float(fr[-1][1]))}
+            main_hist = [round(float(r[1])) for r in fr]
 
     return {"trade_date": str(d), "indexes": idx,
             "breadth": {"up": up, "down": down, "flat": flat, "limit_up": lu, "limit_down": ld},
             "turnover": round(turnover), "turnover_chg": round(turn_chg) if turn_chg is not None else None,
-            "margin": margin, "moneyflow": mf}
+            "margin": margin, "moneyflow": mf,
+            "history": {"net": net_hist, "turnover": turn_hist,
+                        "margin": margin_hist, "main": main_hist}}
 
 
 def lines(g: dict) -> list[str]:

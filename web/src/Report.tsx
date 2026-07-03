@@ -2,59 +2,101 @@ import { useState } from "react";
 import type { Dashboard, MarketGauge, Moneyflow, NewsItem, Report, StockEvent } from "./types";
 import { TechWire } from "./TechWire";
 import { useOpenStock } from "./stockCtx";
-import { Badge, MoreList, StaleBadge, pctCls, sentDot, sentTx, timeHour } from "./ui";
+import { Badge, DIM_HEX, DOWN_HEX, MoreList, StaleBadge, UP_HEX, pctCls, sentDot, sentTx, timeHour } from "./ui";
 
 const confDot: Record<string, string> = { 高: "bg-up", 中: "bg-accent", 低: "bg-muted" };
 
-// 大盘仪表(三层漏斗第一层·环境读数,EOD口径带日期标注)
+// 20日迷你走势线:色随区间方向(末值≥首值红/否则绿,A股约定);无轴无网格,细线
+function Spark({ vals, color }: { vals?: number[]; color?: string }) {
+  if (!vals || vals.length < 2) return null;
+  const w = 56, h = 16, min = Math.min(...vals), max = Math.max(...vals), span = max - min || 1;
+  const pts = vals.map((v, i) =>
+    `${(i / (vals.length - 1)) * w},${h - 1.5 - ((v - min) / span) * (h - 3)}`).join(" ");
+  const c = color ?? (vals[vals.length - 1] >= vals[0] ? UP_HEX : DOWN_HEX);
+  return (
+    <svg width={w} height={h} className="inline-block align-middle" aria-hidden>
+      <polyline points={pts} fill="none" stroke={c} strokeWidth="1.5" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// 20日小柱图:signed=零轴居中正红负绿(净宽度/主力),否则单色幅度柱(成交额)
+function MiniBars({ vals, signed }: { vals?: number[]; signed?: boolean }) {
+  if (!vals || vals.length < 2) return null;
+  const w = 56, h = 16, n = vals.length, bw = Math.max(1, Math.floor(w / n) - 1);
+  const amax = Math.max(...vals.map((v) => Math.abs(v))) || 1;
+  const min = Math.min(...vals), span = (Math.max(...vals) - min) || 1;
+  return (
+    <svg width={w} height={h} className="inline-block align-middle" aria-hidden>
+      {vals.map((v, i) => {
+        const x = i * (bw + 1);
+        if (signed) {
+          const mid = h / 2, bh = Math.max(1, (Math.abs(v) / amax) * (mid - 1));
+          return <rect key={i} x={x} y={v >= 0 ? mid - bh : mid} width={bw} height={bh}
+                       fill={v >= 0 ? UP_HEX : DOWN_HEX} />;
+        }
+        const bh = Math.max(1, ((v - min) / span) * (h - 2));
+        return <rect key={i} x={x} y={h - bh} width={bw} height={bh} fill={DIM_HEX} />;
+      })}
+    </svg>
+  );
+}
+
+// 大盘仪表(三层漏斗第一层·环境读数,EOD口径带日期标注;20日走势小图看趋势方向)
 function GaugeBar({ g }: { g: MarketGauge | null | undefined }) {
   if (!g) return null;
   const b = g.breadth;
+  const hist = g.history;
   const fmtWan = (v: number) => (v >= 10000 ? `${(v / 10000).toFixed(2)}万亿` : `${v.toFixed(0)}亿`);
   return (
     <section className="border hairline rounded bg-surface px-3 py-2.5">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
         <span className="text-dim text-[12px]">大盘 · {g.trade_date} 收盘</span>
         {g.indexes.map((i) => (
-          <span key={i.code} className="text-[13px] whitespace-nowrap">
-            <span className="text-muted">{i.name}</span>{" "}
+          <span key={i.code} className="text-[13px] whitespace-nowrap inline-flex items-center gap-1.5">
+            <span className="text-muted">{i.name}</span>
             <span className={`mono ${pctCls(i.pct)}`}>{i.pct > 0 ? "+" : ""}{i.pct.toFixed(2)}%</span>
+            <Spark vals={i.spark} />
           </span>
         ))}
       </div>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-1.5 text-[13px]">
-        <span className="whitespace-nowrap">
-          <span className="text-dim">宽度</span>{" "}
-          <span className="text-up mono">{b.up}涨</span><span className="text-dim">/</span>
-          <span className="text-down mono">{b.down}跌</span>
-          <span className="text-dim text-[12px] ml-1">涨停{b.limit_up} 跌停{b.limit_down}</span>
+        <span className="whitespace-nowrap inline-flex items-center gap-1.5">
+          <span className="text-dim">宽度</span>
+          <span><span className="text-up mono">{b.up}涨</span><span className="text-dim">/</span>
+          <span className="text-down mono">{b.down}跌</span></span>
+          <MiniBars vals={hist?.net} signed />
+          <span className="text-dim text-[12px]">涨停{b.limit_up} 跌停{b.limit_down}</span>
         </span>
-        <span className="whitespace-nowrap">
-          <span className="text-dim">成交</span>{" "}
+        <span className="whitespace-nowrap inline-flex items-center gap-1.5">
+          <span className="text-dim">成交</span>
           <span className="mono text-muted">{fmtWan(g.turnover)}</span>
           {g.turnover_chg != null && (
-            <span className={`mono text-[12px] ml-1 ${pctCls(g.turnover_chg)}`}>
+            <span className={`mono text-[12px] ${pctCls(g.turnover_chg)}`}>
               {g.turnover_chg > 0 ? "+" : ""}{g.turnover_chg.toFixed(0)}亿
             </span>
           )}
+          <MiniBars vals={hist?.turnover} />
         </span>
         {g.margin && (
-          <span className="whitespace-nowrap">
-            <span className="text-dim">两融</span>{" "}
+          <span className="whitespace-nowrap inline-flex items-center gap-1.5">
+            <span className="text-dim">两融</span>
             <span className="mono text-muted">{fmtWan(g.margin.balance)}</span>
             {g.margin.chg != null && (
-              <span className={`mono text-[12px] ml-1 ${pctCls(g.margin.chg)}`}>
+              <span className={`mono text-[12px] ${pctCls(g.margin.chg)}`}>
                 {g.margin.chg > 0 ? "+" : ""}{g.margin.chg.toFixed(0)}亿
               </span>
             )}
+            <Spark vals={hist?.margin} color={DIM_HEX} />
           </span>
         )}
         {g.moneyflow && (
-          <span className="whitespace-nowrap">
-            <span className="text-dim">全A主力</span>{" "}
+          <span className="whitespace-nowrap inline-flex items-center gap-1.5">
+            <span className="text-dim">全A主力</span>
             <span className={`mono ${pctCls(g.moneyflow.main)}`}>
               {g.moneyflow.main > 0 ? "+" : ""}{g.moneyflow.main.toFixed(0)}亿
             </span>
+            <MiniBars vals={hist?.main} signed />
           </span>
         )}
       </div>

@@ -8,11 +8,12 @@ export interface Top3Item { change: string; evidence: string; node_ids: string[]
 export interface ReportIncrement { hhmm: string; entry: string; tags: string[]; }
 export interface MarketGauge {
   trade_date: string;
-  indexes: { code: string; name: string; close: number; pct: number }[];
+  indexes: { code: string; name: string; close: number; pct: number; spark?: number[] }[];
   breadth: { up: number; down: number; flat: number; limit_up: number; limit_down: number };
   turnover: number; turnover_chg: number | null;
   margin: { date: string; balance: number; chg: number | null } | null;
   moneyflow: { date: string; main: number } | null;
+  history?: { net: number[]; turnover: number[]; margin: number[]; main: number[] };
 }
 export interface Sector { chain: string; status: string; }
 export interface Falsification { claim: string; condition: string; draft_by: string; pinned_id?: number; pinned_falsified?: boolean; }

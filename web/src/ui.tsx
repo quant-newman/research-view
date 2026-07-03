@@ -9,6 +9,10 @@ export const sentColor: Record<string, string> = {
   中性: "text-muted bg-muted/10", 澄清: "text-info bg-info/10",
 };
 export const sentDot: Record<string, string> = { 利好: "bg-up", 利空: "bg-down", 中性: "bg-muted", 澄清: "bg-info" };
+// SVG 等无法用 tailwind 类的场合从这里取色(与 tailwind.config up/down/dim 同源)
+export const UP_HEX = "#F6465D";
+export const DOWN_HEX = "#2EBD85";
+export const DIM_HEX = "#5A6474";
 export const sentTx: Record<string, string> = { 利好: "text-up", 利空: "text-down", 中性: "text-muted", 澄清: "text-info" };
 
 // 市值单位分市场:美股=十亿美元(build_us 已 /1e9);A股=万元(Tushare daily_basic 原始口径)。
