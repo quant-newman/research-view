@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Dashboard, JudgmentBlock, JudgmentCard, MarketGauge, Moneyflow, NewsItem, Report, StockEvent } from "./types";
+import type { Dashboard, JudgmentBlock, JudgmentCard, MarketGauge, Moneyflow, NewsItem, Report, Scorecard, StockEvent } from "./types";
 import { TechWire } from "./TechWire";
 import { useOpenStock } from "./stockCtx";
 import { Badge, DIM_HEX, DOWN_HEX, MoreList, StaleBadge, UP_HEX, pctCls, sentDot, sentTx, timeHour } from "./ui";
@@ -450,6 +450,79 @@ function LedgerPanel({ ledger }: { ledger: Dashboard["ledger"] }) {
   );
 }
 
+// B7 成绩单:研判卡到期按"5交易日相对全池超额"自动记分,命中率/分源归因/教训对错都晒
+const SRC_CN: Record<string, string> = { news: "新闻", mf: "资金", price: "行情", lhb: "龙虎榜", letter: "信函" };
+const vBadge: Record<string, string> = { 对: "text-up bg-up/10", 错: "text-down bg-down/10", 平: "text-dim bg-elevated" };
+
+function ScorecardPanel({ sc }: { sc: Scorecard }) {
+  const srcRows = Object.entries(sc.by_source || {}).filter(([, v]) => v.n > 0);
+  return (
+    <div className="space-y-2.5 text-[14px]">
+      <div className="flex items-center gap-3 flex-wrap">
+        {sc.cum.hit_rate != null ? (
+          <span className="text-primary font-semibold">命中率 {sc.cum.hit_rate}%</span>
+        ) : (
+          <span className="text-dim">暂无到期记分</span>
+        )}
+        <span className="text-up">对 {sc.cum.right}</span>
+        <span className="text-down">错 {sc.cum.wrong}</span>
+        <span className="text-dim">平 {sc.cum.flat}</span>
+        {sc.pending > 0 && (
+          <span className="text-dim text-[12px]">待记分 {sc.pending} 张 · 发卡后第5个交易日到期</span>
+        )}
+      </div>
+      {sc.curve.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 text-[12px] mono">
+          {sc.curve.map((w) => (
+            <span key={w.week} className="bg-elevated/60 px-1.5 py-0.5 rounded text-muted">
+              {w.week.slice(5)} {w.hit_rate != null ? `${w.hit_rate}%` : "—"}({w.right}/{w.n})
+            </span>
+          ))}
+        </div>
+      )}
+      {srcRows.length > 0 && (
+        <div className="text-[13px] space-y-0.5">
+          <div className="text-dim text-[12px]">分源归因 · 跟随该源方向的判断命中</div>
+          {srcRows.map(([k, v]) => (
+            <div key={k} className="flex items-center gap-2">
+              <span className="text-muted w-12">{SRC_CN[k] || k}</span>
+              <span className="mono text-muted">{v.right}/{v.n}</span>
+              <span className={`mono text-[12px] ${v.n && v.right / v.n >= 0.5 ? "text-up" : "text-down"}`}>
+                {v.n ? Math.round((v.right / v.n) * 100) : 0}%
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+      {sc.recent.length > 0 && (
+        <div className="space-y-1">
+          <MoreList items={sc.recent} initial={5}>
+            {(c) => (
+              <div key={c.card_id} className="flex items-center gap-2 text-[13px]">
+                <span className={`px-1.5 py-0.5 rounded text-[12px] shrink-0 ${vBadge[c.verdict] || vBadge.平}`}>{c.verdict}</span>
+                <span className="text-primary truncate">{c.chain}/{c.node}</span>
+                <span className="text-dim shrink-0">{c.direction}</span>
+                <span className={`mono shrink-0 ${pctCls(c.excess)}`}>超额{c.excess > 0 ? "+" : ""}{c.excess}pp</span>
+                <span className="mono text-dim text-[12px] ml-auto shrink-0">{c.end_date.slice(5)}</span>
+              </div>
+            )}
+          </MoreList>
+        </div>
+      )}
+      {sc.weekly && sc.weekly.lessons.length > 0 && (
+        <div className="border-t hairline pt-2">
+          <div className="text-dim text-[12px] mb-1">本周教训(回灌下周研判)· 截至 {sc.weekly.week_end}</div>
+          <ul className="space-y-0.5 text-[13px] text-muted">
+            {sc.weekly.lessons.map((l, i) => (
+              <li key={i}>· {l}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Panel({ title, children, count, collapsible = false, defaultOpen = true }:
   { title: string; children: React.ReactNode; count?: number; collapsible?: boolean; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -558,6 +631,11 @@ export function ReportPageView({ d, isUS, usNewsNodes }: { d: Dashboard; isUS: b
             {d.report?.us_overnight && (
               <Panel title="隔夜美股科技链" collapsible>
                 <UsOvernightBoard us={d.report.us_overnight} />
+              </Panel>
+            )}
+            {d.scorecard && (
+              <Panel title="研判成绩单 · B7 判断追责" collapsible>
+                <ScorecardPanel sc={d.scorecard} />
               </Panel>
             )}
             <Panel title="判断复盘账本 · 近30日" collapsible defaultOpen={false}>

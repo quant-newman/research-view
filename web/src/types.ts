@@ -112,6 +112,21 @@ export interface JudgmentCard {
 }
 export interface JudgmentBlock { date: string; cards: JudgmentCard[]; fallback?: boolean; }
 
+// B7 周度成绩单(卡到期按 horizon 内相对全池超额记分,对错都晒)
+export interface ScoreStats { n: number; right: number; wrong: number; flat: number; hit_rate: number | null; }
+export interface ScoredCard {
+  card_id: number; chain: string; node: string; direction: string; confidence?: string | null;
+  excess: number; verdict: string; trade_date: string; end_date: string;
+}
+export interface Scorecard {
+  pending: number; cum: ScoreStats;
+  by_direction: Record<string, ScoreStats>;
+  by_source: Record<string, { n: number; right: number }>;
+  curve: ({ week: string } & ScoreStats)[];
+  recent: ScoredCard[];
+  weekly?: { week_end: string; review: { node_id: string; error_type: string; why: string }[]; lessons: string[] } | null;
+}
+
 export interface Judgment {
   id: number; report_id: string; claim: string; condition: string;
   date: string; falsified: boolean; error_type: string | null;
@@ -198,4 +213,5 @@ export interface Dashboard {
   moneyflow?: Moneyflow | null;
   market?: MarketGauge | null;
   judgment?: JudgmentBlock | null;
+  scorecard?: Scorecard | null;
 }

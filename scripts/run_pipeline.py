@@ -13,7 +13,7 @@ from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-from research_view import config, db, evidence, export, hotspots, monitor, report, research_digest, universe  # noqa: E402
+from research_view import config, db, evidence, export, hotspots, monitor, report, research_digest, scorecard, universe  # noqa: E402
 from research_view.collect import announcements, heatmap, news, research  # noqa: E402
 from research_view.funnel import run_funnel  # noqa: E402
 from research_view.structure import run_structure  # noqa: E402
@@ -54,6 +54,8 @@ def main() -> None:
     # B6 节点研判卡(二期):六源z矩阵+共振/背离代码算,DeepSeek 出方向/置信/证据链/情景,
     # append-only 落卡供 B7 记分。须在 EOD 资金/龙虎榜/研报都落地后跑(盘后 22:30 满足)。
     step("judgment_cards", lambda: {"n": evidence.persist(date)})
+    # B7 日常记分(三期):到期卡按 horizon 相对全池超额对账,零LLM幂等;周度收口在周日 cron
+    step("card_scores", scorecard.score_mature)
 
     # 数据质量校验
     try:

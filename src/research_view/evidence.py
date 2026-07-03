@@ -212,12 +212,23 @@ def generate(date_utc8: str, top: int = 8) -> list[dict]:
     if not cands:
         return []
     blocks = "\n".join(_node_block(i, r) for i, r in enumerate(cands))
+    # B7 校准回路:最新一份周度成绩单的错误教训回灌(经验层,不是事实源)
+    lessons_seg = ""
+    try:
+        from . import scorecard
+        ls = scorecard.latest_lessons()
+        if ls:
+            lessons_seg = (f"\n【B7成绩单·近期错误教训(截至{ls[0]};经验校准,只用于调整你的谨慎度"
+                           f"与矛盾处理方式——不是事实源,不得写进 evidence)】\n"
+                           + "\n".join(f"- {t}" for t in ls[1]) + "\n")
+    except Exception:  # noqa: BLE001 成绩单不可用不阻塞发卡
+        pass
     user = f"""下面是今日({date_utc8})A股AI科技产业链各节点的六源证据矩阵(已按共振分绝对值排序)。
 z = 该源指标在48节点截面的标准分(衡量相对全池强弱,|z|≥1为显著);共振分 = 方向源(新闻/资金/行情/龙虎榜/信函)加权z和,由代码算出仅供参考——你可以不同意共振方向,但必须在 thesis 里说明理由。
 
 【六源矩阵与事实】
 {blocks}
-
+{lessons_seg}
 对每个节点输出一张研判卡,JSON:
 {{
   "cards": [

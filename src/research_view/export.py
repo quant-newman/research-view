@@ -318,6 +318,14 @@ def build_dashboard(date_utc8: str) -> Path:
             judgment = {"date": str(jd), "cards": cards,
                         "fallback": jd.strftime("%Y%m%d") != date_utc8}
 
+    # B7 成绩单(命中率/分源归因/曲线,对错都晒;未发过卡=None 前端不显)
+    try:
+        from . import scorecard as _sc
+        sc_block = _sc.dashboard_block()
+    except Exception as e:  # noqa: BLE001 成绩单失败不阻塞导出
+        print(f"  ! scorecard 降级: {e}")
+        sc_block = None
+
     # 今日热点/主题热度榜(当日无则回退最近一份,回退带 date/fallback 供前端标陈旧)
     with db.rv_conn() as conn, conn.cursor() as cur:
         cur.execute("SELECT headline, items, report_date, brief FROM hotspot_daily WHERE report_date=to_date(%s,'YYYYMMDD')",
@@ -381,7 +389,7 @@ def build_dashboard(date_utc8: str) -> Path:
             "news_by_node": ev["news_by_node"], "stock_events": ev["stock_events"],
             "heatmap": heatmap, "health": health, "research": research, "ledger": ledger,
             "us": us, "hotspot": hotspot, "sources": {"taipei": taipei_src}, "moneyflow": mflow,
-            "market": market_gauge, "judgment": judgment}
+            "market": market_gauge, "judgment": judgment, "scorecard": sc_block}
     path = EXPORT_DIR / "dashboard.json"
     path.write_text(_dump(dash), encoding="utf-8")
 
