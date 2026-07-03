@@ -179,6 +179,7 @@ X_ACCOUNTS = [
     ("xingpt", 1), ("RYANHINGSHING", 1), ("jimmyhuli", 1), ("EliasVanceQuant", 1),
     ("ohiain", 1), ("dons_korea", 1), ("_FORAB", 1), ("xiaomustock", 1),
     ("iamai_omni", 1), ("op7418", 1), ("Money_or_Life_X", 1), ("BiteyeCN", 1),
+    ("leopoldasch", 1), ("hanking66", 1), ("wadezone", 1),
 ]
 
 

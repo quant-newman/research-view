@@ -286,5 +286,11 @@
     "chain": "机器人",
     "chain_en": "robotics",
     "node": "视觉/大脑(交叉)"
+  },
+  {
+    "node_id": "robotics::执行器/结构件",
+    "chain": "机器人",
+    "chain_en": "robotics",
+    "node": "执行器/结构件"
   }
 ]

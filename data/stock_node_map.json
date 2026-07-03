@@ -1200,16 +1200,6 @@
     "judgment": "已在你原表设备零部件;此处标注特气一体化服务属性"
   },
   {
-    "code": "002971",
-    "name": "和远气体",
-    "chain": "半导体",
-    "node": "电子特气-大宗/综合",
-    "node_id": "semiconductor::电子特气-大宗/综合",
-    "tier": "龙三",
-    "purity": "",
-    "judgment": "布局电子大宗气体,近期涨停活跃(6/14复盘和远7天5板)"
-  },
-  {
     "code": "601138",
     "name": "工业富联",
     "chain": "算力配套",
@@ -1780,46 +1770,6 @@
     "judgment": "与康宁有供货关系"
   },
   {
-    "code": "002050",
-    "name": "三花智控",
-    "chain": "机器人",
-    "node": "整机/本体",
-    "node_id": "robotics::整机/本体",
-    "tier": "龙一",
-    "purity": "",
-    "judgment": "特斯拉Optimus链"
-  },
-  {
-    "code": "601689",
-    "name": "拓普集团",
-    "chain": "机器人",
-    "node": "整机/本体",
-    "node_id": "robotics::整机/本体",
-    "tier": "龙一",
-    "purity": "",
-    "judgment": "Optimus链"
-  },
-  {
-    "code": "300124",
-    "name": "汇川技术",
-    "chain": "机器人",
-    "node": "整机/本体",
-    "node_id": "robotics::整机/本体",
-    "tier": "龙二",
-    "purity": "",
-    "judgment": "运动控制平台(与伺服重叠)"
-  },
-  {
-    "code": "300115",
-    "name": "长盈精密",
-    "chain": "机器人",
-    "node": "整机/本体",
-    "node_id": "robotics::整机/本体",
-    "tier": "龙三",
-    "purity": "",
-    "judgment": "结构件"
-  },
-  {
     "code": "688017",
     "name": "绿的谐波",
     "chain": "机器人",
@@ -1958,5 +1908,65 @@
     "tier": "龙二",
     "purity": "",
     "judgment": "机器人大脑(港股)"
+  },
+  {
+    "code": "002050",
+    "name": "三花智控",
+    "chain": "机器人",
+    "node": "执行器/结构件",
+    "node_id": "robotics::执行器/结构件",
+    "tier": "龙一",
+    "purity": "",
+    "judgment": "特斯拉Optimus链·机电执行器"
+  },
+  {
+    "code": "601689",
+    "name": "拓普集团",
+    "chain": "机器人",
+    "node": "执行器/结构件",
+    "node_id": "robotics::执行器/结构件",
+    "tier": "龙一",
+    "purity": "",
+    "judgment": "Optimus链·执行器总成"
+  },
+  {
+    "code": "300115",
+    "name": "长盈精密",
+    "chain": "机器人",
+    "node": "执行器/结构件",
+    "node_id": "robotics::执行器/结构件",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "精密结构件"
+  },
+  {
+    "code": "002979",
+    "name": "雷赛智能",
+    "chain": "机器人",
+    "node": "伺服/电机",
+    "node_id": "robotics::伺服/电机",
+    "tier": "龙二",
+    "purity": "",
+    "judgment": "运动控制/步进伺服驱动,人形关节驱动候选"
+  },
+  {
+    "code": "300809",
+    "name": "华辰装备",
+    "chain": "机器人",
+    "node": "丝杠/传动",
+    "node_id": "robotics::丝杠/传动",
+    "tier": "龙三",
+    "purity": "",
+    "judgment": "轧辊磨床龙头切入行星滚柱丝杠磨削设备"
+  },
+  {
+    "code": "09880.HK",
+    "name": "优必选",
+    "chain": "机器人",
+    "node": "整机/本体",
+    "node_id": "robotics::整机/本体",
+    "tier": "龙一",
+    "purity": "⭐",
+    "judgment": "人形机器人整机(港股,仅新闻/热点映射,无A股行情资金流)"
   }
 ]
