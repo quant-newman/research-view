@@ -7,6 +7,25 @@ from __future__ import annotations
 
 from . import db
 
+# 常用词票名:这些名字在标题里出现多半是日常用语而非公司(实测"值得买"22条全是
+# "哪款洗衣机值得买"购物文、"三人行"是电视剧、"新华网"是消息来源前缀)。
+# 命中这些名字时,标题须同时出现行情/公司语境词才算票名命中(题材词匹配不受影响)。
+AMBIGUOUS_NAMES = frozenset({
+    "值得买", "三人行", "大智慧", "指南针", "人民网", "新华网", "好上好",
+    "汤姆猫", "漫步者", "天下秀", "生意宝", "同花顺", "地平线", "深科技",
+    "贝斯特", "中国长城",
+})
+_MARKET_CUES = ("涨", "跌", "股", "公告", "证券", "回购", "增持", "减持", "董事",
+                "中标", "业绩", "财报", "融资", "龙虎榜", "市值", "开盘", "收盘")
+
+
+def _name_hit(nm: str, title: str) -> bool:
+    if nm not in title:
+        return False
+    if nm in AMBIGUOUS_NAMES:
+        return any(c in title for c in _MARKET_CUES)
+    return True
+
 
 def _load_maps(cur):
     """返回 (题材词->节点ids, 池内票名->code, code->节点ids, 科技域票名->(code,industry))。"""
@@ -45,7 +64,7 @@ def run_funnel(only_unfiltered: bool = True) -> dict[str, int]:
         n_relevant = 0
         for nid, title in news:
             hit_themes = [t for t in themes if t in title]
-            hit_names = [nm for nm in names if nm in title]
+            hit_names = [nm for nm in names if _name_hit(nm, title)]
             codes = sorted({name_code[nm] for nm in hit_names})
             node_ids = set()
             for t in hit_themes:
@@ -53,7 +72,7 @@ def run_funnel(only_unfiltered: bool = True) -> dict[str, int]:
             for c in codes:
                 node_ids.update(code_nodes.get(c, []))
             # 泛科技票(池外)
-            hit_tech = [nm for nm in tech_names if nm in title]
+            hit_tech = [nm for nm in tech_names if _name_hit(nm, title)]
             tech_codes = sorted({tech_name[nm][0] for nm in hit_tech})
             tech_inds = sorted({tech_name[nm][1] for nm in hit_tech if tech_name[nm][1]})
             relevant = bool(hit_themes or codes or tech_codes)
