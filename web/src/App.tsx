@@ -66,7 +66,7 @@ function StatusBar({ d, market, onMarket, onHealth }: { d: Dashboard; market: Ma
         <span className={`w-2 h-2 rounded-full inline-block ${isUS ? "bg-info" : "bg-accent"}`} />
         <span className="font-semibold">{isUS ? "美股" : sessionLabel}</span>
         <span className="text-dim">·</span>
-        <span className="text-muted">{isUS ? `美东 ${us?.us_session_date || "—"} 收盘` : (d.report?.data_cutoff || d.meta?.date || "—")}</span>
+        <span className="text-muted">{isUS ? `美东 ${us?.us_session_date || "—"} ${us?.session_status || "收盘"}` : (d.report?.data_cutoff || d.meta?.date || "—")}</span>
       </div>
       {isUS ? (
         ut && (
@@ -396,9 +396,10 @@ export default function App() {
     return Object.values(m).sort((a, b) => b.items.length - a.items.length);
   }, [d]);
 
-  // 美股热点(客户端按板块新闻量 + 板块涨跌,US 无龙虎榜)
+  // 美股热点:优先用 build_us 的 DeepSeek 归因版(us.hotspot);老 blob 回退客户端统计版
   const usHotspot = useMemo(() => {
     const us = d?.us;
+    if (us?.hotspot?.items?.length) return us.hotspot;
     if (!us?.news?.length) return null;
     const bySec: Record<string, { news: string[]; count: number; latest: string }> = {};
     for (const n of us.news) {

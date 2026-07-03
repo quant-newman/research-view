@@ -8,6 +8,11 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 set -a; source .env; set +a
+
+# 全局串行锁:盘前/盘中/盘后/美股 四编排都会重建 dashboard.json 并 rsync 回 webdata,
+# 并发会写坏文件 → flock 排队(最多等 300s,超时报错走各自告警路径)。
+exec 9>/tmp/rv_orchestrate.lock
+flock -w 300 9
 DATE="${1:-$(TZ=Asia/Shanghai date +%Y%m%d)}"
 SSH_BASE="-i $HOME/.ssh/aliyun_dc_ed25519 -o IdentitiesOnly=yes -o ConnectTimeout=20"
 SSH="ssh $SSH_BASE $ALIYUN_DC_USER@$ALIYUN_DC_HOST"

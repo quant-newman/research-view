@@ -25,6 +25,15 @@ from fetch_us_board import US_UNIVERSE, fetch as fetch_board  # noqa: E402
 from fetch_tech_wire import fetch_wire, _norm_time  # noqa: E402
 
 TZ = "Asia/Shanghai"
+ET = "America/New_York"
+
+
+def _us_session() -> dict:
+    """美东盘中/收盘判定(常规时段 09:30-16:00 工作日)。盘中刷新时 yfinance 最后一根
+    日线是实时临时 bar,涨跌为实时数据 → 标签/报告口径必须跟着标"盘中"而非"收盘"。"""
+    now = datetime.now(ZoneInfo(ET))
+    live = now.weekday() < 5 and (9, 30) <= (now.hour, now.minute) < (16, 0)
+    return {"live": live, "status": "盘中" if live else "收盘", "et_hhmm": now.strftime("%H:%M")}
 
 
 # ---------- 温度计 ----------
@@ -96,13 +105,19 @@ def _research(stocks: list[dict]) -> list[dict]:
 
 # ---------- 新闻:yfinance 聚合 → B1 中文批处理 ----------
 def _fetch_news_raw(tickers: list[str]) -> list[dict]:
-    seen, raw = set(), []
+    """每票最多 3 条,广度优先轮转:先收每票第1条、再第2/3条,到 60 封顶——
+    否则 universe 前几只票把总名额吃光,云/软件/中概板块永远没新闻。"""
+    seen: set[str] = set()
+    per_ticker: dict[str, list[dict]] = {}
     for t in tickers:
         try:
             items = yf.Ticker(t).news or []
         except Exception:  # noqa: BLE001 单票新闻失败不阻塞
             continue
+        bucket = per_ticker.setdefault(t, [])
         for n in items:
+            if len(bucket) >= 3:
+                break
             c = n.get("content", n)
             title = (c.get("title") if isinstance(c, dict) else None) or n.get("title")
             if not title or title in seen:
@@ -134,18 +149,22 @@ def _fetch_news_raw(tickers: list[str]) -> list[dict]:
                         .astimezone(ZoneInfo("Asia/Shanghai")).strftime("%Y-%m-%d %H:%M")
                 except Exception:  # noqa: BLE001
                     tm = ""
-            raw.append({"title": title, "desc": desc, "src": src or "Yahoo", "url": url,
-                        "from_ticker": t, "time": tm})
-    return raw[:45]  # 控量
+            bucket.append({"title": title, "desc": desc, "src": src or "Yahoo", "url": url,
+                           "from_ticker": t, "time": tm})
+    raw = []
+    for rnd in range(3):  # 轮转:所有票的第 rnd 条
+        for t in tickers:
+            b = per_ticker.get(t) or []
+            if rnd < len(b):
+                raw.append(b[rnd])
+    return raw[:60]  # 控量
 
 
 B1_SYS = "你是金融信息整理器,不是分析师。只翻译+分类不下判断,严禁编造,输出严格JSON。"
 
 
-def _b1_batch(raw: list[dict]) -> list[dict]:
-    """一次调用把英文标题批量译为中文一句话+情绪。"""
-    if not raw:
-        return []
+def _b1_news_chunk(raw: list[dict]) -> dict[int, dict]:
+    """单批(≤~35条)英文标题译中文一句话+情绪,返回 {序号: 提炼}。失败返回空(降级原标题)。"""
     listing = "\n".join(
         f"{i}. 标题:{r['title']}" + (f"\n   摘要:{r['desc']}" if r["desc"] else "") for i, r in enumerate(raw))
     user = f"""下面是美股科技新闻(英文标题+摘要,带序号)。逐条输出中文提炼,JSON:
@@ -154,19 +173,28 @@ def _b1_batch(raw: list[dict]) -> list[dict]:
 只翻译概括,不许出现"看好/利好X/建议买入"等判断词,不许编造摘要没有的数字。"""
     try:
         j = llm.chat_json(B1_SYS, user, timeout=150)
-        m = {int(it["i"]): it for it in j.get("items", []) if "i" in it}
+        return {int(it["i"]): it for it in j.get("items", []) if "i" in it}
     except Exception as e:  # noqa: BLE001 B1失败降级:用原标题
         print(f"  ! 新闻B1失败,降级原标题: {str(e)[:80]}")
-        m = {}
+        return {}
+
+
+def _b1_batch(raw: list[dict], batch: int = 35) -> list[dict]:
+    """新闻批量中文化。分批调用(60条单次输出 JSON 会过长截断)。"""
+    if not raw:
+        return []
     sec_of = {t: s for t, _, s in US_UNIVERSE}
     out = []
-    for i, r in enumerate(raw):
-        b = m.get(i, {})
-        out.append({"title": r["title"], "one_line": b.get("one_line") or r["title"],
-                    "summary": (b.get("summary") or "")[:280] or None,
-                    "sentiment": b.get("sentiment") or "中性", "src": r["src"], "url": r["url"],
-                    "sector": sec_of.get(r["from_ticker"], "科技"), "ticker": r["from_ticker"],
-                    "time": r.get("time", "")})
+    for s in range(0, len(raw), batch):
+        chunk = raw[s:s + batch]
+        m = _b1_news_chunk(chunk)
+        for i, r in enumerate(chunk):
+            b = m.get(i, {})
+            out.append({"title": r["title"], "one_line": b.get("one_line") or r["title"],
+                        "summary": (b.get("summary") or "")[:280] or None,
+                        "sentiment": b.get("sentiment") or "中性", "src": r["src"], "url": r["url"],
+                        "sector": sec_of.get(r["from_ticker"], "科技"), "ticker": r["from_ticker"],
+                        "time": r.get("time", "")})
     return out
 
 
@@ -232,13 +260,117 @@ def _trends(tickers: list[str]) -> dict:
     return out
 
 
+# ---------- 今日热点(DeepSeek 版,口径同 A股 hotspots.py)----------
+HOT_SYS = (
+    "你是投研信息整理器,不是分析师。基于给定的统计信号和新闻,综合'今天美股科技在炒什么主题',"
+    "只陈述事实、不下判断、不出买卖建议。输出严格 JSON。"
+)
+
+
+def _prior_news_counts(date: str) -> dict[str, int]:
+    """上一交易日 us blob 的每板块新闻数(供升温/降温对比)。找不到/损坏返回空。"""
+    prior = None
+    for p in sorted((ROOT / "exports").glob("us_*.json")):
+        d = p.stem[3:]
+        if len(d) == 8 and d.isdigit() and d < date:
+            prior = p
+    if prior is None:
+        return {}
+    try:
+        blob = json.loads(prior.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001 旧文件损坏不阻塞
+        return {}
+    counts: dict[str, int] = {}
+    for n in blob.get("news") or []:
+        sec = n.get("sector")
+        if sec:
+            counts[sec] = counts.get(sec, 0) + 1
+    return counts
+
+
+def _hotspot(stocks: list[dict], news: list[dict], nodes: list[dict], date: str) -> dict | None:
+    """美股今日热点:统计信号(板块新闻量/情绪+板块涨跌+个股异动)算热度选 Top →
+    DeepSeek 中性归因+升温降温。铁律同 A股:热度统计的、归因提炼的,不下判断。
+    US 无龙虎榜,lhb 恒 0;大跌也是热点故涨跌取绝对值计热度。"""
+    prior_counts = _prior_news_counts(date)
+    ret1d = {n["node"]: n["ret_1d"] for n in nodes}
+    sec_stocks: dict[str, list[dict]] = {}
+    for s in stocks:
+        sec_stocks.setdefault(s["sector"], []).append(s)
+    by_sec: dict[str, dict] = {}
+    for n in news:
+        b = by_sec.setdefault(n["sector"], {"news": [], "today": 0, "pos": 0, "neg": 0, "latest": ""})
+        b["today"] += 1
+        if n["sentiment"] == "利好":
+            b["pos"] += 1
+        elif n["sentiment"] == "利空":
+            b["neg"] += 1
+        if (n.get("time") or "") > b["latest"]:
+            b["latest"] = n["time"]
+        if len(b["news"]) < 3:
+            b["news"].append(n.get("summary") or n["one_line"])
+    rows, movers_of = [], {}
+    for sec, b in by_sec.items():
+        r1 = ret1d.get(sec)
+        movers = sorted((s for s in sec_stocks.get(sec, []) if s["pct"] is not None),
+                        key=lambda s: -abs(s["pct"]))
+        movers_of[sec] = movers
+        prior = prior_counts.get(sec)
+        rows.append({"node_id": sec, "chain": "美股", "node": sec,
+                     "heat": round(b["today"] * 1.0 + abs(r1 or 0) * 0.3, 1),
+                     "trend": ("持平" if prior is None else
+                               "升温" if b["today"] > prior else
+                               "降温" if b["today"] < prior else "持平"),
+                     "news_today": b["today"], "news_prior": prior,
+                     "pos": b["pos"], "neg": b["neg"], "ret_1d": r1, "lhb": 0,
+                     "latest_time": b["latest"],
+                     "stocks": [s["name"] for s in movers[:5]], "news": b["news"]})
+    rows.sort(key=lambda x: -x["heat"])
+    rows = rows[:10]
+    if not rows:
+        return None
+
+    blocks = []
+    for i, r in enumerate(rows):
+        mv = "、".join(f"{s['name']}{s['pct']:+.1f}%" for s in movers_of[r["node"]][:3])
+        prior_txt = f"(昨日{r['news_prior']})" if r["news_prior"] is not None else ""
+        nl = "；".join(r["news"]) if r["news"] else "(无当日新闻)"
+        blocks.append(
+            f"{i}. 【{r['node']}】热度{r['heat']} | 今日新闻{r['news_today']}条{prior_txt}"
+            f" 利好{r['pos']}/利空{r['neg']} | 板块今日涨跌{r['ret_1d']}%"
+            f" | 异动个股:{mv or '(无)'} | 新闻:{nl}")
+    user = f"""下面是今日美股科技各板块的统计热度信号(已按热度排序)。请综合成"今日热点榜",JSON:
+{{
+  "headline": "一句话总览今天美股科技在炒哪些主题(中性事实,如'资金聚焦光模块业绩与算力芯片新品'),≤50字",
+  "items": [
+    {{"node_id":"照抄输入的板块名","reason":"该板块为什么热的中性归因,必须基于给的信号/新闻(带具体数字/个股),≤50字","trend":"升温|降温|持平"}}
+  ]
+}}
+规则:items 顺序与条数尽量对应输入(可略去信号极弱的);reason 只陈述事实,禁止"看好/建议买入/值得关注"等判断词;trend 参考输入里"今日vs昨日新闻数"。
+【信号】
+{chr(10).join(blocks)}"""
+    try:
+        j = llm.chat_json(HOT_SYS, user, timeout=120)
+    except Exception as e:  # noqa: BLE001 综述失败降级:用统计信号直接出榜
+        print(f"  ! 美股热点综述失败,降级统计榜: {str(e)[:80]}")
+        j = {"headline": "今日美股科技热度(统计榜)", "items": []}
+    by_node = {str(it.get("node_id")): it for it in j.get("items", []) if it.get("node_id")}
+    items = []
+    for r in rows:
+        d = by_node.get(r["node_id"]) or by_node.get(f"美股/{r['node_id']}") or {}
+        items.append({**r, "reason": d.get("reason") or f"今日{r['news_today']}条相关新闻",
+                      "trend": d.get("trend") or r["trend"]})
+    return {"headline": j.get("headline") or "今日美股科技主题热度", "items": items}
+
+
 # ---------- 每日报告 B3 ----------
 B3_SYS = """你是投研信息整理器,为关注美股AI科技的投资者服务。只呈现变化,不做投资判断。
 铁律:每个事实带来源[来源:xxx];headline.fact 中性事实陈述,user_judgment 永远填"<待填>";
 只用提供数据不外部补充;证伪条件具体可1-2周验证。输出严格JSON。"""
 
 
-def _report(stocks: list[dict], news: list[dict], wire: list[dict], us_date: str) -> dict:
+def _report(stocks: list[dict], news: list[dict], wire: list[dict], us_date: str,
+            session: dict) -> dict:
     movers = sorted([s for s in stocks if s["pct"] is not None], key=lambda s: s["pct"])
     top_dn = movers[:5]
     top_up = movers[-5:][::-1]
@@ -260,12 +392,17 @@ def _report(stocks: list[dict], news: list[dict], wire: list[dict], us_date: str
              "\n\n【全球科技舆情(西方媒体)】\n" + ("\n".join(wire_lines) or "(无)") +
              "\n\n【推特X·美股/全球观点(个人观点,serenity权重最高)】\n" + (xl(x_us) or "(无)") +
              "\n\n【推特X·A股相关观点】\n" + (xl(x_a) or "(无)"))
-    user = f"""【数据截止 美东 {us_date} 收盘】
+    # 盘中刷新:涨跌为实时数据,口径必须标"盘中截至此刻"不能说"收盘"
+    cutoff = (f"美东 {us_date} 盘中 {session['et_hhmm']}" if session["live"]
+              else f"美东 {us_date} 收盘")
+    view = ("美股盘中,涨跌为截至此刻的实时数据,表述用'截至此刻'不许说'收盘'"
+            if session["live"] else "美股盘后")
+    user = f"""【数据截止 {cutoff}】
 {block}
 
-输出JSON(美股盘后,呈现"美股AI科技今天发生了什么、哪些方向强弱"):
+输出JSON({view},呈现"美股AI科技今天发生了什么、哪些方向强弱"):
 {{
-  "data_cutoff": "美东 {us_date} 收盘",
+  "data_cutoff": "{cutoff}",
   "session": "us",
   "headline": {{"fact":"基于上述数据的中性事实陈述,不带倾向","user_judgment":"<待填>","confidence":"高|中|低"}},
   "narrative": "约500字的今日综述,分3-4个自然段(段间用\\n\\n分隔):①大盘与板块涨跌概况(点名强弱板块+代表个股数据);②今日重要新闻事件(半导体/云/光模块/存储/Neocloud等,按重要性展开2-4条,带来源);③舆情要点(权威媒体口径 + 推特X的美股与A股两方观点分歧,注明谁说的)。只陈述事实与各方说法,不下投资判断,不编造数字。",
@@ -298,8 +435,15 @@ def main() -> None:
     wire = _b1_wire(fetch_wire())
     print(f"  舆情 {len(wire)} 条")
 
+    session = _us_session()
+    heatmap = _heatmap(stocks)
+
+    print(f"[build_us] 生成美股热点(DeepSeek,{session['status']})...")
+    hotspot = _hotspot(stocks, news, heatmap["nodes"], date)
+    print(f"  热点 {len(hotspot['items']) if hotspot else 0} 板块")
+
     print("[build_us] 合成美股报告 B3 ...")
-    report = _report(stocks, news, wire, us_date)
+    report = _report(stocks, news, wire, us_date, session)
 
     print("[build_us] 拉美股 6M 走势 ...")
     trends = _trends([t for t, _, _ in US_UNIVERSE])
@@ -307,12 +451,14 @@ def main() -> None:
 
     us = {
         "us_session_date": us_date,
+        "session_status": session["status"],
         "board": {"items": board["items"], "n_ok": board["n_ok"]},
         "temperature": _temperature(stocks),
-        "heatmap": _heatmap(stocks),
+        "heatmap": heatmap,
         "research": _research(stocks),
         "news": news,
         "wire": wire,
+        "hotspot": hotspot,
         "report": report,
         "trends": trends,
         "indices": idx,

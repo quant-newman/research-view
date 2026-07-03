@@ -65,7 +65,7 @@ export function HotspotView({ hotspot }: { hotspot: Hotspot | null | undefined }
       <div className="border border-accent/40 rounded bg-accent/5 px-4 py-3">
         <div className="text-accent text-[12px] mb-1">今日热点 · 市场在炒什么</div>
         <p className="text-primary text-[16px] leading-relaxed font-medium">{hotspot.headline}</p>
-        <p className="text-dim text-[12px] mt-1">热度=统计(新闻量+龙虎榜+涨跌),归因由 DeepSeek 综合 · 只呈现事实不下判断</p>
+        <p className="text-dim text-[12px] mt-1">热度=统计(新闻量+龙虎榜/异动+涨跌),归因由 DeepSeek 综合 · 只呈现事实不下判断</p>
       </div>
       <div className="space-y-2">
         <MoreList items={hotspot.items} initial={6}>

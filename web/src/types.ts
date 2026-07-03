@@ -105,12 +105,14 @@ export interface WireItem {
 }
 export interface UsData {
   us_session_date: string;
+  session_status?: string;
   board: { items: UsBoardItem[]; n_ok: number };
   temperature: UsTemperature;
   heatmap: Heatmap;
   research: UsResearchItem[];
   news: UsNewsItem[];
   wire?: WireItem[];
+  hotspot?: Hotspot | null;
   report: Report | null;
   indices: UsBoardItem[];
 }
