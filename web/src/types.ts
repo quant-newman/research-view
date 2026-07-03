@@ -6,7 +6,7 @@ export interface Temperature {
 export interface Headline { fact: string; user_judgment: string; confidence: string; }
 export interface Top3Item { change: string; evidence: string; node_ids: string[]; related_stocks: string[]; }
 export interface Sector { chain: string; status: string; }
-export interface Falsification { claim: string; condition: string; draft_by: string; }
+export interface Falsification { claim: string; condition: string; draft_by: string; pinned_id?: number; pinned_falsified?: boolean; }
 export interface UsItem { ticker: string; name: string; mapping: string; close: number | null; pct: number | null; }
 export interface UsOvernight { us_session_date: string; items: UsItem[]; n_ok: number; fetched_at: string; }
 export interface Report {

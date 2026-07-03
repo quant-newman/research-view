@@ -189,6 +189,23 @@ def build_dashboard(date_utc8: str) -> Path:
                       "headline": row[3], "top3": row[4], "sectors": row[5],
                       "falsification": row[6], "holdings_moves": row[7],
                       "generated_at": str(row[8]), "narrative": row[9]}
+            # 证伪草稿标注已钉死:锚点=report_id+condition 文本(与 manage_ledger drafts 同口径;
+            # pin 时人改写 condition 措辞的,草稿侧不标——账本面板仍会显示该判断)。
+            fals = report["falsification"] or []
+            if isinstance(fals, str):
+                fals = json.loads(fals)
+            if fals:
+                cur.execute(
+                    """SELECT l.condition, l.ledger_id,
+                              EXISTS(SELECT 1 FROM ledger a WHERE a.ref_ledger=l.ledger_id)
+                       FROM ledger l WHERE l.report_id=%s AND l.kind='judgment'""",
+                    (report["report_id"],))
+                pinned = {r[0]: (r[1], r[2]) for r in cur.fetchall()}
+                for f in fals:
+                    hit = pinned.get(f.get("condition", ""))
+                    if hit:
+                        f["pinned_id"], f["pinned_falsified"] = hit
+            report["falsification"] = fals
             # 盘前/盘中报告附隔夜美股科技链(台北 yfinance 产出,scp 到本机 exports/),供前端小面板。
             # 盘中也附:否则盘中报告一接管,早上的隔夜外盘参照会整天消失。
             if row[1] in ("premarket", "intraday"):

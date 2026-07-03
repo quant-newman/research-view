@@ -193,7 +193,13 @@ function DailyReport({ report }: { report: Report | null | undefined }) {
               </p>
               <div className="mt-1 flex gap-2">
                 <Badge text="DeepSeek 起草" cls="bg-elevated text-dim" />
-                <Badge text="待审定" cls="bg-accent/10 text-accent" />
+                {f.pinned_id == null ? (
+                  <Badge text="待审定" cls="bg-accent/10 text-accent" />
+                ) : f.pinned_falsified ? (
+                  <Badge text={`✗已证伪 #${f.pinned_id}`} cls="bg-down/10 text-down" />
+                ) : (
+                  <Badge text={`✓已钉死 #${f.pinned_id}`} cls="bg-up/10 text-up" />
+                )}
               </div>
             </div>
           ))}
