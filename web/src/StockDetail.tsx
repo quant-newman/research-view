@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import * as echarts from "echarts";
 import type { Dashboard, NewsItem } from "./types";
 import type { StockSel } from "./stockCtx";
+import { pctCls, sentColor } from "./ui";
 
 // 走势小图数据(6M日线)单列 trends.json,首次打开个股详情时懒加载一次,模块级缓存。
 type TrendPoint = [string, number];
@@ -50,10 +51,6 @@ function TrendChart({ series }: { series: TrendPoint[] }) {
   return <div ref={ref} className="w-full h-40" />;
 }
 
-const pctCls = (v: number | null | undefined) => (v == null ? "text-dim" : v > 0 ? "text-up" : v < 0 ? "text-down" : "text-muted");
-const sentColor: Record<string, string> = {
-  利好: "text-up bg-up/10", 利空: "text-down bg-down/10", 中性: "text-muted bg-muted/10", 澄清: "text-info bg-info/10",
-};
 const recLabel: Record<string, string> = { strong_buy: "强烈买入", buy: "买入", hold: "持有", underperform: "跑输", sell: "卖出" };
 const num = (v: number | null | undefined, s = "") => (v == null ? "—" : `${v}${s}`);
 const fmtMc = (v: number | null | undefined) => (v == null ? "—" : v >= 1000 ? `${(v / 1000).toFixed(2)}T` : `${Math.round(v)}B`);

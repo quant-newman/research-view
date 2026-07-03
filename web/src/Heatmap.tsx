@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as echarts from "echarts";
 import type { Heatmap, HeatNode, HeatStock } from "./types";
 import { useOpenStock } from "./stockCtx";
+import { pctCls } from "./ui";
 
 const QUAD_COLOR: Record<string, string> = {
   核心主线: "#F6465D", 潜在补涨: "#F0B90B", 等待验证: "#4A9EFF", 风险区: "#5A6474", 数据不足: "#232B36",
@@ -102,7 +103,6 @@ function NodeTable({ nodes, onSelect, selected }: { nodes: HeatNode[]; onSelect:
   ];
   const click = (k: SortKey) => { if (k === sort) setAsc(!asc); else { setSort(k); setAsc(false); } };
   const num = (v: any) => (typeof v === "number" ? (Number.isInteger(v) ? v : v.toFixed(1)) : v ?? "—");
-  const pctCls = (v: any) => (typeof v === "number" ? (v > 0 ? "text-up" : v < 0 ? "text-down" : "text-muted") : "");
   return (
     <div className="overflow-auto">
       <table className="w-full text-[14px] mono">
@@ -147,7 +147,6 @@ function NodeTable({ nodes, onSelect, selected }: { nodes: HeatNode[]; onSelect:
 function StockPanel({ node, stocks, onClose }: { node: HeatNode; stocks: HeatStock[]; onClose: () => void }) {
   const openStock = useOpenStock();
   const num = (v: number | null) => (v == null ? "—" : Number.isInteger(v) ? v : v.toFixed(1));
-  const pctCls = (v: number | null) => (v == null ? "text-dim" : v > 0 ? "text-up" : v < 0 ? "text-down" : "text-muted");
   const sorted = [...stocks].sort((a, b) => (b.ret_6m ?? -1e9) - (a.ret_6m ?? -1e9));
   return (
     <div className="border border-accent/40 rounded bg-surface">

@@ -1,9 +1,8 @@
 import { useMemo, useState } from "react";
 import type { UsBoard, UsBoardItem } from "./types";
 import { useOpenStock } from "./stockCtx";
+import { pctCls as pctColor } from "./ui";
 
-// 全站红涨绿跌硬约束(美股在本 A股 工具里也沿用,与隔夜面板一致)
-const pctColor = (v: number | null) => (v == null ? "text-dim" : v > 0 ? "text-up" : v < 0 ? "text-down" : "text-muted");
 const fmtPct = (v: number | null) => (v == null ? "—" : `${v > 0 ? "+" : ""}${v}%`);
 const fmtMc = (v: number | null) => (v == null ? "—" : v >= 1000 ? `${(v / 1000).toFixed(2)}T` : `${Math.round(v)}B`);
 

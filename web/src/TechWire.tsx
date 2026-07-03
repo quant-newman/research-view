@@ -1,8 +1,5 @@
 import type { WireItem } from "./types";
-import { timeHour } from "./ui";
-
-const sentDot: Record<string, string> = { 利好: "bg-up", 利空: "bg-down", 中性: "bg-muted", 澄清: "bg-info" };
-const sentTx: Record<string, string> = { 利好: "text-up", 利空: "text-down", 中性: "text-muted", 澄清: "text-info" };
+import { sentDot, sentTx, timeHour } from "./ui";
 
 // 推特X 舆情:热点视图右栏。条目多→多列铺开(grid 自动分列),重点号(serenity)置顶标 ★。
 export function TechWireX({ wire }: { wire: WireItem[] }) {

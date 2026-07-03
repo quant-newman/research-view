@@ -1,5 +1,20 @@
 import { useState } from "react";
 
+// ── 全站共享色映射(单点,勿在各页复制)────────────────────────────
+// 涨跌色(A股红涨绿跌硬约束):null/undefined → text-dim
+export const pctCls = (v: number | null | undefined) =>
+  v == null ? "text-dim" : v > 0 ? "text-up" : v < 0 ? "text-down" : "text-muted";
+export const sentColor: Record<string, string> = {
+  利好: "text-up bg-up/10", 利空: "text-down bg-down/10",
+  中性: "text-muted bg-muted/10", 澄清: "text-info bg-info/10",
+};
+export const sentDot: Record<string, string> = { 利好: "bg-up", 利空: "bg-down", 中性: "bg-muted", 澄清: "bg-info" };
+export const sentTx: Record<string, string> = { 利好: "text-up", 利空: "text-down", 中性: "text-muted", 澄清: "text-info" };
+
+export function Badge({ text, cls }: { text: string; cls: string }) {
+  return <span className={`px-1.5 py-0.5 rounded text-[13px] ${cls}`}>{text}</span>;
+}
+
 // 时间统一显示到小时:"YYYY-MM-DD HH:MM" → "MM-DD HH时"。解析失败/空则不显示。
 export function timeHour(t?: string): string {
   if (!t) return "";

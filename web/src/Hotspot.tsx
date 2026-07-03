@@ -1,12 +1,11 @@
 import { useState } from "react";
 import type { Hotspot, HotspotItem } from "./types";
 import { useOpenStock } from "./stockCtx";
-import { MoreList, StaleBadge, timeHour } from "./ui";
+import { MoreList, StaleBadge, pctCls, timeHour } from "./ui";
 
 const trendCls: Record<string, string> = {
   升温: "text-up bg-up/10", 降温: "text-down bg-down/10", 持平: "text-muted bg-muted/10",
 };
-const pctCls = (v: number | null | undefined) => (v == null ? "text-dim" : v > 0 ? "text-up" : v < 0 ? "text-down" : "text-muted");
 
 function Card({ it, rank }: { it: HotspotItem; rank: number }) {
   const [open, setOpen] = useState(rank <= 2);

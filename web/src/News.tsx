@@ -1,12 +1,8 @@
 import { useMemo, useState } from "react";
 import type { NewsNode, NewsItem } from "./types";
 import { useOpenStock } from "./stockCtx";
-import { Section, MoreList, timeHour } from "./ui";
+import { Section, MoreList, sentColor, timeHour } from "./ui";
 
-const sentColor: Record<string, string> = {
-  利好: "text-up bg-up/10", 利空: "text-down bg-down/10",
-  中性: "text-muted bg-muted/10", 澄清: "text-info bg-info/10",
-};
 const SENTS = ["利好", "利空", "中性", "澄清"];
 
 type Flat = NewsItem & { chain: string; node: string; scope: string; gid: string };
