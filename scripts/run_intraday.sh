@@ -12,9 +12,10 @@ mkdir -p webdata
 trap 'alert_set intraday 盘中 "盘中刷新失败,数据可能陈旧(logs/intraday-*.log)"' ERR
 
 # 全局串行锁:盘前/盘中/盘后/美股/信函 编排都会重建 dashboard.json 并 rsync 回 webdata,
-# 并发会写坏文件 → flock 排队(最多等 300s)。
+# 并发会写坏文件 → flock 排队。等 900s:美股时段(UTC+8 22:00/23:00)整点 run_us
+# 全量构建约 10min,300s 不够会让盘中档每晚整点例行超时+误告警(2026-07-03 首撞实测)。
 exec 9>/tmp/rv_orchestrate.lock
-flock -w 300 9
+flock -w 900 9
 DATE="${1:-$(TZ=Asia/Shanghai date +%Y%m%d)}"
 # LogLevel=ERROR 压掉 known-hosts Warning——不再需要 grep -v 过滤,rsync/ssh 退出码
 # 原样生效(旧版 "| grep -v ... || true" 会吞掉拉回失败,前端静默用旧数据)。

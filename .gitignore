@@ -5,7 +5,7 @@ __pycache__/
 .venv/
 .venv-taipei/
 exports/
-webdata/*.json
+webdata/
 web/node_modules/
 web/dist/
 web/tsconfig.tsbuildinfo
