@@ -106,6 +106,24 @@ function GaugeBar({ g }: { g: MarketGauge | null | undefined }) {
 
 // 头版化(倒金字塔):第1屏=主线hero+今日三件事;第2屏=证伪+盘中节奏(最新在前,收合);
 // 第3屏起=综述正文+分板块(折叠)。结论先行,证据按需展开。
+// 美股指数横条(对标A股大盘仪表位:环境读数第一眼可见,手机不再沉底)
+function UsIndexBar({ us }: { us: Dashboard["us"] }) {
+  if (!us?.indices?.length) return null;
+  return (
+    <section className="border hairline rounded bg-surface px-3 py-2.5">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+        <span className="text-dim text-[12px]">美股 · {us.us_session_date}{us.session_status ? ` ${us.session_status}` : ""}</span>
+        {us.indices.map((i) => (
+          <span key={i.ticker} className="text-[13px] whitespace-nowrap inline-flex items-center gap-1.5">
+            <span className="text-muted">{i.name}</span>
+            <span className={`mono ${pctCls(i.pct ?? 0)}`}>{i.pct == null ? "—" : `${i.pct > 0 ? "+" : ""}${i.pct}%`}</span>
+          </span>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function DailyReport({ report }: { report: Report | null | undefined }) {
   const r = report;
   if (!r) return <div className="text-muted p-4">今日暂无报告</div>;
@@ -422,8 +440,23 @@ export function ReportPageView({ d, isUS, usNewsNodes }: { d: Dashboard; isUS: b
   return (
     <div className="flex-1 grid grid-cols-1 md:grid-cols-[1.6fr_1fr] gap-4 md:gap-6 p-3 md:p-6 overflow-auto">
       <div className="space-y-6">
-        {!isUS && <GaugeBar g={d.market} />}
+        {isUS ? <UsIndexBar us={d.us} /> : <GaugeBar g={d.market} />}
         <DailyReport report={isUS ? d.us?.report : d.report} />
+        {/* 推特X观点综述:左栏主阅读流(原在右栏,手机沉底刷不到) */}
+        {isUS && (d.us?.report?.x_takes?.us_global || d.us?.report?.x_takes?.a_share) && (
+          <Panel title="推特X 观点综述 · serenity等17号(完整流见「热点」页)" collapsible>
+            <div className="space-y-2.5 text-[14px] leading-relaxed">
+              {d.us?.report?.x_takes?.us_global && d.us.report.x_takes.us_global !== "(无)" && (
+                <div><span className="text-accent text-[12px]">美股/全球</span>
+                  <p className="text-muted mt-0.5">{d.us.report.x_takes.us_global}</p></div>
+              )}
+              {d.us?.report?.x_takes?.a_share && d.us.report.x_takes.a_share !== "(无)" && (
+                <div><span className="text-accent text-[12px] bg-accent/10 px-1 rounded">A股</span>
+                  <p className="text-muted mt-0.5">{d.us.report.x_takes.a_share}</p></div>
+              )}
+            </div>
+          </Panel>
+        )}
         {!isUS && d.stock_events.length > 0 && (
           <Panel title="个股事件 · 公告 / 龙虎榜" count={d.stock_events.length} collapsible defaultOpen={false}>
             <Events events={d.stock_events} />
@@ -438,31 +471,6 @@ export function ReportPageView({ d, isUS, usNewsNodes }: { d: Dashboard; isUS: b
             </Panel>
             <Panel title="全球科技舆情 · WSJ/路透/科技媒体/Reddit" count={usWireMedia.length} collapsible defaultOpen={false}>
               <TechWire wire={usWireMedia} />
-            </Panel>
-            {(d.us?.report?.x_takes?.us_global || d.us?.report?.x_takes?.a_share) && (
-              <Panel title="推特X 观点综述 · serenity等17号(完整流见「热点」页)" collapsible>
-                <div className="space-y-2.5 text-[14px] leading-relaxed">
-                  {d.us?.report?.x_takes?.us_global && d.us.report.x_takes.us_global !== "(无)" && (
-                    <div><span className="text-accent text-[12px]">美股/全球</span>
-                      <p className="text-muted mt-0.5">{d.us.report.x_takes.us_global}</p></div>
-                  )}
-                  {d.us?.report?.x_takes?.a_share && d.us.report.x_takes.a_share !== "(无)" && (
-                    <div><span className="text-accent text-[12px] bg-accent/10 px-1 rounded">A股</span>
-                      <p className="text-muted mt-0.5">{d.us.report.x_takes.a_share}</p></div>
-                  )}
-                </div>
-              </Panel>
-            )}
-            <Panel title="美股指数" collapsible>
-              <div className="space-y-1">
-                {(d.us?.indices || []).map((i) => (
-                  <div key={i.ticker} className="flex items-center gap-2 text-[15px]">
-                    <span className="text-primary flex-1">{i.name}</span>
-                    <span className="mono text-dim text-[13px]">{i.ticker}</span>
-                    <span className={`mono ${pctCls(i.pct ?? 0)}`}>{i.pct == null ? "—" : `${i.pct > 0 ? "+" : ""}${i.pct}%`}</span>
-                  </div>
-                ))}
-              </div>
             </Panel>
           </>
         ) : (
