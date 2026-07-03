@@ -36,7 +36,12 @@ def main() -> None:
     date = sys.argv[1] if len(sys.argv) > 1 else datetime.now(ZoneInfo(config.TZ)).strftime("%Y%m%d")
     print(f"[Pipeline] {date} UTC+8")
     step("tech_universe", universe.build)
-    step("fetch_news", lambda: {"n": news.fetch_major_news(date)})
+    def _fetch_news():
+        skip = news.throttle(force=True)  # 盘后主采只受40硬顶约束;拦截时失败入health但带标记不计台账
+        if skip:
+            raise RuntimeError(skip)
+        return {"n": news.fetch_major_news(date)}
+    step("fetch_news", _fetch_news)
     step("funnel", run_funnel)
     step("structure_b1", run_structure)
     step("stock_events", announcements.collect_events)

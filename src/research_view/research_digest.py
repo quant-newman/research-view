@@ -42,26 +42,38 @@ def _collect(date_utc8: str, days: int = 30):
 
 
 def _changes(by_code: dict, top: int = 20):
+    """评级/目标价变动榜。只认**同一机构**自身前后两篇的变化——跨机构比较是假动作
+    (A券商最新tp对比B券商更早的tp,不是任何一家的真实调价,输出"机构下调"会失真,
+    与零幻觉铁律冲突)。同票多家机构都有变动时取最近一条。"""
     out = []
     for code, d in by_code.items():
-        reps = d["reports"]
-        if len(reps) < 2:
-            continue
-        latest, prior = reps[-1], reps[:-1]
-        lat_s = _score(latest["rating"])
-        prior_rated = next((r for r in reversed(prior) if _score(r["rating"]) is not None), None)
-        rating_dir = None
-        if prior_rated and lat_s is not None:
-            ps = _score(prior_rated["rating"])
-            rating_dir = "上调" if lat_s > ps else "下调" if lat_s < ps else None
-        prior_tp = next((r["tp"] for r in reversed(prior) if r["tp"]), None)
-        tp_chg = round((latest["tp"] / prior_tp - 1) * 100, 1) if latest["tp"] and prior_tp else None
-        if rating_dir or (tp_chg is not None and abs(tp_chg) >= 1):
-            out.append({"code": code, "name": d["name"], "scope": d["scope"], "n": len(reps),
+        by_org: dict[str, list] = {}
+        for r in d["reports"]:  # reports 已按 report_date 升序
+            if r["org"]:
+                by_org.setdefault(r["org"], []).append(r)
+        best = None
+        for org, reps in by_org.items():
+            if len(reps) < 2:
+                continue
+            latest, prior = reps[-1], reps[:-1]
+            lat_s = _score(latest["rating"])
+            prior_rated = next((r for r in reversed(prior) if _score(r["rating"]) is not None), None)
+            rating_dir = None
+            if prior_rated and lat_s is not None:
+                ps = _score(prior_rated["rating"])
+                rating_dir = "上调" if lat_s > ps else "下调" if lat_s < ps else None
+            prior_tp = next((r["tp"] for r in reversed(prior) if r["tp"]), None)
+            tp_chg = round((latest["tp"] / prior_tp - 1) * 100, 1) if latest["tp"] and prior_tp else None
+            if rating_dir or (tp_chg is not None and abs(tp_chg) >= 1):
+                cand = {"code": code, "name": d["name"], "scope": d["scope"], "n": len(d["reports"]),
                         "rating_dir": rating_dir, "latest_rating": latest["rating"],
                         "prior_rating": prior_rated["rating"] if prior_rated else None,
                         "latest_tp": latest["tp"], "prior_tp": prior_tp, "tp_chg": tp_chg,
-                        "latest_org": latest["org"], "latest_date": latest["date"]})
+                        "latest_org": org, "latest_date": latest["date"]}
+                if best is None or cand["latest_date"] > best["latest_date"]:
+                    best = cand
+        if best:
+            out.append(best)
     # 上调优先,其次目标价上调幅度
     out.sort(key=lambda c: (c["rating_dir"] != "上调", -(c["tp_chg"] if c["tp_chg"] is not None else -999)))
     return out[:top]

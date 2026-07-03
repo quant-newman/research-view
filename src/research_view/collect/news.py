@@ -33,6 +33,34 @@ def _news_id(url: str | None, title: str, pub_time: str) -> tuple[str, str]:
     return nid, chash
 
 
+QUOTA_24H = 40      # major_news 配额实测按滚动24h窗口计,且超限的失败调用本身也计数
+RESERVE = 6         # 盘中留给盘后主采/手动补抓的保底额度
+COOLDOWN_MIN = 120  # 收到超限错误后的退避窗口(分钟),不再每30min重撞白烧配额
+
+
+def throttle(force: bool = False) -> str | None:
+    """调用前查滚动24h台账,可调返回 None,否则返回跳过原因。
+
+    台账=task_log 里 fetch_news 的历史记录(成败都是一次真实API调用;
+    被本函数拦下的跳过带'台账拦截'标记,不计入)。force=盘后主采/手动,
+    只受硬顶约束不受保底/退避约束。"""
+    with db.rv_conn() as conn, conn.cursor() as cur:
+        cur.execute("""SELECT count(*),
+              bool_or(status='失败' AND error_msg ~ '最多访问|频率|超限'
+                      AND ts_utc8 >= now() - make_interval(mins => %s))
+            FROM task_log WHERE task='fetch_news'
+              AND ts_utc8 >= now() - interval '24 hours'
+              AND (error_msg IS NULL OR error_msg NOT LIKE '%%台账拦截%%')""",
+            (COOLDOWN_MIN,))
+        calls, cooling = cur.fetchone()
+    cap = QUOTA_24H if force else QUOTA_24H - RESERVE
+    if calls >= cap:
+        return f"台账拦截:滚动24h已调{calls}次(本档上限{cap}/配额{QUOTA_24H})"
+    if not force and cooling:
+        return f"台账拦截:{COOLDOWN_MIN}分钟内曾撞配额,退避中(24h已调{calls}次)"
+    return None
+
+
 def fetch_major_news(date_utc8: str) -> int:
     """抓某日 major_news 落库(含正文,供 B1 提炼核心观点)。返回新增/更新条数。"""
     pro = ts.pro_api(config.tushare_token())

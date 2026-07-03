@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as echarts from "echarts";
 import type { Heatmap, HeatNode, HeatStock } from "./types";
 import { useOpenStock } from "./stockCtx";
-import { pctCls } from "./ui";
+import { fmtMc, pctCls } from "./ui";
 
 const QUAD_COLOR: Record<string, string> = {
   核心主线: "#F6465D", 潜在补涨: "#F0B90B", 等待验证: "#4A9EFF", 风险区: "#5A6474", 数据不足: "#232B36",
@@ -84,7 +84,7 @@ function Scatter({ nodes, win, onSelect }: { nodes: HeatNode[]; win: WinKey; onS
 }
 
 type SortKey = keyof HeatNode;
-function NodeTable({ nodes, onSelect, selected }: { nodes: HeatNode[]; onSelect: (id: string) => void; selected: string | null }) {
+function NodeTable({ nodes, onSelect, selected, isUS }: { nodes: HeatNode[]; onSelect: (id: string) => void; selected: string | null; isUS: boolean }) {
   const [sort, setSort] = useState<SortKey>("total_mv");
   const [asc, setAsc] = useState(false);
   const rows = useMemo(() => {
@@ -97,7 +97,7 @@ function NodeTable({ nodes, onSelect, selected }: { nodes: HeatNode[]; onSelect:
     return r;
   }, [nodes, sort, asc]);
   const cols: [SortKey, string][] = [
-    ["node", "节点"], ["chain", "链"], ["n_stocks", "公司数"], ["total_mv", "市值(亿)"],
+    ["node", "节点"], ["chain", "链"], ["n_stocks", "公司数"], ["total_mv", "市值"],
     ["ret_1m", "1M%"], ["ret_6m", "6M%"], ["or_yoy", "营收%"], ["gross_margin", "毛利%"],
     ["pe", "PE"], ["ps", "PS"], ["quadrant", "象限"],
   ];
@@ -123,7 +123,7 @@ function NodeTable({ nodes, onSelect, selected }: { nodes: HeatNode[]; onSelect:
               <td className="px-2 py-1.5 text-primary whitespace-nowrap">{n.node}</td>
               <td className="px-2 py-1.5 text-muted">{n.chain}</td>
               <td className="px-2 py-1.5 text-right">{n.n_stocks}</td>
-              <td className="px-2 py-1.5 text-right text-muted">{n.total_mv ? Math.round(n.total_mv / 1e4).toLocaleString() : "—"}</td>
+              <td className="px-2 py-1.5 text-right text-muted">{fmtMc(n.total_mv, isUS)}</td>
               <td className={`px-2 py-1.5 text-right ${pctCls(n.ret_1m)}`}>{num(n.ret_1m)}</td>
               <td className={`px-2 py-1.5 text-right ${pctCls(n.ret_6m)}`}>{num(n.ret_6m)}</td>
               <td className={`px-2 py-1.5 text-right ${pctCls(n.or_yoy)}`}>{num(n.or_yoy)}</td>
@@ -144,7 +144,7 @@ function NodeTable({ nodes, onSelect, selected }: { nodes: HeatNode[]; onSelect:
   );
 }
 
-function StockPanel({ node, stocks, onClose }: { node: HeatNode; stocks: HeatStock[]; onClose: () => void }) {
+function StockPanel({ node, stocks, onClose, isUS }: { node: HeatNode; stocks: HeatStock[]; onClose: () => void; isUS: boolean }) {
   const openStock = useOpenStock();
   const num = (v: number | null) => (v == null ? "—" : Number.isInteger(v) ? v : v.toFixed(1));
   const sorted = [...stocks].sort((a, b) => (b.ret_6m ?? -1e9) - (a.ret_6m ?? -1e9));
@@ -165,7 +165,7 @@ function StockPanel({ node, stocks, onClose }: { node: HeatNode; stocks: HeatSto
               <th className="font-normal py-1">名称</th><th className="font-normal">代码</th>
               <th className="font-normal text-right">6M%</th><th className="font-normal text-right">营收%</th>
               <th className="font-normal text-right">毛利%</th><th className="font-normal text-right">PE</th>
-              <th className="font-normal text-right">市值(亿)</th>
+              <th className="font-normal text-right">市值</th>
             </tr></thead>
             <tbody>
               {sorted.map((s) => (
@@ -177,7 +177,7 @@ function StockPanel({ node, stocks, onClose }: { node: HeatNode; stocks: HeatSto
                   <td className={`text-right ${pctCls(s.or_yoy)}`}>{num(s.or_yoy)}</td>
                   <td className="text-right text-muted">{num(s.gross_margin)}</td>
                   <td className="text-right text-muted">{num(s.pe)}</td>
-                  <td className="text-right text-muted">{s.total_mv ? Math.round(s.total_mv / 1e4).toLocaleString() : "—"}</td>
+                  <td className="text-right text-muted">{fmtMc(s.total_mv, isUS)}</td>
                 </tr>
               ))}
             </tbody>
@@ -188,7 +188,7 @@ function StockPanel({ node, stocks, onClose }: { node: HeatNode; stocks: HeatSto
   );
 }
 
-export default function HeatmapView({ h }: { h: Heatmap | undefined }) {
+export default function HeatmapView({ h, isUS = false }: { h: Heatmap | undefined; isUS?: boolean }) {
   const [sel, setSel] = useState<string | null>(null);
   const [win, setWin] = useState<WinKey>("ret_6m");
   if (!h) return <div className="text-muted p-4">暂无热力图数据</div>;
@@ -221,12 +221,12 @@ export default function HeatmapView({ h }: { h: Heatmap | undefined }) {
         </div>
         <div className="p-2"><Scatter nodes={h.nodes} win={win} onSelect={setSel} /></div>
       </div>
-      {selNode && <StockPanel node={selNode} stocks={selStocks} onClose={() => setSel(null)} />}
+      {selNode && <StockPanel node={selNode} stocks={selStocks} onClose={() => setSel(null)} isUS={isUS} />}
       <div className="border hairline rounded bg-surface">
         <div className="px-3 py-2 border-b hairline text-[13px] text-muted uppercase tracking-wide">
           节点监控表 · {h.nodes.length} 节点(点表头排序 · 点行看成分股)
         </div>
-        <NodeTable nodes={h.nodes} onSelect={setSel} selected={sel} />
+        <NodeTable nodes={h.nodes} onSelect={setSel} selected={sel} isUS={isUS} />
       </div>
     </div>
   );

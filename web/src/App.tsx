@@ -143,8 +143,8 @@ export default function App() {
         )}
         {view === "heatmap" && (
           <div className="flex-1 p-3 md:p-5 overflow-auto space-y-4">
-            <HeatmapView h={isUS ? d.us?.heatmap : d.heatmap} />
-            {isUS && d.us && (
+            <HeatmapView h={isUS ? d.us?.heatmap : d.heatmap} isUS={isUS} />
+            {isUS && d.us?.board && (
               <div className="border hairline rounded bg-surface p-3">
                 <div className="text-[14px] text-muted mb-2">美股个股行情(收盘/涨跌/6M/52W位/市值/PE)</div>
                 <UsBoardView b={{ us_session_date: d.us.us_session_date, items: d.us.board.items, n_ok: d.us.board.n_ok }} />

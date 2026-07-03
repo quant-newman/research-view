@@ -109,6 +109,7 @@ def build_export(date_utc8: str) -> Path:
             FROM raw_news rn
             WHERE rn.relevant AND (rn.is_chain_relevant IS NOT false
                   OR array_length(rn.matched_codes,1) > 0 OR array_length(rn.matched_tech_codes,1) > 0)
+              AND rn.pub_time >= current_date - 14
             ORDER BY rn.pub_time DESC""")
         news = cur.fetchall()
 

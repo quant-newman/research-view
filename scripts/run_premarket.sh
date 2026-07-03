@@ -9,19 +9,21 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 set -a; source .env; set +a
 
-# 全局串行锁:盘前/盘中/盘后/美股 四编排都会重建 dashboard.json 并 rsync 回 webdata,
-# 并发会写坏文件 → flock 排队(最多等 300s,超时报错走各自告警路径)。
+# 失败告警旗标(装在 flock 之前:锁等待超时也走告警,不再无声退出)
+source scripts/lib_alert.sh
+mkdir -p webdata
+trap 'alert_set premarket 盘前 "盘前流程失败,数据可能陈旧(logs/premarket-*.log)"' ERR
+
+# 全局串行锁:盘前/盘中/盘后/美股/信函 编排都会重建 dashboard.json 并 rsync 回 webdata,
+# 并发会写坏文件 → flock 排队(最多等 300s)。
 exec 9>/tmp/rv_orchestrate.lock
 flock -w 300 9
 DATE="${1:-$(TZ=Asia/Shanghai date +%Y%m%d)}"
-SSH_BASE="-i $HOME/.ssh/aliyun_dc_ed25519 -o IdentitiesOnly=yes -o ConnectTimeout=20"
+# LogLevel=ERROR 压掉 known-hosts Warning,rsync/ssh 退出码原样生效(不再 grep/|| true 吞错)
+SSH_BASE="-i $HOME/.ssh/aliyun_dc_ed25519 -o IdentitiesOnly=yes -o ConnectTimeout=20 -o LogLevel=ERROR"
 SSH="ssh $SSH_BASE $ALIYUN_DC_USER@$ALIYUN_DC_HOST"
 export RSYNC_RSH="ssh $SSH_BASE"
 REMOTE=/opt/research_view
-
-# 失败告警旗标:失败写 webdata/alert.json(前端红横幅),成功清除。
-mkdir -p webdata
-trap 'echo "{\"job\":\"盘前\",\"at\":\"$(TZ=Asia/Shanghai date "+%F %T")\",\"msg\":\"盘前流程失败,数据可能陈旧(logs/premarket-*.log)\"}" > webdata/alert.json' ERR
 
 echo "[premarket] 1/4 台北拉隔夜美股 + 美股板块 $DATE ..."
 if ! ./.venv-taipei/bin/python scripts/fetch_us_overnight.py "$DATE"; then
@@ -32,17 +34,18 @@ if ! ./.venv-taipei/bin/python scripts/build_us.py "$DATE"; then
 fi
 
 echo "[premarket] 2/4 推美股文件到阿里云 ..."
+# 推送失败=阿里云拿旧文件建 dashboard,必须告警(旧版 || true 会静默陈旧一天)
 for f in "us_overnight_${DATE}.json" "us_${DATE}.json" "source_status.json"; do
   if [ -f "exports/$f" ]; then
-    rsync -az "exports/$f" "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/" 2>&1 | grep -v "Warning: Permanently" || true
+    rsync -az "exports/$f" "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/"
   fi
 done
 
 echo "[premarket] 3/4 阿里云合成盘前报告 ..."
-$SSH "cd $REMOTE && ./.venv/bin/python -c \"import sys;sys.path.insert(0,'src');from research_view import report;print('premarket:',report.persist_premarket('$DATE'))\"" 2>&1 | grep -v "Warning: Permanently"
+$SSH "cd $REMOTE && ./.venv/bin/python -c \"import sys;sys.path.insert(0,'src');from research_view import report;print('premarket:',report.persist_premarket('$DATE'))\""
 
 echo "[premarket] 4/4 阿里云重建 dashboard + 拉回 webdata/ ..."
-$SSH "cd $REMOTE && ./.venv/bin/python -c \"import sys;sys.path.insert(0,'src');from research_view import export;print(export.build_dashboard('$DATE'))\"" 2>&1 | grep -v "Warning: Permanently"
-rsync -az "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/"{dashboard,trends}.json webdata/ 2>&1 | grep -v "Warning: Permanently" || true
-rm -f webdata/alert.json
+$SSH "cd $REMOTE && ./.venv/bin/python -c \"import sys;sys.path.insert(0,'src');from research_view import export;print(export.build_dashboard('$DATE'))\""
+rsync -az "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/"{dashboard,trends}.json webdata/
+alert_clear premarket
 echo "[premarket] 完成。前端 8092 已读取盘前报告。"

@@ -11,6 +11,14 @@ export const sentColor: Record<string, string> = {
 export const sentDot: Record<string, string> = { 利好: "bg-up", 利空: "bg-down", 中性: "bg-muted", 澄清: "bg-info" };
 export const sentTx: Record<string, string> = { 利好: "text-up", 利空: "text-down", 中性: "text-muted", 澄清: "text-info" };
 
+// 市值单位分市场:美股=十亿美元(build_us 已 /1e9);A股=万元(Tushare daily_basic 原始口径)。
+// 全站市值显示单点——热力页曾因本地 /1e4 硬编码把美股显示成"0亿"(2fc3a80 的反向同类错)。
+export const fmtMc = (v: number | null | undefined, isUS: boolean) => {
+  if (v == null || !v) return "—";
+  if (isUS) return v >= 1000 ? `${(v / 1000).toFixed(2)}T` : `${Math.round(v)}B`;
+  return v >= 1e8 ? `${(v / 1e8).toFixed(2)}万亿` : `${(v / 1e4).toFixed(v >= 1e7 ? 0 : 2)}亿`;
+};
+
 export function Badge({ text, cls }: { text: string; cls: string }) {
   return <span className={`px-1.5 py-0.5 rounded text-[13px] ${cls}`}>{text}</span>;
 }

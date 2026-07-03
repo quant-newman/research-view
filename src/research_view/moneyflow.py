@@ -171,14 +171,23 @@ def collect_rt_extra() -> dict:
         cur.execute("SELECT ts_code FROM stock WHERE ts_code IS NOT NULL")
         missing = sorted({r[0] for r in cur.fetchall()} - covered)
         ok = 0
+        errs: list[str] = []
         for ts in missing:
+            # 抓取与写库分开兜:一条 INSERT 报错会让事务进入 aborted 状态,若不回滚,
+            # 后续所有票全部失败且 commit 变隐式 ROLLBACK——整批无声丢失。写库错误
+            # 用 SAVEPOINT 只丢这一票,并记录错误不再静默。
             try:
                 kl = _fetch_klines(ts)
-                if not kl:
-                    continue
-                p = kl[-1].split(",")  # 最后一分钟 = 全天累计:时间,主力,小单,中单,大单,超大单
-                if len(p) < 6:
-                    continue
+            except Exception as e:  # noqa: BLE001 单票抓取失败不阻塞
+                errs.append(f"{ts}:抓 {str(e)[:40]}")
+                continue
+            if not kl:
+                continue
+            p = kl[-1].split(",")  # 最后一分钟 = 全天累计:时间,主力,小单,中单,大单,超大单
+            if len(p) < 6:
+                continue
+            try:
+                cur.execute("SAVEPOINT rt_row")
                 cur.execute("""INSERT INTO moneyflow_rt_extra
                         (trade_date, ts_code, last_min, main_net, elg_net, lg_net, mid_net, sm_net)
                     VALUES (current_date,%s,%s,%s,%s,%s,%s,%s)
@@ -186,11 +195,17 @@ def collect_rt_extra() -> dict:
                         main_net=EXCLUDED.main_net, elg_net=EXCLUDED.elg_net, lg_net=EXCLUDED.lg_net,
                         mid_net=EXCLUDED.mid_net, sm_net=EXCLUDED.sm_net, updated_at=now()""",
                     (ts, p[0][-5:], p[1], p[5], p[4], p[3], p[2]))
+                cur.execute("RELEASE SAVEPOINT rt_row")
                 ok += 1
-            except Exception:  # noqa: BLE001 单票失败不阻塞
-                continue
+            except Exception as e:  # noqa: BLE001
+                cur.execute("ROLLBACK TO SAVEPOINT rt_row")
+                errs.append(f"{ts}:库 {str(e)[:40]}")
         conn.commit()
-    return {"missing": len(missing), "fetched": ok}
+    out: dict = {"missing": len(missing), "fetched": ok}
+    if errs:
+        out["errors"] = len(errs)
+        print(f"  ! rt_extra 异常{len(errs)}票(首3): " + "; ".join(errs[:3]))
+    return out
 
 
 # ---------- 盘中累计曲线(资金页,sql/018) ----------

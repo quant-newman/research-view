@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import * as echarts from "echarts";
 import type { Dashboard, NewsItem } from "./types";
 import type { StockSel } from "./stockCtx";
-import { pctCls, sentColor } from "./ui";
+import { fmtMc, pctCls, sentColor } from "./ui";
 
 // 走势小图数据(6M日线)单列 trends.json,首次打开个股详情时懒加载一次,模块级缓存。
 type TrendPoint = [string, number];
@@ -53,12 +53,6 @@ function TrendChart({ series }: { series: TrendPoint[] }) {
 
 const recLabel: Record<string, string> = { strong_buy: "强烈买入", buy: "买入", hold: "持有", underperform: "跑输", sell: "卖出" };
 const num = (v: number | null | undefined, s = "") => (v == null ? "—" : `${v}${s}`);
-// 市值单位分市场:美股=十亿美元(build_us 已 /1e9);A股=万元(Tushare daily_basic 原始口径)
-const fmtMc = (v: number | null | undefined, isUS: boolean) => {
-  if (v == null) return "—";
-  if (isUS) return v >= 1000 ? `${(v / 1000).toFixed(2)}T` : `${Math.round(v)}B`;
-  return v >= 1e8 ? `${(v / 1e8).toFixed(2)}万亿` : `${(v / 1e4).toFixed(v >= 1e7 ? 0 : 2)}亿`;
-};
 
 function Field({ k, v, cls = "text-muted" }: { k: string; v: React.ReactNode; cls?: string }) {
   return <div className="flex flex-col"><span className="text-dim text-[12px]">{k}</span><span className={`mono ${cls}`}>{v}</span></div>;

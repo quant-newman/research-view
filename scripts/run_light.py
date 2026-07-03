@@ -36,11 +36,17 @@ def main() -> None:
     args = [a for a in sys.argv[1:] if not a.startswith("-")]
     date = args[0] if args else now.strftime("%Y%m%d")
     print(f"[Light] {date} UTC+8 盘中刷新")
-    # cron 火点 :00/:15/:30/:45,minute%30<15 挑出 :00/:30 两档
-    if "--news" in sys.argv or now.minute % 30 < 15:
-        step("fetch_news", lambda: {"n": news.fetch_major_news(date)})
+    # cron 火点 :00/:15/:30/:45,minute%30<15 挑出 :00/:30 两档;
+    # 再过滚动24h台账(失败也计数的真实配额窗口),超限后退避不重撞
+    force = "--news" in sys.argv
+    if force or now.minute % 30 < 15:
+        skip = news.throttle(force=force)
+        if skip:
+            print(f"  fetch_news: 跳过({skip})")
+        else:
+            step("fetch_news", lambda: {"n": news.fetch_major_news(date)})
     else:
-        print("  fetch_news: 跳过(major_news 配额节流,每30min一抓;强制用 --news)")
+        print("  fetch_news: 跳过(:15/:45 档不抓;强制用 --news)")
     step("funnel", run_funnel)
     step("structure_b1", run_structure)
     # 盘中资金流补采:DC 监控池(agu产业表)未覆盖的核心池票走东财 push2delay 自采
