@@ -3,7 +3,9 @@
 
 采集→漏斗→B1(含核心观点提炼)→近3日研报→观点提炼→盘中报告(session=intraday)→热点→导出 dashboard。每步失败不阻断。
 增量友好:funnel 只处理 relevant IS NULL、B1 只处理未结构化,所以每次很轻。
-用法: ./.venv/bin/python scripts/run_light.py [YYYYMMDD]
+新闻节流:Tushare major_news 配额 40次/天,cron 每15min 全抓必超限(64+盘后>40,实测 2026-07-03 午后连续
+频率超限)——只在 :00/:30 火点抓(32次/天+盘后1次=33,留7次余量给手动),:15/:45 档跳过只跑下游增量。
+用法: ./.venv/bin/python scripts/run_light.py [YYYYMMDD] [--news 强制抓新闻(手动补抓用)]
 """
 from __future__ import annotations
 
@@ -30,9 +32,15 @@ def step(name, fn):
 
 
 def main() -> None:
-    date = sys.argv[1] if len(sys.argv) > 1 else datetime.now(ZoneInfo(config.TZ)).strftime("%Y%m%d")
+    now = datetime.now(ZoneInfo(config.TZ))
+    args = [a for a in sys.argv[1:] if not a.startswith("-")]
+    date = args[0] if args else now.strftime("%Y%m%d")
     print(f"[Light] {date} UTC+8 盘中刷新")
-    step("fetch_news", lambda: {"n": news.fetch_major_news(date)})
+    # cron 火点 :00/:15/:30/:45,minute%30<15 挑出 :00/:30 两档
+    if "--news" in sys.argv or now.minute % 30 < 15:
+        step("fetch_news", lambda: {"n": news.fetch_major_news(date)})
+    else:
+        print("  fetch_news: 跳过(major_news 配额节流,每30min一抓;强制用 --news)")
     step("funnel", run_funnel)
     step("structure_b1", run_structure)
     step("research", lambda: research.collect_reports(3))
