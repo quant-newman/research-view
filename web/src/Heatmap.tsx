@@ -97,7 +97,7 @@ function NodeTable({ nodes, onSelect, selected }: { nodes: HeatNode[]; onSelect:
     return r;
   }, [nodes, sort, asc]);
   const cols: [SortKey, string][] = [
-    ["node", "节点"], ["chain", "链"], ["n_stocks", "公司数"], ["total_mv", "市值(万)"],
+    ["node", "节点"], ["chain", "链"], ["n_stocks", "公司数"], ["total_mv", "市值(亿)"],
     ["ret_1m", "1M%"], ["ret_6m", "6M%"], ["or_yoy", "营收%"], ["gross_margin", "毛利%"],
     ["pe", "PE"], ["ps", "PS"], ["quadrant", "象限"],
   ];
@@ -123,7 +123,7 @@ function NodeTable({ nodes, onSelect, selected }: { nodes: HeatNode[]; onSelect:
               <td className="px-2 py-1.5 text-primary whitespace-nowrap">{n.node}</td>
               <td className="px-2 py-1.5 text-muted">{n.chain}</td>
               <td className="px-2 py-1.5 text-right">{n.n_stocks}</td>
-              <td className="px-2 py-1.5 text-right text-muted">{n.total_mv ? Math.round(n.total_mv).toLocaleString() : "—"}</td>
+              <td className="px-2 py-1.5 text-right text-muted">{n.total_mv ? Math.round(n.total_mv / 1e4).toLocaleString() : "—"}</td>
               <td className={`px-2 py-1.5 text-right ${pctCls(n.ret_1m)}`}>{num(n.ret_1m)}</td>
               <td className={`px-2 py-1.5 text-right ${pctCls(n.ret_6m)}`}>{num(n.ret_6m)}</td>
               <td className={`px-2 py-1.5 text-right ${pctCls(n.or_yoy)}`}>{num(n.or_yoy)}</td>
@@ -165,7 +165,7 @@ function StockPanel({ node, stocks, onClose }: { node: HeatNode; stocks: HeatSto
               <th className="font-normal py-1">名称</th><th className="font-normal">代码</th>
               <th className="font-normal text-right">6M%</th><th className="font-normal text-right">营收%</th>
               <th className="font-normal text-right">毛利%</th><th className="font-normal text-right">PE</th>
-              <th className="font-normal text-right">市值(万)</th>
+              <th className="font-normal text-right">市值(亿)</th>
             </tr></thead>
             <tbody>
               {sorted.map((s) => (
@@ -177,7 +177,7 @@ function StockPanel({ node, stocks, onClose }: { node: HeatNode; stocks: HeatSto
                   <td className={`text-right ${pctCls(s.or_yoy)}`}>{num(s.or_yoy)}</td>
                   <td className="text-right text-muted">{num(s.gross_margin)}</td>
                   <td className="text-right text-muted">{num(s.pe)}</td>
-                  <td className="text-right text-muted">{s.total_mv ? Math.round(s.total_mv).toLocaleString() : "—"}</td>
+                  <td className="text-right text-muted">{s.total_mv ? Math.round(s.total_mv / 1e4).toLocaleString() : "—"}</td>
                 </tr>
               ))}
             </tbody>
