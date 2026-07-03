@@ -104,12 +104,14 @@ function GaugeBar({ g }: { g: MarketGauge | null | undefined }) {
   );
 }
 
+// 头版化(倒金字塔):第1屏=主线hero+今日三件事;第2屏=证伪+盘中节奏(最新在前,收合);
+// 第3屏起=综述正文+分板块(折叠)。结论先行,证据按需展开。
 function DailyReport({ report }: { report: Report | null | undefined }) {
   const r = report;
   if (!r) return <div className="text-muted p-4">今日暂无报告</div>;
   return (
     <div className="space-y-5">
-      {/* 今日主线 */}
+      {/* 今日主线(hero:整页第一眼要读到的一句话) */}
       <section>
         <div className="flex items-center gap-2 mb-2">
           <div className="w-0.5 h-4 bg-accent" />
@@ -118,43 +120,10 @@ function DailyReport({ report }: { report: Report | null | undefined }) {
           <span className="text-dim text-[13px]">置信度 {r.headline.confidence}</span>
           {r.fallback && <StaleBadge date={r.report_date} label="今日报告未生成 · 显示" />}
         </div>
-        <p className="text-[15px] leading-relaxed text-primary">{r.headline.fact}</p>
+        <p className="text-[17px] leading-relaxed text-primary font-medium">{r.headline.fact}</p>
       </section>
 
-      {/* 盘中增量时间线（演进式报告：只有实质变化才产生条目） */}
-      {(r.increments?.length ?? 0) > 0 && (
-        <section className="border-t hairline pt-4">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-0.5 h-4 bg-accent" />
-            <h2 className="font-semibold">盘中增量</h2>
-            <span className="text-dim text-[12px]">较上一时点的变化 · 无变化不打扰</span>
-          </div>
-          <ol className="space-y-1.5 border-l border-hairline ml-1.5 pl-3">
-            {r.increments!.map((inc) => (
-              <li key={inc.hhmm} className="text-[14px]">
-                <span className="mono text-accent mr-2">{inc.hhmm}</span>
-                <span className="text-muted leading-relaxed">{inc.entry}</span>
-              </li>
-            ))}
-          </ol>
-        </section>
-      )}
-
-      {/* 今日综述 ~500字 */}
-      {r.narrative && (
-        <section className="border-t hairline pt-4">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-0.5 h-4 bg-info" />
-            <h2 className="font-semibold">今日综述</h2>
-            <span className="text-dim text-[12px]">DeepSeek 综合 · 只述事实不判断</span>
-          </div>
-          <div className="border hairline rounded bg-surface px-4 py-3 text-[14px] leading-[1.85] text-muted whitespace-pre-line">
-            {r.narrative}
-          </div>
-        </section>
-      )}
-
-      {/* 今天只看这3件事 */}
+      {/* 今天只看这3件事(紧跟主线,不被长文压到屏外) */}
       <section className="border-t hairline pt-4">
         <div className="flex items-center gap-2 mb-2">
           <div className="w-0.5 h-4 bg-accent" />
@@ -192,23 +161,7 @@ function DailyReport({ report }: { report: Report | null | undefined }) {
         </ol>
       </section>
 
-      {/* 分板块扫描 */}
-      <section className="border-t hairline pt-4">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="w-0.5 h-4 bg-dim" />
-          <h2 className="font-semibold text-muted">分板块扫描</h2>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-          {r.sectors.map((s, i) => (
-            <div key={i} className="flex gap-2 text-[14px] border-l-2 border-hairline pl-2 py-0.5">
-              <span className="text-accent shrink-0 font-medium">{s.chain}</span>
-              <span className="text-dim">{s.status}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 证伪与风险 */}
+      {/* 证伪与风险(纪律锚,提到第2屏:结论旁边就是"什么情况下它错了") */}
       <section className="border-t hairline pt-4">
         <div className="flex items-center gap-2 mb-2">
           <div className="w-0.5 h-4 bg-up" />
@@ -235,6 +188,56 @@ function DailyReport({ report }: { report: Report | null | undefined }) {
           ))}
         </div>
       </section>
+
+      {/* 盘中节奏(演进式增量,最新在前;先看最近3条,全程按需展开) */}
+      {(r.increments?.length ?? 0) > 0 && (
+        <section className="border-t hairline pt-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-0.5 h-4 bg-accent" />
+            <h2 className="font-semibold">盘中节奏</h2>
+            <span className="text-dim text-[12px]">最新在前 · 只有实质变化才产生条目</span>
+            <span className="text-dim text-[12px] mono ml-auto">{r.increments!.length}</span>
+          </div>
+          <ol className="space-y-1.5 border-l border-hairline ml-1.5 pl-3">
+            <MoreList items={[...r.increments!].reverse()} initial={3}>
+              {(inc) => (
+                <li key={inc.hhmm} className="text-[14px]">
+                  <span className="mono text-accent mr-2">{inc.hhmm}</span>
+                  <span className="text-muted leading-relaxed">{inc.entry}</span>
+                </li>
+              )}
+            </MoreList>
+          </ol>
+        </section>
+      )}
+
+      {/* 今日综述(正文层:结论都在上面了,这里是愿意细读的人的展开阅读) */}
+      {r.narrative && (
+        <section className="border-t hairline pt-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-0.5 h-4 bg-info" />
+            <h2 className="font-semibold">今日综述</h2>
+            <span className="text-dim text-[12px]">DeepSeek 综合 · 只述事实不判断</span>
+          </div>
+          <div className="border hairline rounded bg-surface px-4 py-3 text-[14px] leading-[1.85] text-muted whitespace-pre-line">
+            {r.narrative}
+          </div>
+        </section>
+      )}
+
+      {/* 分板块扫描(状态陈列,默认折叠) */}
+      {r.sectors.length > 0 && (
+        <Panel title="分板块扫描" count={r.sectors.length} collapsible defaultOpen={false}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+            {r.sectors.map((s, i) => (
+              <div key={i} className="flex gap-2 text-[14px] border-l-2 border-hairline pl-2 py-0.5">
+                <span className="text-accent shrink-0 font-medium">{s.chain}</span>
+                <span className="text-dim">{s.status}</span>
+              </div>
+            ))}
+          </div>
+        </Panel>
+      )}
     </div>
   );
 }
@@ -422,7 +425,7 @@ export function ReportPageView({ d, isUS, usNewsNodes }: { d: Dashboard; isUS: b
         {!isUS && <GaugeBar g={d.market} />}
         <DailyReport report={isUS ? d.us?.report : d.report} />
         {!isUS && d.stock_events.length > 0 && (
-          <Panel title="个股事件 · 公告 / 龙虎榜" count={d.stock_events.length} collapsible>
+          <Panel title="个股事件 · 公告 / 龙虎榜" count={d.stock_events.length} collapsible defaultOpen={false}>
             <Events events={d.stock_events} />
           </Panel>
         )}
@@ -433,7 +436,7 @@ export function ReportPageView({ d, isUS, usNewsNodes }: { d: Dashboard; isUS: b
             <Panel title="美股新闻流 · 按板块" count={usNewsNodes.length} collapsible>
               <EventStream nodes={usNewsNodes} />
             </Panel>
-            <Panel title="全球科技舆情 · WSJ/路透/科技媒体/Reddit" count={usWireMedia.length} collapsible>
+            <Panel title="全球科技舆情 · WSJ/路透/科技媒体/Reddit" count={usWireMedia.length} collapsible defaultOpen={false}>
               <TechWire wire={usWireMedia} />
             </Panel>
             {(d.us?.report?.x_takes?.us_global || d.us?.report?.x_takes?.a_share) && (
@@ -470,19 +473,15 @@ export function ReportPageView({ d, isUS, usNewsNodes }: { d: Dashboard; isUS: b
               </Panel>
             )}
             {d.report?.us_overnight && (
-              <Panel title="隔夜美股科技链">
+              <Panel title="隔夜美股科技链" collapsible>
                 <UsOvernightBoard us={d.report.us_overnight} />
               </Panel>
             )}
-            <Panel title="判断复盘账本 · 近30日" collapsible>
+            <Panel title="判断复盘账本 · 近30日" collapsible defaultOpen={false}>
               <LedgerPanel ledger={d.ledger} />
             </Panel>
-            <Panel title="我的持仓 / 自选动态" collapsible>
-              {d.report?.holdings_moves?.length
-                ? <div className="text-primary text-[15px]">{d.report.holdings_moves.length} 条异动</div>
-                : <div className="text-dim text-[15px]">未设持仓/自选。设置后,你的票有事永远第一时间最高优先级出现。</div>}
-            </Panel>
-            <Panel title="事件流 · 按节点" count={d.news_by_node.length} collapsible>
+            {/* 事件流与热点页新闻流同源,右栏默认收起当索引用;持仓空面板已删(四期持仓层复活时重建) */}
+            <Panel title="事件流 · 按节点" count={d.news_by_node.length} collapsible defaultOpen={false}>
               <EventStream nodes={d.news_by_node} />
             </Panel>
           </>
