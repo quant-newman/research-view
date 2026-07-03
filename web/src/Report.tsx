@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Dashboard, MarketGauge, Moneyflow, NewsItem, Report, StockEvent } from "./types";
+import type { Dashboard, JudgmentBlock, JudgmentCard, MarketGauge, Moneyflow, NewsItem, Report, StockEvent } from "./types";
 import { TechWire } from "./TechWire";
 import { useOpenStock } from "./stockCtx";
 import { Badge, DIM_HEX, DOWN_HEX, MoreList, StaleBadge, UP_HEX, pctCls, sentDot, sentTx, timeHour } from "./ui";
@@ -124,7 +124,79 @@ function UsIndexBar({ us }: { us: Dashboard["us"] }) {
   );
 }
 
-function DailyReport({ report }: { report: Report | null | undefined }) {
+// —— B6 节点研判卡(第2屏:六源共振,方向判断可追责,5日窗口进 B7 记分) ——
+const dirBadge: Record<string, string> = {
+  偏多: "bg-up/10 text-up", 偏空: "bg-down/10 text-down", 中性: "bg-elevated text-dim",
+};
+const zCls = (z: number) =>
+  Math.abs(z) < 1 ? "text-dim" : z > 0 ? "text-up" : "text-down";
+
+function CardRow({ c }: { c: JudgmentCard }) {
+  const m = c.matrix || {};
+  const zs: [string, number | undefined][] = [
+    ["新闻", m.news?.z], ["资金", m.mf?.z], ["行情", m.price?.z],
+    ["龙虎榜", m.lhb?.z], ["研报", m.research?.z],
+  ];
+  return (
+    <div className="border hairline rounded bg-surface px-3 py-2.5">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className={`px-1.5 py-0.5 rounded text-[12px] font-medium ${dirBadge[c.direction] || dirBadge.中性}`}>
+          {c.direction}
+        </span>
+        <span className="text-primary text-[14px] font-semibold">{c.chain}/{c.node}</span>
+        {c.confidence && <span className="text-dim text-[12px]">置信{c.confidence}</span>}
+        <span className={`mono text-[12px] ${zCls(c.resonance ?? 0)}`}>共振{(c.resonance ?? 0) > 0 ? "+" : ""}{c.resonance}</span>
+        <span className="text-dim text-[12px]">同向{c.n_agree}/激活{c.n_active}源</span>
+        {c.divergence.length > 0 && (
+          <Badge text={`⚠背离 ${c.divergence.map((d) => d.pair).join("、")}`} cls="bg-accent/10 text-accent" />
+        )}
+      </div>
+      <p className="text-primary text-[14px] leading-relaxed mt-1.5">{c.thesis}</p>
+      <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[12px] mono">
+        {zs.map(([name, z]) => z != null && (
+          <span key={name} className={zCls(z)}>{name}{z > 0 ? "+" : ""}{z.toFixed(1)}</span>
+        ))}
+        {m.letter?.hit && <span className="text-info">信函命中</span>}
+      </div>
+      {c.evidence.length > 0 && (
+        <ul className="mt-1.5 space-y-0.5">
+          {c.evidence.map((e, i) => (
+            <li key={i} className="text-[13px] text-muted leading-snug">
+              <span className="text-dim">[{e.src}]</span> {e.fact}
+            </li>
+          ))}
+        </ul>
+      )}
+      {c.scenarios.map((s, i) => (
+        <p key={i} className="text-[13px] text-muted mt-1 leading-snug">
+          {s.cond && <span>{s.cond}{s.expect ? `,${s.expect}` : ""} </span>}
+          {s.falsify && <span className="text-down">证伪:{s.falsify}</span>}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+function JudgmentCards({ jb }: { jb: JudgmentBlock | null | undefined }) {
+  if (!jb || jb.cards.length === 0) return null;
+  return (
+    <section className="border-t hairline pt-4">
+      <div className="flex items-center gap-2 mb-2 flex-wrap">
+        <div className="w-0.5 h-4 bg-accent" />
+        <h2 className="font-semibold">节点研判 · 六源共振</h2>
+        <span className="text-dim text-[12px]">方向=未来5交易日相对全池 · 判断留痕记分</span>
+        {jb.fallback && <StaleBadge date={jb.date} label="今日研判未生成 · 显示" />}
+      </div>
+      <div className="space-y-2">
+        <MoreList items={jb.cards} initial={3}>
+          {(c) => <CardRow key={c.card_id} c={c} />}
+        </MoreList>
+      </div>
+    </section>
+  );
+}
+
+function DailyReport({ report, cards }: { report: Report | null | undefined; cards?: JudgmentBlock | null }) {
   const r = report;
   if (!r) return <div className="text-muted p-4">今日暂无报告</div>;
   return (
@@ -178,6 +250,9 @@ function DailyReport({ report }: { report: Report | null | undefined }) {
           ))}
         </ol>
       </section>
+
+      {/* 节点研判卡(B6·第2屏:六源共振,带方向的可追责判断,紧跟三件事) */}
+      <JudgmentCards jb={cards} />
 
       {/* 证伪与风险(纪律锚,提到第2屏:结论旁边就是"什么情况下它错了") */}
       <section className="border-t hairline pt-4">
@@ -441,7 +516,7 @@ export function ReportPageView({ d, isUS, usNewsNodes }: { d: Dashboard; isUS: b
     <div className="flex-1 grid grid-cols-1 md:grid-cols-[1.6fr_1fr] gap-4 md:gap-6 p-3 md:p-6 overflow-auto">
       <div className="space-y-6">
         {isUS ? <UsIndexBar us={d.us} /> : <GaugeBar g={d.market} />}
-        <DailyReport report={isUS ? d.us?.report : d.report} />
+        <DailyReport report={isUS ? d.us?.report : d.report} cards={isUS ? null : d.judgment} />
         {/* 推特X观点综述:左栏主阅读流(原在右栏,手机沉底刷不到) */}
         {isUS && (d.us?.report?.x_takes?.us_global || d.us?.report?.x_takes?.a_share) && (
           <Panel title="推特X 观点综述 · serenity等17号(完整流见「热点」页)" collapsible>

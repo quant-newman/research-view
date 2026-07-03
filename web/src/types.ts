@@ -92,6 +92,26 @@ export interface Research {
   reports: ResearchReport[]; coverage: Coverage[]; letters: FundLetter[]; digest?: ResearchDigest | null;
 }
 
+// B6 节点研判卡(六源z矩阵+共振/背离代码算,DeepSeek 方向/置信/证据链/情景;append-only 记分)
+export interface CardEvidence { src: string; fact: string; }
+export interface CardScenario { cond?: string; expect?: string; falsify?: string; }
+export interface CardMatrix {
+  news?: { z: number; today: number; pos: number; neg: number };
+  mf?: { z: number; d5: number; d20: number; streak: number };
+  price?: { z: number; ret_1d: number; ret_1w: number };
+  lhb?: { z: number; n: number; net: number };
+  research?: { z: number; n3d: number };
+  letter?: { hit: boolean; sign: number; funds: string[] };
+}
+export interface JudgmentCard {
+  card_id: number; node_id: string; chain: string; node: string;
+  direction: string; confidence: string | null; horizon_days: number;
+  thesis: string; evidence: CardEvidence[]; scenarios: CardScenario[];
+  matrix: CardMatrix; resonance: number | null; n_agree: number; n_active: number;
+  divergence: { pair: string; desc: string }[];
+}
+export interface JudgmentBlock { date: string; cards: JudgmentCard[]; fallback?: boolean; }
+
 export interface Judgment {
   id: number; report_id: string; claim: string; condition: string;
   date: string; falsified: boolean; error_type: string | null;
@@ -177,4 +197,5 @@ export interface Dashboard {
   sources?: { taipei: TaipeiSource[] };
   moneyflow?: Moneyflow | null;
   market?: MarketGauge | null;
+  judgment?: JudgmentBlock | null;
 }

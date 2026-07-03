@@ -13,7 +13,7 @@ from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-from research_view import config, db, export, hotspots, monitor, report, research_digest, universe  # noqa: E402
+from research_view import config, db, evidence, export, hotspots, monitor, report, research_digest, universe  # noqa: E402
 from research_view.collect import announcements, heatmap, news, research  # noqa: E402
 from research_view.funnel import run_funnel  # noqa: E402
 from research_view.structure import run_structure  # noqa: E402
@@ -51,6 +51,9 @@ def main() -> None:
     # 每日报告(心脏 B3):需在上面各源采集后、导出前生成,dashboard 才拿得到当日报告
     step("report_afterhours", lambda: {"report_id": report.persist_afterhours(date)})
     step("hotspots", lambda: {"n": hotspots.persist(date)})  # 今日热点/主题热度榜
+    # B6 节点研判卡(二期):六源z矩阵+共振/背离代码算,DeepSeek 出方向/置信/证据链/情景,
+    # append-only 落卡供 B7 记分。须在 EOD 资金/龙虎榜/研报都落地后跑(盘后 22:30 满足)。
+    step("judgment_cards", lambda: {"n": evidence.persist(date)})
 
     # 数据质量校验
     try:

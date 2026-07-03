@@ -297,6 +297,27 @@ def build_dashboard(date_utc8: str) -> Path:
     ledger = {"judgments": judgments, "alive": alive,
               "falsified": len(judgments) - alive, "error_dist": error_dist}
 
+    # B6 节点研判卡(append-only 表:取最新一日、每节点最新一张;当日无回退最近标 fallback)
+    with db.rv_conn() as conn, conn.cursor() as cur:
+        cur.execute("SELECT max(trade_date) FROM judgment_card")
+        jd = cur.fetchone()[0]
+        judgment = None
+        if jd:
+            cur.execute("""SELECT DISTINCT ON (jc.node_id) jc.card_id, jc.node_id, n.chain, n.node,
+                    jc.direction, jc.confidence, jc.horizon_days, jc.thesis, jc.evidence,
+                    jc.scenarios, jc.matrix, jc.resonance, jc.n_agree, jc.n_active, jc.divergence
+                FROM judgment_card jc JOIN node n USING(node_id)
+                WHERE jc.trade_date=%s ORDER BY jc.node_id, jc.card_id DESC""", (jd,))
+            cards = [{"card_id": r[0], "node_id": r[1], "chain": r[2], "node": r[3],
+                      "direction": r[4], "confidence": r[5], "horizon_days": r[6],
+                      "thesis": r[7], "evidence": r[8] or [], "scenarios": r[9] or [],
+                      "matrix": r[10] or {}, "resonance": fnum(r[11]),
+                      "n_agree": r[12], "n_active": r[13], "divergence": r[14] or []}
+                     for r in cur.fetchall()]
+            cards.sort(key=lambda c: -abs(c["resonance"] or 0))
+            judgment = {"date": str(jd), "cards": cards,
+                        "fallback": jd.strftime("%Y%m%d") != date_utc8}
+
     # 今日热点/主题热度榜(当日无则回退最近一份,回退带 date/fallback 供前端标陈旧)
     with db.rv_conn() as conn, conn.cursor() as cur:
         cur.execute("SELECT headline, items, report_date, brief FROM hotspot_daily WHERE report_date=to_date(%s,'YYYYMMDD')",
@@ -360,7 +381,7 @@ def build_dashboard(date_utc8: str) -> Path:
             "news_by_node": ev["news_by_node"], "stock_events": ev["stock_events"],
             "heatmap": heatmap, "health": health, "research": research, "ledger": ledger,
             "us": us, "hotspot": hotspot, "sources": {"taipei": taipei_src}, "moneyflow": mflow,
-            "market": market_gauge}
+            "market": market_gauge, "judgment": judgment}
     path = EXPORT_DIR / "dashboard.json"
     path.write_text(_dump(dash), encoding="utf-8")
 
