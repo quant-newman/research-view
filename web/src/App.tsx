@@ -90,8 +90,8 @@ export default function App() {
     <StockCtx.Provider value={setStock}>
     <div className="min-h-screen flex">
       {stock && <StockDetail sel={stock} market={market} d={d} onClose={() => setStock(null)} />}
-      {/* 左侧窄导航 */}
-      <nav className="w-16 shrink-0 border-r hairline bg-surface flex flex-col items-center py-4 gap-4 text-[12px] text-dim">
+      {/* 左侧窄导航(桌面);手机换底部 tab 栏 */}
+      <nav className="w-16 shrink-0 border-r hairline bg-surface hidden md:flex flex-col items-center py-4 gap-4 text-[12px] text-dim">
         <div className="text-accent font-bold text-[15px]">RV</div>
         {NAV.map((n) => {
           const on = view === n.key;
@@ -106,7 +106,21 @@ export default function App() {
         })}
       </nav>
 
-      <div className="flex-1 flex flex-col min-w-0">
+      {/* 手机底部 tab 栏(md 起隐藏,桌面无此 DOM 影响) */}
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-surface border-t hairline flex justify-around py-1.5 text-[11px]">
+        {NAV.map((n) => {
+          const on = view === n.key;
+          return (
+            <button key={n.key} onClick={() => setView(n.key)}
+              className={`flex flex-col items-center gap-0.5 px-1 ${on ? "text-accent" : "text-muted"}`}>
+              <span className="text-[13px] leading-none">●</span>
+              <span>{n.label}</span>
+            </button>
+          );
+        })}
+      </nav>
+
+      <div className="flex-1 flex flex-col min-w-0 pb-12 md:pb-0">
         {alert?.msg && (
           <div className="px-4 py-2 bg-down/15 text-down text-[13px] border-b hairline">
             ⚠ {alert.msg}{alert.at ? ` · ${alert.at}` : ""}
@@ -115,20 +129,20 @@ export default function App() {
         <StatusBar d={d} market={market} onMarket={setMarket} onHealth={() => setView("system")} />
         {view === "report" && <ReportPageView d={d} isUS={isUS} usNewsNodes={usNewsNodes} />}
         {view === "hotspot" && (
-          <div className="flex-1 flex gap-5 p-5 overflow-auto">
+          <div className="flex-1 flex flex-col md:flex-row gap-5 p-3 md:p-5 overflow-auto">
             <div className="flex-1 min-w-0"><HotspotView hotspot={isUS ? usHotspot : d.hotspot} /></div>
             {isUS && (d.us?.wire?.some((w) => w.group === "推特X")) && (
-              <div className="w-[52%] shrink-0 min-w-0 border-l hairline pl-5">
+              <div className="w-full md:w-[52%] shrink-0 min-w-0 border-t md:border-t-0 md:border-l hairline pt-4 md:pt-0 md:pl-5">
                 <TechWireX wire={d.us?.wire || []} />
               </div>
             )}
           </div>
         )}
         {view === "flow" && (
-          <div className="flex-1 p-5 overflow-auto"><MoneyflowView mf={d.moneyflow} isUS={isUS} /></div>
+          <div className="flex-1 p-3 md:p-5 overflow-auto"><MoneyflowView mf={d.moneyflow} isUS={isUS} /></div>
         )}
         {view === "heatmap" && (
-          <div className="flex-1 p-5 overflow-auto space-y-4">
+          <div className="flex-1 p-3 md:p-5 overflow-auto space-y-4">
             <HeatmapView h={isUS ? d.us?.heatmap : d.heatmap} />
             {isUS && d.us && (
               <div className="border hairline rounded bg-surface p-3">
@@ -139,18 +153,18 @@ export default function App() {
           </div>
         )}
         {view === "news" && (
-          <div className="flex-1 p-5 overflow-auto"><NewsView nodes={isUS ? usNewsNodes : d.news_by_node} /></div>
+          <div className="flex-1 p-3 md:p-5 overflow-auto"><NewsView nodes={isUS ? usNewsNodes : d.news_by_node} /></div>
         )}
         {view === "research" && (
-          <div className="flex-1 p-5 overflow-auto">
+          <div className="flex-1 p-3 md:p-5 overflow-auto">
             {isUS ? <UsResearchView items={d.us?.research} /> : <ResearchView r={d.research} />}
           </div>
         )}
         {view === "letters" && (
-          <div className="flex-1 p-5 overflow-auto"><LettersView r={d.research} /></div>
+          <div className="flex-1 p-3 md:p-5 overflow-auto"><LettersView r={d.research} /></div>
         )}
         {view === "system" && (
-          <div className="flex-1 p-5 overflow-auto"><SystemView h={d.health} sources={d.sources?.taipei} /></div>
+          <div className="flex-1 p-3 md:p-5 overflow-auto"><SystemView h={d.health} sources={d.sources?.taipei} /></div>
         )}
       </div>
     </div>

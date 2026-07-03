@@ -17,7 +17,7 @@ export function ResearchView({ r }: { r: Research | undefined }) {
   return (
     <div className="space-y-4 max-w-5xl">
       {/* 评级/目标价变动榜 + 机构观点提炼 */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Section title="评级 / 目标价变动榜" count={changes.length}
           right={r.digest?.fallback ? <StaleBadge date={r.digest.date} label="非今日 · 数据截至" /> : undefined}>
           {changes.length === 0 ? <div className="text-dim text-[13px]">近30日无评级/目标价变动。</div> : (
@@ -60,7 +60,7 @@ export function ResearchView({ r }: { r: Research | undefined }) {
       </div>
 
       {/* 研报流 + 覆盖热度 */}
-      <div className="grid grid-cols-[1.7fr_1fr] gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-[1.7fr_1fr] gap-4">
         <Section title="近30日卖方研报" count={r.reports.length}>
           <div className="divide-y divide-[#232B36] -mt-1">
             <MoreList items={r.reports} initial={14}>
@@ -119,7 +119,7 @@ export function LettersView({ r }: { r: Research | undefined }) {
   const relColor = (v: number | null) =>
     v == null ? "text-dim" : v >= 7 ? "text-up" : v >= 4 ? "text-accent" : "text-dim";
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       {letters.map((l, i) => (
         <div key={i} className="border hairline rounded bg-surface p-3">
           <div className="flex items-center justify-between gap-2">

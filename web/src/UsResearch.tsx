@@ -32,7 +32,7 @@ export function UsResearchView({ items }: { items: UsResearchItem[] | undefined 
           ))}
         </div>
       </div>
-      <table className="w-full text-[14px]">
+      <div className="overflow-x-auto"><table className="w-full min-w-[560px] text-[14px]">
         <thead>
           <tr className="text-muted text-left text-[13px]">
             <th className="py-1 font-normal">名称</th><th className="font-normal">代码</th>
@@ -59,7 +59,7 @@ export function UsResearchView({ items }: { items: UsResearchItem[] | undefined 
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
     </div>
   );
 }

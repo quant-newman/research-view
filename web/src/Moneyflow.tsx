@@ -16,13 +16,14 @@ function FlowChart({ intraday, onPick }: {
   useEffect(() => {
     if (!ref.current) return;
     const chart = echarts.init(ref.current, undefined, { renderer: "canvas" });
+    const narrow = ref.current.clientWidth < 640;  // 手机:右端标签收窄、高亮少给几条
     const sers = intraday.series.filter((s) => Math.abs(s.last) >= 0.05);
     const ranked = [...sers].sort((a, b) => Math.abs(b.last) - Math.abs(a.last));
-    const hot = new Set(ranked.slice(0, 8).map((s) => s.node_id));
+    const hot = new Set(ranked.slice(0, narrow ? 5 : 8).map((s) => s.node_id));
     const topAbs = Math.abs(ranked[0]?.last ?? 0);
     const maxAbs = Math.max(...sers.map((s) => Math.abs(s.last)), 1);
     chart.setOption({
-      grid: { left: 52, right: 140, top: 18, bottom: 30 },
+      grid: { left: narrow ? 40 : 52, right: narrow ? 88 : 140, top: 18, bottom: 30 },
       xAxis: {
         type: "category", data: intraday.times, boundaryGap: false,
         axisLabel: { color: "#8A93A6", fontSize: 11 }, axisLine: { lineStyle: { color: "#2A3040" } },
@@ -50,7 +51,7 @@ function FlowChart({ intraday, onPick }: {
           },
           emphasis: { focus: "series", lineStyle: { width: 3 } },
           endLabel: isHot ? {
-            show: true, color, fontSize: 11, distance: 6,
+            show: true, color, fontSize: narrow ? 9 : 11, distance: 4,
             formatter: () => `${s.node} ${s.last > 0 ? "+" : ""}${s.last}`,
           } : undefined,
         };
@@ -64,7 +65,7 @@ function FlowChart({ intraday, onPick }: {
     window.addEventListener("resize", onResize);
     return () => { window.removeEventListener("resize", onResize); chart.dispose(); };
   }, [intraday, onPick]);
-  return <div ref={ref} className="w-full h-[430px]" />;
+  return <div ref={ref} className="w-full h-[300px] md:h-[430px]" />;
 }
 
 function StockRow({ s, onOpen }: { s: MfStock; onOpen: () => void }) {
@@ -115,7 +116,7 @@ export function MoneyflowView({ mf, isUS }: { mf?: Moneyflow | null; isUS: boole
         </div>
       )}
 
-      <div className="grid grid-cols-[1.2fr_1fr] gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-[1.2fr_1fr] gap-5">
         {/* 节点排行 → 点击下钻 */}
         <div className="border hairline rounded bg-surface p-3">
           <div className="text-[13px] text-muted mb-2">节点排行(点击看成分股)</div>

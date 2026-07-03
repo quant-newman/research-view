@@ -105,12 +105,12 @@ export function UsBoardView({ b }: { b: UsBoard | null | undefined }) {
                 <span className="text-primary font-semibold">{sector}</span>
                 <span className="text-dim">({its.length})</span>
               </div>
-              <table className="w-full text-[14px]">{HEAD}<tbody>{its.map((it) => <Row key={it.ticker} it={it} />)}</tbody></table>
+              <div className="overflow-x-auto"><table className="w-full min-w-[560px] text-[14px]">{HEAD}<tbody>{its.map((it) => <Row key={it.ticker} it={it} />)}</tbody></table></div>
             </div>
           ))}
         </div>
       ) : (
-        <table className="w-full text-[14px]">{HEAD}<tbody>{flat.map((it) => <Row key={it.ticker} it={it} />)}</tbody></table>
+        <div className="overflow-x-auto"><table className="w-full min-w-[560px] text-[14px]">{HEAD}<tbody>{flat.map((it) => <Row key={it.ticker} it={it} />)}</tbody></table></div>
       )}
     </div>
   );

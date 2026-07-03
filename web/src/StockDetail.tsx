@@ -121,8 +121,8 @@ export function StockDetail({ sel, market, d, onClose }: { sel: StockSel; market
   }, [code, isUS]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 p-4 overflow-auto" onClick={onClose}>
-      <div className="bg-surface border hairline rounded-lg w-full max-w-2xl my-4" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 p-0 sm:p-4 overflow-auto" onClick={onClose}>
+      <div className="bg-surface border hairline rounded-none sm:rounded-lg w-full max-w-2xl my-0 sm:my-4 min-h-full sm:min-h-0" onClick={(e) => e.stopPropagation()}>
         {/* 头 */}
         <div className="flex items-center gap-2 px-4 py-3 border-b hairline">
           <span className="text-primary font-semibold text-[17px]">{name}</span>
@@ -134,7 +134,7 @@ export function StockDetail({ sel, market, d, onClose }: { sel: StockSel; market
 
         <div className="p-4 space-y-4">
           {/* 行情/估值 */}
-          <div className="grid grid-cols-4 gap-3 text-[14px]">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[14px]">
             <Field k="市值" v={fmtMc(mv)} />
             <Field k="PE" v={num(hs.pe ?? bd.pe)} />
             <Field k="6M涨幅" v={num(hs.ret_6m ?? bd.ret_6m, "%")} cls={pctCls(hs.ret_6m ?? bd.ret_6m)} />

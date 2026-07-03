@@ -48,7 +48,7 @@ export function StatusBar({ d, market, onMarket, onHealth }: { d: Dashboard; mar
   const nl = mins(newsLatest), gen = mins(d.meta?.generated_at);
   const newsStale = nl != null && gen != null && gen - nl > 180;
   return (
-    <div className="flex items-center gap-4 px-4 h-11 border-b hairline bg-surface text-[14px]">
+    <div className="flex items-center gap-4 px-3 md:px-4 h-11 border-b hairline bg-surface text-[14px] overflow-x-auto whitespace-nowrap [&>*]:shrink-0">
       <MarketToggle market={market} onMarket={onMarket} />
       <div className="flex items-center gap-2">
         <span className={`w-2 h-2 rounded-full inline-block ${isUS ? "bg-info" : "bg-accent"}`} />
@@ -80,7 +80,7 @@ export function StatusBar({ d, market, onMarket, onHealth }: { d: Dashboard; mar
       )}
       <div className="ml-auto flex items-center gap-4">
         {d.health && <HealthDot level={d.health.level} onClick={onHealth} />}
-        <Clock />
+        <span className="hidden md:inline"><Clock /></span>
       </div>
     </div>
   );

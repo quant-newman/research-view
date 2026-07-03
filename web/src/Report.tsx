@@ -298,7 +298,7 @@ export function ReportPageView({ d, isUS, usNewsNodes }: { d: Dashboard; isUS: b
   // 报告页舆情面板:只留媒体+Reddit(推特X 已挪到热点视图右栏)
   const usWireMedia = (d.us?.wire || []).filter((w) => w.group !== "推特X");
   return (
-    <div className="flex-1 grid grid-cols-[1.6fr_1fr] gap-6 p-6 overflow-auto">
+    <div className="flex-1 grid grid-cols-1 md:grid-cols-[1.6fr_1fr] gap-4 md:gap-6 p-3 md:p-6 overflow-auto">
       <div className="space-y-6">
         <DailyReport report={isUS ? d.us?.report : d.report} />
         {!isUS && d.stock_events.length > 0 && (

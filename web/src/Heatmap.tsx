@@ -80,7 +80,7 @@ function Scatter({ nodes, win, onSelect }: { nodes: HeatNode[]; win: WinKey; onS
     ro.observe(ref.current);
     return () => { ro.disconnect(); chart.dispose(); };
   }, [nodes, win]);
-  return <div ref={ref} className="w-full h-[380px]" />;
+  return <div ref={ref} className="w-full h-[300px] md:h-[380px]" />;
 }
 
 type SortKey = keyof HeatNode;
@@ -199,9 +199,9 @@ export default function HeatmapView({ h }: { h: Heatmap | undefined }) {
   return (
     <div className="space-y-4">
       <div className="border hairline rounded bg-surface">
-        <div className="flex items-center justify-between px-3 py-2 border-b hairline">
+        <div className="flex flex-wrap items-center justify-between gap-y-1 px-3 py-2 border-b hairline">
           <span className="text-[13px] text-muted uppercase tracking-wide">四象限 · 叙事强度 × 财报兑现(气泡=市值 · 点气泡看成分股)</span>
-          <div className="flex gap-3 text-[13px]">
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[13px]">
             {legend.map(([q, d]) => (
               <span key={q} className="flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full inline-block" style={{ background: QUAD_COLOR[q] }} />
@@ -210,7 +210,7 @@ export default function HeatmapView({ h }: { h: Heatmap | undefined }) {
             ))}
           </div>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 border-b hairline text-[13px]">
+        <div className="flex flex-wrap items-center gap-2 px-3 py-1.5 border-b hairline text-[13px]">
           <span className="text-dim">叙事窗口(X轴涨幅):</span>
           {WINS.map(([k, l]) => (
             <button key={k} onClick={() => setWin(k)}

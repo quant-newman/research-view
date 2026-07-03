@@ -49,7 +49,7 @@ function SourcePanel({ list }: { list: TaipeiSource[] }) {
   const layers = [...new Set(list.map((s) => s.layer || "其他"))];
   return (
     <Sec title="外网信源(台北抓取 · 注册表 data/sources.json)">
-      <table className="w-full text-[14px] mono">
+      <div className="overflow-x-auto"><table className="w-full min-w-[520px] text-[14px] mono">
         <thead><tr className="text-muted text-left">
           <th className="py-1 font-normal">信源</th><th className="font-normal">层</th>
           <th className="font-normal">状态</th><th className="font-normal text-right">上次抓取</th>
@@ -58,7 +58,7 @@ function SourcePanel({ list }: { list: TaipeiSource[] }) {
           {layers.map((ly) =>
             list.filter((s) => (s.layer || "其他") === ly).map((s) => <SourceRow key={s.key} s={s} />))}
         </tbody>
-      </table>
+      </table></div>
     </Sec>
   );
 }
@@ -93,7 +93,7 @@ export default function SystemView({ h, sources }: { h: Health | undefined; sour
       </Sec>
 
       <Sec title="数据源新鲜度">
-        <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-[14px] mono">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-[14px] mono">
           {h.sources.map((s, i) => (
             <div key={i} className="flex items-center justify-between">
               <span className="text-muted">{s.name}</span>
