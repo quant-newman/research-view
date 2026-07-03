@@ -308,7 +308,7 @@ def _hotspot(stocks: list[dict], news: list[dict], nodes: list[dict], date: str)
         if (n.get("time") or "") > b["latest"]:
             b["latest"] = n["time"]
         if len(b["news"]) < 3:
-            b["news"].append(n.get("summary") or n["one_line"])
+            b["news"].append(f"[{n.get('sentiment') or '中性'}]{n.get('summary') or n['one_line']}")
     rows, movers_of = [], {}
     for sec, b in by_sec.items():
         r1 = ret1d.get(sec)
@@ -339,14 +339,16 @@ def _hotspot(stocks: list[dict], news: list[dict], nodes: list[dict], date: str)
             f"{i}. 【{r['node']}】热度{r['heat']} | 今日新闻{r['news_today']}条{prior_txt}"
             f" 利好{r['pos']}/利空{r['neg']} | 板块今日涨跌{r['ret_1d']}%"
             f" | 异动个股:{mv or '(无)'} | 新闻:{nl}")
-    user = f"""下面是今日美股科技各板块的统计热度信号(已按热度排序)。请综合成"今日热点榜",JSON:
+    user = f"""下面是今日美股科技各板块的统计热度信号(已按热度排序,新闻已标[利好]/[利空]/[中性])。请综合成"今日热点榜",JSON:
 {{
   "headline": "一句话总览今天美股科技在炒哪些主题(中性事实,如'资金聚焦光模块业绩与算力芯片新品'),≤50字",
+  "pos": ["今日利好面要点,只汇总输入中标[利好]的新闻事实,每条带板块/个股/具体数字,≤40字", "共2-5条,信息不足可少给"],
+  "neg": ["今日利空面要点,只汇总输入中标[利空]的新闻事实,格式同上", "共2-5条"],
   "items": [
     {{"node_id":"照抄输入的板块名","reason":"该板块为什么热的中性归因,必须基于给的信号/新闻(带具体数字/个股),≤50字","trend":"升温|降温|持平"}}
   ]
 }}
-规则:items 顺序与条数尽量对应输入(可略去信号极弱的);reason 只陈述事实,禁止"看好/建议买入/值得关注"等判断词;trend 参考输入里"今日vs昨日新闻数"。
+规则:items 顺序与条数尽量对应输入(可略去信号极弱的);reason/pos/neg 只陈述事实,禁止"看好/建议买入/值得关注"等判断词;pos/neg 不得引用输入之外的信息,无对应新闻则给空数组;trend 参考输入里"今日vs昨日新闻数"。
 【信号】
 {chr(10).join(blocks)}"""
     try:
@@ -360,7 +362,9 @@ def _hotspot(stocks: list[dict], news: list[dict], nodes: list[dict], date: str)
         d = by_node.get(r["node_id"]) or by_node.get(f"美股/{r['node_id']}") or {}
         items.append({**r, "reason": d.get("reason") or f"今日{r['news_today']}条相关新闻",
                       "trend": d.get("trend") or r["trend"]})
-    return {"headline": j.get("headline") or "今日美股科技主题热度", "items": items}
+    brief = {"pos": [s for s in (j.get("pos") or []) if isinstance(s, str) and s.strip()][:5],
+             "neg": [s for s in (j.get("neg") or []) if isinstance(s, str) and s.strip()][:5]}
+    return {"headline": j.get("headline") or "今日美股科技主题热度", "brief": brief, "items": items}
 
 
 # ---------- 每日报告 B3 ----------

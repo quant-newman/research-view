@@ -57,7 +57,26 @@ export function HotspotView({ hotspot, onDrill, newsIds }:
           {hotspot.fallback && <StaleBadge date={hotspot.date} label="非今日 · 数据截至" />}
         </div>
         <p className="text-primary text-[16px] leading-relaxed font-medium">{hotspot.headline}</p>
-        <p className="text-dim text-[12px] mt-1">热度=统计(新闻量+龙虎榜/异动+涨跌),归因由 DeepSeek 综合 · 只呈现事实不下判断</p>
+        {/* 利好/利空要点(LLM 汇总当日新闻事实;旧数据无 brief 自动隐藏) */}
+        {(hotspot.brief?.pos?.length || hotspot.brief?.neg?.length) ? (
+          <div className="mt-2.5 space-y-2">
+            {[["利好", hotspot.brief?.pos, "text-up bg-up/10"] as const,
+              ["利空", hotspot.brief?.neg, "text-down bg-down/10"] as const].map(([label, lines, cls]) =>
+              lines?.length ? (
+                <div key={label} className="flex items-start gap-2">
+                  <span className={`px-1.5 py-0.5 rounded text-[12px] shrink-0 ${cls}`}>{label}</span>
+                  <ul className="space-y-0.5 min-w-0">
+                    {lines.map((s, i) => (
+                      <li key={i} className="text-[13px] text-muted leading-relaxed flex gap-1.5">
+                        <span className="text-dim shrink-0">·</span><span>{s}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null)}
+          </div>
+        ) : null}
+        <p className="text-dim text-[12px] mt-1.5">热度=统计(新闻量+龙虎榜/异动+涨跌),归因/要点由 DeepSeek 汇总当日新闻 · 只呈现事实不下判断</p>
       </div>
       <div className="space-y-2">
         <MoreList items={hotspot.items} initial={6}>

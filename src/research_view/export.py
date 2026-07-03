@@ -299,13 +299,13 @@ def build_dashboard(date_utc8: str) -> Path:
 
     # 今日热点/主题热度榜(当日无则回退最近一份,回退带 date/fallback 供前端标陈旧)
     with db.rv_conn() as conn, conn.cursor() as cur:
-        cur.execute("SELECT headline, items, report_date FROM hotspot_daily WHERE report_date=to_date(%s,'YYYYMMDD')",
+        cur.execute("SELECT headline, items, report_date, brief FROM hotspot_daily WHERE report_date=to_date(%s,'YYYYMMDD')",
                     (date_utc8,))
         hrow = cur.fetchone()
         if hrow is None:
-            cur.execute("SELECT headline, items, report_date FROM hotspot_daily ORDER BY report_date DESC LIMIT 1")
+            cur.execute("SELECT headline, items, report_date, brief FROM hotspot_daily ORDER BY report_date DESC LIMIT 1")
             hrow = cur.fetchone()
-    hotspot = ({"headline": hrow[0], "items": hrow[1], "date": str(hrow[2]),
+    hotspot = ({"headline": hrow[0], "items": hrow[1], "date": str(hrow[2]), "brief": hrow[3],
                 "fallback": hrow[2].strftime("%Y%m%d") != date_utc8} if hrow else None)
 
     from . import monitor

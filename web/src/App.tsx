@@ -137,24 +137,23 @@ export default function App() {
         {view === "hotspot" && (() => {
           const hasWire = isUS && !!d.us?.wire?.some((w) => w.group === "推特X");
           return (
-            <div className="flex-1 flex flex-col md:flex-row gap-5 p-3 md:p-5 overflow-auto">
-              {/* 左列 = 热点排名 + 全量新闻流(下钻联动);右列 = 美股X舆情(手机版内联在热点后,免得沉底) */}
-              <div className="flex-1 min-w-0 space-y-4">
-                <HotspotView hotspot={isUS ? usHotspot : d.hotspot} newsIds={newsIds}
-                  onDrill={(id) => setNewsFocus({ id, ts: Date.now() })} />
+            <div className="flex-1 p-3 md:p-5 overflow-auto space-y-5">
+              {/* 上排 = 热点排名 | 美股X舆情(手机纵排:热点→X);下方 = 全量新闻流全宽(下钻联动) */}
+              <div className="flex flex-col md:flex-row gap-5">
+                <div className="flex-1 min-w-0">
+                  <HotspotView hotspot={isUS ? usHotspot : d.hotspot} newsIds={newsIds}
+                    onDrill={(id) => setNewsFocus({ id, ts: Date.now() })} />
+                </div>
                 {hasWire && (
-                  <div className="md:hidden border-t hairline pt-4"><TechWireX wire={d.us?.wire || []} /></div>
+                  <div className="w-full md:w-[52%] shrink-0 min-w-0 border-t md:border-t-0 md:border-l hairline pt-4 md:pt-0 md:pl-5">
+                    <TechWireX wire={d.us?.wire || []} />
+                  </div>
                 )}
-                <div className="border-t hairline pt-4 space-y-2">
-                  <div className="text-[13px] text-muted">全量新闻流 · 点热点卡「查看该节点新闻」可直达对应分组</div>
-                  <NewsView nodes={isUS ? usNewsNodes : d.news_by_node} focus={newsFocus} />
-                </div>
               </div>
-              {hasWire && (
-                <div className="hidden md:block w-[52%] shrink-0 min-w-0 border-l hairline pl-5">
-                  <TechWireX wire={d.us?.wire || []} />
-                </div>
-              )}
+              <div className="border-t hairline pt-4 space-y-2">
+                <div className="text-[13px] text-muted">全量新闻流 · 点热点卡「查看该节点新闻」可直达对应分组</div>
+                <NewsView nodes={isUS ? usNewsNodes : d.news_by_node} focus={newsFocus} />
+              </div>
             </div>
           );
         })()}
