@@ -127,9 +127,20 @@ export interface UsData {
 export interface HotspotItem {
   node_id: string; chain: string; node: string; heat: number; trend: string; reason?: string;
   news_today: number; news_prior?: number; pos?: number; neg?: number;
-  ret_1d?: number | null; lhb?: number; stocks: string[]; news: string[]; latest_time?: string;
+  ret_1d?: number | null; lhb?: number; mf?: number | null; stocks: string[]; news: string[]; latest_time?: string;
 }
 export interface Hotspot { headline: string; items: HotspotItem[]; date?: string; fallback?: boolean; }
+
+// A股资金面(节点主力净额聚合,亿元;kind: eod=收盘权威口径 / rt=盘中DC+自采)
+export interface MfStock { code: string; name: string; main: number; }
+export interface MfNode {
+  node_id: string; chain: string; node: string; main: number; n: number;
+  top_in: MfStock[]; top_out: MfStock[];
+}
+export interface Moneyflow {
+  kind: string; date: string; stamp?: string | null;
+  nodes: MfNode[]; pool_main: number; stocks: Record<string, number>;
+}
 
 export interface Dashboard {
   meta: Meta; report: Report | null; temperature: Temperature | null;
@@ -137,4 +148,5 @@ export interface Dashboard {
   heatmap?: Heatmap; health?: Health; research?: Research; ledger?: Ledger;
   us?: UsData | null; hotspot?: Hotspot | null;
   sources?: { taipei: TaipeiSource[] };
+  moneyflow?: Moneyflow | null;
 }

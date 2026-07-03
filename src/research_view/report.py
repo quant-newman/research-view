@@ -12,7 +12,7 @@ import json
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from . import config, db, llm
+from . import config, db, llm, moneyflow
 
 SYSTEM = """你是投研信息整理器,为一位每日做决策的A股AI科技投资者服务。
 你的职责:呈现"发生了什么变化",不做投资判断。
@@ -120,10 +120,25 @@ def _gather(date_utc8: str) -> tuple[str, str]:
     block = "\n\n".join([
         "【相关产业链新闻(按链/行业)】\n" + ("\n".join(_news_lines(news, node_meta)) or "(无)"),
         "【个股事件(近7日,来自公告/龙虎榜)】\n" + ("\n".join(ev_lines) or "(无)"),
+        _moneyflow_block(),
         "【今日新增卖方研报(机构评级=客观事实,非你的判断)】\n" + ("\n".join(_report_lines(reports)) or "(无)"),
         "【相关基金/大行观点(供背景,非你的判断)】\n" + ("\n".join(_letter_lines(letters)) or "(无)"),
     ])
     return _now_ts(), block
+
+
+def _moneyflow_block() -> str:
+    """资金面客观事实块(主力=大单+超大单净额,亿元)。取不到不阻塞报告。
+    口径标注必须带日期:盘中报告用的可能是当日盘中rt或上一交易日EOD,LLM 须照实引用。"""
+    try:
+        mf = moneyflow.latest()
+    except Exception:  # noqa: BLE001
+        mf = None
+    if not mf:
+        return "【资金面·主力净额】\n(无)"
+    label = f"{mf['date']} 收盘EOD" if mf["kind"] == "eod" else f"{mf['date']} 盘中截至{mf['stamp']}"
+    return (f"【资金面·主力净额(大单+超大单,亿元;口径:{label})】\n"
+            + "\n".join(moneyflow.lines(mf)))
 
 
 def generate_afterhours(date_utc8: str) -> dict:
@@ -173,7 +188,7 @@ def generate_intraday(date_utc8: str) -> dict:
     {{"claim":"某个可证伪的观察","condition":"具体的1-2周内可验证的证伪条件","draft_by":"deepseek"}}
   ]
 }}
-只用上面提供的数据(龙虎榜/资金流盘中尚未落地,若相关块为空属正常,不要脑补)。narrative 约500字(480-620字)。
+只用上面提供的数据(龙虎榜盘中尚未落地属正常,不要脑补;资金面按其口径标注引用——盘中口径是"截至此刻",上一日EOD要说明是上一交易日)。narrative 约500字(480-620字)。
 top3 选截至此刻最值得注意的3个变化。研报/基金观点仅作佐证并注明来源,不升格为主线判断——headline.user_judgment 仍留 "<待填>"。"""
     return llm.chat_json(SYSTEM, user, timeout=300)
 

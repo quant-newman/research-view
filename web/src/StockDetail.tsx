@@ -140,6 +140,11 @@ export function StockDetail({ sel, market, d, onClose }: { sel: StockSel; market
             <Field k="6M涨幅" v={num(hs.ret_6m ?? bd.ret_6m, "%")} cls={pctCls(hs.ret_6m ?? bd.ret_6m)} />
             <Field k={isUS ? "营收增速" : "营收同比"} v={num(hs.or_yoy ?? bd.rev_growth, "%")} cls={pctCls(hs.or_yoy ?? bd.rev_growth)} />
             {!isUS && <Field k="毛利率" v={num(hs.gross_margin, "%")} />}
+            {!isUS && d.moneyflow?.stocks?.[code] != null && (
+              <Field k={`主力净额(${d.moneyflow.kind === "eod" ? "收盘" : "盘中"})`}
+                v={`${d.moneyflow.stocks[code] > 0 ? "+" : ""}${d.moneyflow.stocks[code]}亿`}
+                cls={pctCls(d.moneyflow.stocks[code])} />
+            )}
             {isUS && bd.target_mean != null && <Field k="目标均价" v={num(bd.target_mean)} cls="text-accent" />}
             {isUS && bd.rec_key && <Field k="评级" v={recLabel[bd.rec_key] || bd.rec_key} cls="text-up" />}
           </div>

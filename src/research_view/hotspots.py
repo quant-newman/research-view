@@ -68,6 +68,16 @@ def _signals(date_utc8: str, top: int = 10) -> list[dict]:
         for nid in code_nodes.get(ts2code.get(ts), []):
             lhb_node[nid] = lhb_node.get(nid, 0) + 1
 
+    # 资金面:每节点主力净额(亿;EOD/盘中由 moneyflow.latest 自动选口径,失败不阻塞热点)
+    mf_node: dict[str, float] = {}
+    try:
+        from . import moneyflow
+        mf = moneyflow.latest()
+        if mf:
+            mf_node = {g["node_id"]: g["main"] for g in mf["nodes"]}
+    except Exception:  # noqa: BLE001
+        pass
+
     rows = []
     for nid, (chain, node) in meta.items():
         nw = news.get(nid, {"today": 0, "prior": 0, "pos": 0, "neg": 0, "latest": ""})
@@ -80,7 +90,7 @@ def _signals(date_utc8: str, top: int = 10) -> list[dict]:
         rows.append({
             "node_id": nid, "chain": chain, "node": node, "heat": round(heat, 1), "trend": trend,
             "news_today": nw["today"], "news_prior": nw["prior"], "pos": nw["pos"], "neg": nw["neg"],
-            "ret_1d": r1d, "lhb": lhb, "latest_time": nw.get("latest", ""),
+            "ret_1d": r1d, "lhb": lhb, "mf": mf_node.get(nid), "latest_time": nw.get("latest", ""),
             "stocks": node_stocks.get(nid, [])[:5],
             "news": node_news.get(nid, [])[:3],
         })
@@ -98,7 +108,8 @@ def generate(date_utc8: str) -> dict:
         blocks.append(
             f"{i}. 【{r['chain']}/{r['node']}】热度{r['heat']} | 今日新闻{r['news_today']}条(昨日{r['news_prior']})"
             f" 利好{r['pos']}/利空{r['neg']} | 节点今日涨跌{r['ret_1d']}% | 龙虎榜上榜{r['lhb']}只"
-            f" | 代表票:{'、'.join(r['stocks'][:4])} | 新闻:{nl}")
+            + (f" | 主力净额{r['mf']:+.1f}亿" if r.get("mf") is not None else "")
+            + f" | 代表票:{'、'.join(r['stocks'][:4])} | 新闻:{nl}")
     user = f"""下面是今日各主题的统计热度信号(已按热度排序)。请综合成"今日热点榜",JSON:
 {{
   "headline": "一句话总览今天市场在炒哪些主题(中性事实,如'资金聚焦存储涨价与MLCC,机器人新品密集'),≤50字",

@@ -25,6 +25,7 @@ function Card({ it, rank }: { it: HotspotItem; rank: number }) {
           <div className="flex flex-wrap items-center gap-3 mt-1.5 text-[12px] text-dim mono">
             <span>新闻 <span className="text-primary">{it.news_today}</span>{it.news_prior != null ? `(昨${it.news_prior})` : ""}</span>
             {it.lhb ? <span>龙虎榜 <span className="text-accent">{it.lhb}</span></span> : null}
+            {it.mf != null && Math.abs(it.mf) >= 0.1 ? <span>主力 <span className={pctCls(it.mf)}>{it.mf > 0 ? "+" : ""}{it.mf}亿</span></span> : null}
             {it.ret_1d != null && <span>今日 <span className={pctCls(it.ret_1d)}>{it.ret_1d > 0 ? "+" : ""}{it.ret_1d}%</span></span>}
             {(it.pos || it.neg) ? <span><span className="text-up">利好{it.pos || 0}</span>/<span className="text-down">利空{it.neg || 0}</span></span> : null}
           </div>

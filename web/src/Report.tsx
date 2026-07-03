@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Dashboard, NewsItem, Report, StockEvent } from "./types";
+import type { Dashboard, Moneyflow, NewsItem, Report, StockEvent } from "./types";
 import { TechWire } from "./TechWire";
 import { useOpenStock } from "./stockCtx";
 import { Badge, MoreList, StaleBadge, pctCls, sentDot, sentTx, timeHour } from "./ui";
@@ -251,6 +251,48 @@ function Panel({ title, children, count, collapsible = false, defaultOpen = true
   );
 }
 
+// A股资金面:节点主力净额 top 流入/流出(客观统计,判断留给人)。个股名可点开详情。
+function MoneyflowPanel({ mf }: { mf: Moneyflow }) {
+  const openStock = useOpenStock();
+  const flows = mf.nodes.filter((n) => Math.abs(n.main) >= 0.1);
+  const tin = flows.slice(0, 5);
+  const tout = flows.slice(-5).filter((n) => n.main < 0).reverse();
+  const maxAbs = Math.max(...flows.map((n) => Math.abs(n.main)), 0.1);
+  const Row = ({ n }: { n: typeof flows[0] }) => (
+    <div className="flex items-center gap-2 text-[13px]">
+      <span className="text-primary w-[38%] truncate shrink-0">{n.chain}/{n.node}</span>
+      <div className="flex-1 h-2 rounded bg-elevated/60 overflow-hidden">
+        <div className={`h-full ${n.main >= 0 ? "bg-up/70" : "bg-down/70"}`}
+          style={{ width: `${Math.min(100, (Math.abs(n.main) / maxAbs) * 100)}%` }} />
+      </div>
+      <span className={`mono w-16 text-right shrink-0 ${pctCls(n.main)}`}>{n.main > 0 ? "+" : ""}{n.main}亿</span>
+    </div>
+  );
+  const Tops = ({ ss }: { ss: { code: string; name: string; main: number }[] }) => (
+    <>{ss.map((s) => (
+      <button key={s.code} onClick={() => openStock({ code: s.code, name: s.name })}
+        className="text-[12px] text-muted bg-elevated/60 px-1.5 py-0.5 rounded hover:text-accent mono">
+        {s.name} <span className={pctCls(s.main)}>{s.main > 0 ? "+" : ""}{s.main}</span>
+      </button>
+    ))}</>
+  );
+  return (
+    <div className="space-y-2">
+      <div className="text-dim text-[12px]">
+        主力=大单+超大单净额 · {mf.kind === "eod" ? `${mf.date} 收盘` : `${mf.date} 盘中截至${mf.stamp || ""}`}
+        · 核心池合计 <span className={`mono ${pctCls(mf.pool_main)}`}>{mf.pool_main > 0 ? "+" : ""}{mf.pool_main}亿</span>
+      </div>
+      {tin.map((n) => <Row key={n.node_id} n={n} />)}
+      {tout.length > 0 && <div className="border-t hairline my-1" />}
+      {tout.map((n) => <Row key={n.node_id} n={n} />)}
+      <div className="flex flex-wrap gap-1.5 pt-1">
+        <Tops ss={tin.flatMap((n) => n.top_in).slice(0, 4)} />
+        <Tops ss={tout.flatMap((n) => n.top_out).slice(0, 3)} />
+      </div>
+    </div>
+  );
+}
+
 // 报告页整页(左报告+右侧栏,A股/美股 两套侧栏)。usNewsNodes 由 App 传入(新闻页也用)。
 export function ReportPageView({ d, isUS, usNewsNodes }: { d: Dashboard; isUS: boolean; usNewsNodes: Dashboard["news_by_node"] }) {
   // 报告页舆情面板:只留媒体+Reddit(推特X 已挪到热点视图右栏)
@@ -302,6 +344,11 @@ export function ReportPageView({ d, isUS, usNewsNodes }: { d: Dashboard; isUS: b
           </>
         ) : (
           <>
+            {d.moneyflow && d.moneyflow.nodes?.length > 0 && (
+              <Panel title="资金面 · 节点主力净额" collapsible>
+                <MoneyflowPanel mf={d.moneyflow} />
+              </Panel>
+            )}
             {d.report?.us_overnight && (
               <Panel title="隔夜美股科技链">
                 <UsOvernightBoard us={d.report.us_overnight} />

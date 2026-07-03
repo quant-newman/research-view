@@ -312,6 +312,12 @@ def build_dashboard(date_utc8: str) -> Path:
         taipei_src = monitor.taipei_sources()
     except Exception:  # noqa: BLE001
         taipei_src = []
+    try:
+        # A股资金面(节点主力净额聚合+个股字典):报告页面板/热点信号/个股详情用
+        from . import moneyflow as _mf
+        mflow = _mf.latest()
+    except Exception:  # noqa: BLE001 资金面失败不阻塞导出
+        mflow = None
 
     # 美股一等公民(台北 build_us 产出完整 blob→scp 到 exports/):
     # board/温度计/热力/新闻(B1)/研究(分析师)/报告(B3)。与 A股 同权,前端顶部一键切。
@@ -337,7 +343,7 @@ def build_dashboard(date_utc8: str) -> Path:
     dash = {"meta": ev["meta"], "report": report, "temperature": ev["temperature"],
             "news_by_node": ev["news_by_node"], "stock_events": ev["stock_events"],
             "heatmap": heatmap, "health": health, "research": research, "ledger": ledger,
-            "us": us, "hotspot": hotspot, "sources": {"taipei": taipei_src}}
+            "us": us, "hotspot": hotspot, "sources": {"taipei": taipei_src}, "moneyflow": mflow}
     path = EXPORT_DIR / "dashboard.json"
     path.write_text(_dump(dash), encoding="utf-8")
 

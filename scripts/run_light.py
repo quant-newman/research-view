@@ -16,7 +16,7 @@ from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-from research_view import config, export, hotspots, monitor, report, research_digest  # noqa: E402
+from research_view import config, export, hotspots, moneyflow, monitor, report, research_digest  # noqa: E402
 from research_view.collect import news, research  # noqa: E402
 from research_view.funnel import run_funnel  # noqa: E402
 from research_view.structure import run_structure  # noqa: E402
@@ -43,6 +43,9 @@ def main() -> None:
         print("  fetch_news: 跳过(major_news 配额节流,每30min一抓;强制用 --news)")
     step("funnel", run_funnel)
     step("structure_b1", run_structure)
+    # 盘中资金流补采:DC 监控池(agu产业表)未覆盖的核心池票走东财 push2delay 自采
+    # (非交易日/DC未开盘零开销);报告/热点/export 通过 moneyflow.latest() 自动用上
+    step("moneyflow_rt_extra", moneyflow.collect_rt_extra)
     step("research", lambda: research.collect_reports(3))
     step("research_digest", lambda: research_digest.persist(date))
     # 盘中重生成 B3 报告(基于截至此刻的新闻/研报/事件),让报告页盘中也"活"
