@@ -8,7 +8,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 set -a; source .env; set +a
 DATE="${1:-$(TZ=Asia/Shanghai date +%Y%m%d)}"
-SRC="${2:-oaktree}"
+SRC="${2:-oaktree,blackrock,gs,ms}"
 LIMIT="${3:-2}"
 SSH_BASE="-i $HOME/.ssh/aliyun_dc_ed25519 -o IdentitiesOnly=yes -o ConnectTimeout=20"
 SSH="ssh $SSH_BASE $ALIYUN_DC_USER@$ALIYUN_DC_HOST"
