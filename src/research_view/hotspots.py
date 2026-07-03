@@ -110,7 +110,7 @@ def generate(date_utc8: str) -> dict:
 【信号】
 {chr(10).join(blocks)}"""
     try:
-        j = llm.chat_json(SYSTEM, user, timeout=120)
+        j = llm.chat_json(SYSTEM, user, timeout=240)
     except Exception as e:  # noqa: BLE001 综述失败降级:用统计信号直接出榜
         print(f"  ! 热点综述失败,降级统计榜: {str(e)[:80]}")
         j = {"headline": "今日主题热度(统计榜)", "items": []}

@@ -172,7 +172,7 @@ def _b1_news_chunk(raw: list[dict]) -> dict[int, dict]:
 {listing}
 只翻译概括,不许出现"看好/利好X/建议买入"等判断词,不许编造摘要没有的数字。"""
     try:
-        j = llm.chat_json(B1_SYS, user, timeout=150)
+        j = llm.chat_json(B1_SYS, user, timeout=240)
         return {int(it["i"]): it for it in j.get("items", []) if "i" in it}
     except Exception as e:  # noqa: BLE001 B1失败降级:用原标题
         print(f"  ! 新闻B1失败,降级原标题: {str(e)[:80]}")
@@ -210,7 +210,7 @@ def _b1_wire_chunk(raw: list[dict]) -> dict:
 market 判断:主要讲 A股上市公司/A股板块/中国境内市场→"A股";讲美股/美国科技公司/全球AI→"美股";都不明确→"其他"。
 只翻译概括,不许出现"看好/建议买入"等判断词,不许编造原文没有的数字。Reddit/推特X 是个人观点,如实转述不背书。"""
     try:
-        j = llm.chat_json(B1_SYS, user, timeout=150)
+        j = llm.chat_json(B1_SYS, user, timeout=240)
         return {int(it["i"]): it for it in j.get("items", []) if "i" in it}
     except Exception as e:  # noqa: BLE001 单批失败降级:用原标题
         print(f"  ! 舆情B1失败,降级原标题: {str(e)[:80]}")
@@ -350,7 +350,7 @@ def _hotspot(stocks: list[dict], news: list[dict], nodes: list[dict], date: str)
 【信号】
 {chr(10).join(blocks)}"""
     try:
-        j = llm.chat_json(HOT_SYS, user, timeout=120)
+        j = llm.chat_json(HOT_SYS, user, timeout=240)
     except Exception as e:  # noqa: BLE001 综述失败降级:用统计信号直接出榜
         print(f"  ! 美股热点综述失败,降级统计榜: {str(e)[:80]}")
         j = {"headline": "今日美股科技热度(统计榜)", "items": []}
@@ -413,7 +413,7 @@ def _report(stocks: list[dict], news: list[dict], wire: list[dict], us_date: str
 }}
 只用上面数据。narrative 约500字(控制在480-620字,充实但别啰嗦);top3 选今天最值得注意的3个变化;x_takes 是对推特X两组观点的中性综述(转述不背书)。"""
     try:
-        return llm.chat_json(B3_SYS, user, timeout=180)
+        return llm.chat_json(B3_SYS, user, timeout=300)
     except Exception as e:  # noqa: BLE001 报告失败不阻塞整个blob
         print(f"  ! 美股B3报告失败: {str(e)[:80]}")
         return None

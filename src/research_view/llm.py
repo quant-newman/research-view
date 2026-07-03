@@ -22,11 +22,12 @@ def _loads_lenient(content: str) -> dict:
         raise
 
 
-def chat_json(system: str, user: str, timeout: int = 60, retries: int = 1) -> dict:
-    """调 DeepSeek chat,强制 JSON 输出,返回解析后的 dict。失败(网络/坏JSON)自动重试。"""
+def chat_json(system: str, user: str, timeout: int = 120, retries: int = 1) -> dict:
+    """调 DeepSeek chat,强制 JSON 输出,返回解析后的 dict。失败(网络/坏JSON)自动重试。
+    模型见 config.deepseek_model()(默认 v4-pro 旗舰,带思考故默认超时放宽到 120s)。"""
     key, base = config.deepseek()
     body = json.dumps({
-        "model": "deepseek-chat",
+        "model": config.deepseek_model(),
         "messages": [
             {"role": "system", "content": system},
             {"role": "user", "content": user},

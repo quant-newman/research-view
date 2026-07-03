@@ -81,7 +81,7 @@ def _views(by_code: dict, top: int = 15):
 {chr(10).join(blocks)}
 不许出现"建议买入/值得关注"等你自己的判断词。"""
     try:
-        j = llm.chat_json(SYS, user, timeout=120)
+        j = llm.chat_json(SYS, user, timeout=240)
         items = j.get("items", []) if isinstance(j, dict) else (j if isinstance(j, list) else [])
         m = {int(it["i"]): it.get("view") for it in items if isinstance(it, dict) and "i" in it}
     except Exception as e:  # noqa: BLE001 提炼失败降级:空 view

@@ -79,7 +79,7 @@ def b5(fund: str, title: str, text: str) -> dict:
   "relevant_points": ["与AI/算力/半导体/科技相关的具体点,没有则空数组"]
 }}
 core_views 中性转述作者观点,不许出现"因此应买X""看好Y"这类你自己的判断词。"""
-    return llm.chat_json(B5_SYSTEM, user, timeout=120)
+    return llm.chat_json(B5_SYSTEM, user, timeout=240)
 
 
 def main() -> None:

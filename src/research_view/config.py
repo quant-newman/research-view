@@ -49,5 +49,11 @@ def deepseek() -> tuple[str, str]:
     return require("DEEPSEEK_API_KEY"), os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
 
 
+def deepseek_model() -> str:
+    """默认用平台最新最强旗舰(2026-07 实测 /models 只有 v4-flash/v4-pro;
+    旧别名 deepseek-chat 现指向 v4-flash 小模型,别再用)。可用 .env DEEPSEEK_MODEL 覆盖。"""
+    return os.environ.get("DEEPSEEK_MODEL", "deepseek-v4-pro")
+
+
 def tushare_token() -> str:
     return require("TUSHARE_TOKEN")

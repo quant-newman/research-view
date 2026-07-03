@@ -147,7 +147,7 @@ def generate_afterhours(date_utc8: str) -> dict:
 }}
 只用上面提供的数据。narrative 约500字(控制在480-620字,充实但别啰嗦);top3 选今天最值得注意的3个变化。
 研报评级与基金观点仅作背景与佐证(可在 evidence 里注明"[来源:XX机构评级]"),不得升格为主线判断——headline.user_judgment 仍留 "<待填>"。"""
-    return llm.chat_json(SYSTEM, user, timeout=180)
+    return llm.chat_json(SYSTEM, user, timeout=300)
 
 
 # ---------- 盘中(intraday) ----------
@@ -175,7 +175,7 @@ def generate_intraday(date_utc8: str) -> dict:
 }}
 只用上面提供的数据(龙虎榜/资金流盘中尚未落地,若相关块为空属正常,不要脑补)。narrative 约500字(480-620字)。
 top3 选截至此刻最值得注意的3个变化。研报/基金观点仅作佐证并注明来源,不升格为主线判断——headline.user_judgment 仍留 "<待填>"。"""
-    return llm.chat_json(SYSTEM, user, timeout=180)
+    return llm.chat_json(SYSTEM, user, timeout=300)
 
 
 # ---------- 盘前(premarket) ----------
@@ -243,7 +243,7 @@ def generate_premarket(date_utc8: str) -> dict:
 }}
 隔夜美股是客观涨跌%,可据此中性陈述对应A股链条的外盘参照,但绝不预测A股今天怎么走(那是判断,user_judgment 留白)。narrative 约500字(480-620字)。
 top3 选隔夜最值得开盘关注的3点。研报/基金观点仅作佐证,注明来源,不升格为主线判断。"""
-    return llm.chat_json(SYSTEM, user, timeout=180)
+    return llm.chat_json(SYSTEM, user, timeout=300)
 
 
 # ---------- 我的持仓动态 + 落库 ----------
