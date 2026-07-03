@@ -21,14 +21,26 @@ function DailyReport({ report }: { report: Report | null | undefined }) {
           {r.fallback && <StaleBadge date={r.report_date} label="今日报告未生成 · 显示" />}
         </div>
         <p className="text-[15px] leading-relaxed text-primary">{r.headline.fact}</p>
-        <div className="mt-2 border border-accent/50 rounded bg-accent/5 px-3 py-2">
-          <span className="text-accent text-[13px]">我的判断（人填 · 模型不越位）</span>
-          <input
-            className="w-full bg-transparent outline-none text-primary mt-1 placeholder:text-dim"
-            placeholder="在此写下你的判断……（模型永远留白这一栏）"
-          />
-        </div>
       </section>
+
+      {/* 盘中增量时间线（演进式报告：只有实质变化才产生条目） */}
+      {(r.increments?.length ?? 0) > 0 && (
+        <section className="border-t hairline pt-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-0.5 h-4 bg-accent" />
+            <h2 className="font-semibold">盘中增量</h2>
+            <span className="text-dim text-[12px]">较上一时点的变化 · 无变化不打扰</span>
+          </div>
+          <ol className="space-y-1.5 border-l border-hairline ml-1.5 pl-3">
+            {r.increments!.map((inc) => (
+              <li key={inc.hhmm} className="text-[14px]">
+                <span className="mono text-accent mr-2">{inc.hhmm}</span>
+                <span className="text-muted leading-relaxed">{inc.entry}</span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
 
       {/* 今日综述 ~500字 */}
       {r.narrative && (
@@ -56,7 +68,16 @@ function DailyReport({ report }: { report: Report | null | undefined }) {
               <div className="flex gap-2">
                 <span className="mono text-accent">{i + 1}</span>
                 <div className="flex-1">
-                  <p className="text-primary">{it.change}</p>
+                  <p className="text-primary">
+                    {it.delta && (
+                      <span className={`mr-1.5 px-1.5 py-0.5 rounded text-[12px] align-middle ${
+                        it.delta === "新出现" ? "bg-accent/10 text-accent"
+                        : it.delta === "反转" ? "bg-down/10 text-down" : "bg-info/10 text-info"}`}>
+                        {it.delta === "延续" && it.streak_days ? `延续·第${it.streak_days}天` : it.delta}
+                      </span>
+                    )}
+                    {it.change}
+                  </p>
                   <div className="flex flex-wrap items-center gap-2 mt-1 text-[13px]">
                     <span className="text-info">{it.evidence}</span>
                     {it.node_ids.map((n) => (

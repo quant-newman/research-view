@@ -4,7 +4,8 @@ export interface Temperature {
   flat: number; limit_up: number; limit_down: number; avg_pct: number;
 }
 export interface Headline { fact: string; user_judgment: string; confidence: string; }
-export interface Top3Item { change: string; evidence: string; node_ids: string[]; related_stocks: string[]; }
+export interface Top3Item { change: string; evidence: string; node_ids: string[]; related_stocks: string[]; delta?: string; streak_days?: number; }
+export interface ReportIncrement { hhmm: string; entry: string; tags: string[]; }
 export interface Sector { chain: string; status: string; }
 export interface Falsification { claim: string; condition: string; draft_by: string; pinned_id?: number; pinned_falsified?: boolean; }
 export interface UsItem { ticker: string; name: string; mapping: string; close: number | null; pct: number | null; }
@@ -17,6 +18,7 @@ export interface Report {
   x_takes?: { us_global?: string; a_share?: string };
   narrative?: string;
   report_date?: string; fallback?: boolean;
+  increments?: ReportIncrement[];
 }
 export interface NewsItem {
   title: string; one_line: string; summary?: string | null; sentiment: string; event_type?: string; src: string;

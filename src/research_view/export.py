@@ -209,6 +209,11 @@ def build_dashboard(date_utc8: str) -> Path:
                     if hit:
                         f["pinned_id"], f["pinned_falsified"] = hit
             report["falsification"] = fals
+            # 盘中增量时间线(演进式报告):挂报告自身日期的条目,回退旧报告时也带旧日时间线
+            cur.execute("""SELECT hhmm, entry, tags FROM report_increment
+                WHERE trade_date=%s ORDER BY hhmm""", (row[10],))
+            report["increments"] = [{"hhmm": h, "entry": e, "tags": t or []}
+                                    for h, e, t in cur.fetchall()]
             # 盘前/盘中报告附隔夜美股科技链(台北 yfinance 产出,scp 到本机 exports/),供前端小面板。
             # 盘中也附:否则盘中报告一接管,早上的隔夜外盘参照会整天消失。
             if row[1] in ("premarket", "intraday"):

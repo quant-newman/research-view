@@ -55,8 +55,9 @@ def main() -> None:
     step("mf_snapshot", moneyflow.snapshot_intraday)  # 盘中累计曲线追点(资金页)
     step("research", lambda: research.collect_reports(3))
     step("research_digest", lambda: research_digest.persist(date))
-    # 盘中重生成 B3 报告(基于截至此刻的新闻/研报/事件),让报告页盘中也"活"
-    step("report_intraday", lambda: {"report_id": report.persist_intraday(date)})
+    # 盘中增量条目(演进式):有实质变化(新闻≥3或资金位移≥2亿)才追加时间线一条,
+    # 不再每15min重烧完整 B3 报告——报告主体盘中=盘前锚点+增量时间线,盘后收口
+    step("report_increment", lambda: report.persist_increment(date))
     step("hotspots", lambda: {"n": hotspots.persist(date)})
     step("export_dashboard", lambda: str(export.build_dashboard(date)))
 
