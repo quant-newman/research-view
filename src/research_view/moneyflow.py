@@ -279,8 +279,10 @@ def intraday_series() -> dict | None:
             return None
         cur.execute("SELECT hhmm, node_id, main FROM mf_intraday_node WHERE trade_date=%s", (d,))
         rows = cur.fetchall()
-        cur.execute("SELECT node_id, chain, node FROM node")
+        cur.execute("SELECT node_id, chain, node, chain_en FROM node")
         meta = {r[0]: (r[1], r[2]) for r in cur.fetchall()}
+        cur.execute("SELECT DISTINCT chain_en, chain FROM node")
+        en2cn = dict(cur.fetchall())
     times = sorted({h for h, _, _ in rows})
     val = {(h, n): float(m) for h, n, m in rows}
     series, pool = [], None
@@ -290,7 +292,13 @@ def intraday_series() -> dict | None:
         if nid == "POOL":
             pool = {"values": values, "last": last}
             continue
-        chain, node = meta.get(nid, ("", nid))
+        if nid in meta:
+            chain, node = meta[nid]
+        else:
+            # 参照层改版后的旧节点id(过渡窗历史曲线):保留曲线,诚实标注,前端不下钻
+            prefix = nid.split("::", 1)[0]
+            chain = en2cn.get(prefix, prefix)
+            node = nid.split("::", 1)[-1] + "(已重组)"
         series.append({"node_id": nid, "chain": chain, "node": node, "values": values, "last": last})
     series.sort(key=lambda s: -s["last"])
     return {"date": str(d), "times": times, "series": series, "pool": pool}

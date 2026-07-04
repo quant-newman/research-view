@@ -144,7 +144,9 @@ export function MoneyflowView({ mf, isUS }: { mf?: Moneyflow | null; isUS: boole
 
   const intraday = mf.intraday;
   const label = mf.kind === "eod" ? `${mf.date} 收盘` : `${mf.date} 盘中截至${mf.stamp || ""}`;
-  const sel = mf.nodes.find((n) => n.node_id === nid) || mf.nodes[0];
+  // 严格按 node_id 匹配:参照层改版后旧id(历史曲线)查不到成分,绝不能错位回退到别的节点
+  const sel = nid ? mf.nodes.find((n) => n.node_id === nid) ?? null : mf.nodes[0];
+  const staleNid = nid != null && !mf.nodes.some((n) => n.node_id === nid);
   // 全池个股(members 跨节点去重;多节点票取任一,net额相同)
   const seen = new Set<string>();
   const allStocks: MfStock[] = [];
@@ -230,6 +232,12 @@ export function MoneyflowView({ mf, isUS }: { mf?: Moneyflow | null; isUS: boole
 
         {/* 选中节点成分股 + 全池个股 */}
         <div className="space-y-5">
+          {staleNid && (
+            <div className="border hairline rounded bg-surface p-3 text-[13px] text-dim leading-relaxed">
+              该曲线属参照层旧版本节点(已重组,如机器人链 07-04 起 7→14 细分)。历史曲线保留作事实记录,
+              成分股请在左侧节点排行选择新节点;下一交易日起曲线按新结构生长。
+            </div>
+          )}
           {sel && (
             <div className="border hairline rounded bg-surface p-3">
               <div className="text-[13px] text-muted mb-2">
