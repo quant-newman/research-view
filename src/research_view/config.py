@@ -57,3 +57,9 @@ def deepseek_model() -> str:
 
 def tushare_token() -> str:
     return require("TUSHARE_TOKEN")
+
+
+def calibration_freeze() -> bool:
+    """校准期冻结(DECISIONS #22/#28):冻结时 B7 lessons 只落库不注入发卡 prompt,
+    防首批校准样本口径漂移。默认冻结;解冻=显式设 CALIBRATION_FREEZE=0(须记 DECISIONS)。"""
+    return os.environ.get("CALIBRATION_FREEZE", "1") != "0"

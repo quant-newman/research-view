@@ -23,6 +23,8 @@
 
 周日收口:`weekly()` 汇总累计/本周命中 + 分方向/分源 → 本周错误卡喂 DeepSeek → `b7_weekly.lessons`(2-5条可操作教训)。`evidence.generate()` 每天发卡前读**最新一份非空 lessons** 注入 prompt(明示"经验校准,不是事实源,不得写进 evidence")。无错误卡不烧 LLM,lessons 空则不回灌。
 
+**校准期冻结(DECISIONS #28,2026-07-04):`CALIBRATION_FREEZE`(默认冻结)拦住 B6/B8 两处注入点——lessons 只落库不注入,防首批校准样本 prompt 漂移;冻结状态每次 pipeline 落 task_log(`calibration_freeze` 步,1=冻结)。解冻=首份周报+样本≥40 后使用者拍板,显式置 0 并记 DECISIONS。判断卡带 `prompt_hash`(SYSTEM+规则模板+lessons段,排除每日数据块),B7 可按 prompt 版本分组样本。**
+
 ## 编排与消费
 
 - **日常记分**:run_pipeline 盘后档 `card_scores` 步(judgment_cards 之后,零 LLM 幂等)——到期卡当晚即记分,不等周日。
@@ -34,7 +36,7 @@
 
 - 首批 8 张卡 07-03 发出 → 07-10(周五)到期,当晚盘后 cron 首次真实记分。
 - 首个有内容的周报 = 07-12(周日);本周日 07-05 会跑出诚实空单。
-- lessons 首次回灌 ≈ 07-13(周一)盘后发卡。
+- ~~lessons 首次回灌 ≈ 07-13(周一)盘后发卡~~(校准期冻结,DECISIONS #28:解冻前只落库不注入)。
 
 ## 已知边界
 

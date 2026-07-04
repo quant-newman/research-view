@@ -8,9 +8,10 @@ node_card_id 追责链与发卡日收盘价锚。每张卡与节点卡同一套 
 """
 from __future__ import annotations
 
+import hashlib
 import json
 
-from . import db, llm
+from . import config, db, llm
 from .evidence import _z
 
 _W = {"price": 1.0, "mf": 1.0, "news": 0.8, "lhb": 0.6}
@@ -191,26 +192,14 @@ def _stock_block(i: int, f: dict) -> str:
     return "\n".join(lines)
 
 
-def generate(date_utc8: str) -> list[dict]:
-    cands = candidates(date_utc8)
-    if not cands:
-        return []
-    blocks = "\n".join(_stock_block(i, f) for i, f in enumerate(cands))
-    lessons_seg = ""
-    try:
-        from . import scorecard
-        ls = scorecard.latest_lessons()
-        if ls:
-            lessons_seg = (f"\n【B7成绩单·近期错误教训(截至{ls[0]};经验校准,非事实源,不得写进evidence)】\n"
-                           + "\n".join(f"- {t}" for t in ls[1]) + "\n")
-    except Exception:  # noqa: BLE001
-        pass
-    user = f"""下面是今日({date_utc8})按"板块节点研判卡→成分股共振"筛出的个股候选(已按对齐分排序)。
+# user prompt 模板(规则文本,静态):prompt_hash 口径同 evidence——sha256(SYSTEM+模板+lessons段),
+# 排除每日数据块与日期。
+_USER_TMPL = """下面是今日({date})按"板块节点研判卡→成分股共振"筛出的个股候选(已按对齐分排序)。
 z=该指标在核心池全体个股截面的标准分(相对全池强弱);对齐分=个股方向源z与节点方向的加权一致度+注意力加成,由代码算出。
 
 【个股候选与证据】
 {blocks}
-{lessons_seg}
+{lessons}
 对每个候选输出一张决策卡,JSON:
 {{
   "cards": [
@@ -228,6 +217,30 @@ z=该指标在核心池全体个股截面的标准分(相对全池强弱);对齐
 }}
 规则:direction 通常跟随节点方向;个股证据与节点方向矛盾或太弱→"中性"(放弃)并在 thesis 说明;
 confidence 与个股证据强度匹配(仅靠节点惯性不给"高");每卡 evidence 2-4条;偏空=回避/减仓提示(A股无做空)。"""
+
+
+def prompt_hash(lessons_seg: str) -> str:
+    return hashlib.sha256((SYSTEM + _USER_TMPL + lessons_seg).encode("utf-8")).hexdigest()[:16]
+
+
+def generate(date_utc8: str) -> list[dict]:
+    cands = candidates(date_utc8)
+    if not cands:
+        return []
+    blocks = "\n".join(_stock_block(i, f) for i, f in enumerate(cands))
+    # B7 校准回路:校准期冻结(DECISIONS #28)时 lessons 只落库不注入
+    lessons_seg = ""
+    if not config.calibration_freeze():
+        try:
+            from . import scorecard
+            ls = scorecard.latest_lessons()
+            if ls:
+                lessons_seg = (f"\n【B7成绩单·近期错误教训(截至{ls[0]};经验校准,非事实源,不得写进evidence)】\n"
+                               + "\n".join(f"- {t}" for t in ls[1]) + "\n")
+        except Exception:  # noqa: BLE001
+            pass
+    phash = prompt_hash(lessons_seg)
+    user = _USER_TMPL.format(date=date_utc8, blocks=blocks, lessons=lessons_seg)
     j = llm.chat_json(SYSTEM, user, timeout=300)
     by_code = {f["code"]: f for f in cands}
     cards = []
@@ -247,13 +260,13 @@ confidence 与个股证据强度匹配(仅靠节点惯性不给"高");每卡 evi
             "evidence": [e for e in (c.get("evidence") or []) if isinstance(e, dict) and e.get("fact")][:4],
             "falsify": (c.get("falsify") or "").strip()[:200] or None,
             "matrix": f["matrix"], "alignment": f["alignment"], "close": f["close"],
+            "prompt_hash": phash,
         })
     return cards
 
 
 def persist(date_utc8: str) -> int:
     """生成并落 decision_card(append-only:重跑同日只追加,消费方取每股最新 card_id)。"""
-    from . import config
     cards = generate(date_utc8)
     if not cards:
         return 0
@@ -262,11 +275,12 @@ def persist(date_utc8: str) -> int:
         for c in cards:
             cur.execute("""INSERT INTO decision_card(trade_date,code,name,ts_code,node_id,
                     node_card_id,direction,confidence,horizon_days,thesis,entry_cond,exit_cond,
-                    evidence,falsify,matrix,alignment,close,model)
-                VALUES(to_date(%s,'YYYYMMDD'),%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                    evidence,falsify,matrix,alignment,close,model,prompt_hash)
+                VALUES(to_date(%s,'YYYYMMDD'),%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                 (date_utc8, c["code"], c["name"], c["ts_code"], c["node_id"], c["node_card_id"],
                  c["direction"], c["confidence"], c["horizon_days"], c["thesis"],
                  c["entry_cond"], c["exit_cond"],
                  json.dumps(c["evidence"], ensure_ascii=False), c["falsify"],
-                 json.dumps(c["matrix"], ensure_ascii=False), c["alignment"], c["close"], model))
+                 json.dumps(c["matrix"], ensure_ascii=False), c["alignment"], c["close"],
+                 model, c["prompt_hash"]))
     return len(cards)

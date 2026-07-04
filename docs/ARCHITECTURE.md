@@ -58,7 +58,7 @@ marketdata(只读):bar_daily_raw / moneyflow / margin_detail / top_list / hot_ra
   B8 个股决策卡: 方向/信心/入场/退出/证伪(价位锚=发卡日收盘),node_card_id 追责链
 记分层(闭环):
   B7: 到期(5开市日)按相对全池超额记分(对/错/平) → 周度成绩单+分源归因
-      → DeepSeek 错误归纳(信息错/逻辑错/纯运气) → lessons 回灌次日发卡 prompt
+      → DeepSeek 错误归纳(信息错/逻辑错/纯运气) → lessons 回灌次日发卡 prompt(校准期冻结只落库,DECISIONS #28)
 人工闭环: 证伪草稿 → manage_ledger.py pin 钉死 → falsify 归因(append-only)
 ```
 
