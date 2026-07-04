@@ -46,6 +46,8 @@ bar_daily_raw(1990起,未复权,复权乘 adj_factor) / moneyflow(2010起,主力
 | 2026-07-02 下午-07-03 | major_news 配额死亡螺旋(失败重试也计数),新闻断续;07-03 14:10-20:00 超限,20:30 恢复一次(800条),22:30 台账拦截 |
 | 2026-06-11 前 | hot_rank 无数据 |
 | 2026-07-03 22:30 | 盘后 cron 跑的旧 pipeline(B6-B8 当晚更深夜才部署),judgment/decision/card_scores 三步缺席——首个全链自动跑=2026-07-07 |
+| 2026-07-04 | **参照层 v2 切换(机器人链7→14节点,+6票,DECISIONS #31)**:截面z分母49→57;此前 raw_news.matched_node_ids/mf_intraday_node/hotspot_daily 里的旧机器人 node_id 不迁移,过渡窗内旧数据挂旧id属正常 |
+| 2026-07-04 | B6 prompt_hash 变更 b2f7cf70df6678da→ffb0a6cccf2c61b7(模板"48节点"改"全部产业链节点",与参照层版本同界)——样本分组的两个版本轴切在同一天 |
 | 持续 | heatmap_stock/heatmap_node 每日 TRUNCATE,无历史(行情可重算,设计如此) |
 | 持续 | 参照层 2026-07-04 前的修订无快照(如 07-03 执行器节点拆分),此前时点成分不可精确还原 |
 

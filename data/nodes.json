@@ -1,296 +1,359 @@
 [
-  {
-    "node_id": "optical::光模块成品",
-    "chain": "光通信",
-    "chain_en": "optical",
-    "node": "光模块成品"
-  },
-  {
-    "node_id": "optical::光芯片",
-    "chain": "光通信",
-    "chain_en": "optical",
-    "node": "光芯片"
-  },
-  {
-    "node_id": "optical::光器件/CPO封装",
-    "chain": "光通信",
-    "chain_en": "optical",
-    "node": "光器件/CPO封装"
-  },
-  {
-    "node_id": "optical::光纤光缆",
-    "chain": "光通信",
-    "chain_en": "optical",
-    "node": "光纤光缆"
-  },
-  {
-    "node_id": "optical::通信设备",
-    "chain": "光通信",
-    "chain_en": "optical",
-    "node": "通信设备"
-  },
-  {
-    "node_id": "semiconductor::AI算力芯片",
-    "chain": "半导体",
-    "chain_en": "semiconductor",
-    "node": "AI算力芯片"
-  },
-  {
-    "node_id": "semiconductor::晶圆代工",
-    "chain": "半导体",
-    "chain_en": "semiconductor",
-    "node": "晶圆代工"
-  },
-  {
-    "node_id": "semiconductor::半导体设备",
-    "chain": "半导体",
-    "chain_en": "semiconductor",
-    "node": "半导体设备"
-  },
-  {
-    "node_id": "semiconductor::设备零部件",
-    "chain": "半导体",
-    "chain_en": "semiconductor",
-    "node": "设备零部件"
-  },
-  {
-    "node_id": "semiconductor::半导体材料",
-    "chain": "半导体",
-    "chain_en": "semiconductor",
-    "node": "半导体材料"
-  },
-  {
-    "node_id": "semiconductor::先进封测",
-    "chain": "半导体",
-    "chain_en": "semiconductor",
-    "node": "先进封测"
-  },
-  {
-    "node_id": "semiconductor::存储",
-    "chain": "半导体",
-    "chain_en": "semiconductor",
-    "node": "存储"
-  },
-  {
-    "node_id": "semiconductor::接口/IP芯片",
-    "chain": "半导体",
-    "chain_en": "semiconductor",
-    "node": "接口/IP芯片"
-  },
-  {
-    "node_id": "semiconductor::芯片设计",
-    "chain": "半导体",
-    "chain_en": "semiconductor",
-    "node": "芯片设计"
-  },
-  {
-    "node_id": "semiconductor::功率/化合物",
-    "chain": "半导体",
-    "chain_en": "semiconductor",
-    "node": "功率/化合物"
-  },
-  {
-    "node_id": "semiconductor::EDA",
-    "chain": "半导体",
-    "chain_en": "semiconductor",
-    "node": "EDA"
-  },
-  {
-    "node_id": "semiconductor::存储-内存接口",
-    "chain": "半导体",
-    "chain_en": "semiconductor",
-    "node": "存储-内存接口"
-  },
-  {
-    "node_id": "semiconductor::存储-主控/模组",
-    "chain": "半导体",
-    "chain_en": "semiconductor",
-    "node": "存储-主控/模组"
-  },
-  {
-    "node_id": "semiconductor::存储-利基/细分",
-    "chain": "半导体",
-    "chain_en": "semiconductor",
-    "node": "存储-利基/细分"
-  },
-  {
-    "node_id": "semiconductor::存储-HBM/分销",
-    "chain": "半导体",
-    "chain_en": "semiconductor",
-    "node": "存储-HBM/分销"
-  },
-  {
-    "node_id": "semiconductor::CoWoS载板-ABF/FCBGA",
-    "chain": "半导体",
-    "chain_en": "semiconductor",
-    "node": "CoWoS载板-ABF/FCBGA"
-  },
-  {
-    "node_id": "semiconductor::CoWoS载板-ABF膜材",
-    "chain": "半导体",
-    "chain_en": "semiconductor",
-    "node": "CoWoS载板-ABF膜材"
-  },
-  {
-    "node_id": "semiconductor::电子特气-含氟蚀刻",
-    "chain": "半导体",
-    "chain_en": "semiconductor",
-    "node": "电子特气-含氟蚀刻"
-  },
-  {
-    "node_id": "semiconductor::电子特气-光刻气",
-    "chain": "半导体",
-    "chain_en": "semiconductor",
-    "node": "电子特气-光刻气"
-  },
-  {
-    "node_id": "semiconductor::电子特气-材料一体化",
-    "chain": "半导体",
-    "chain_en": "semiconductor",
-    "node": "电子特气-材料一体化"
-  },
-  {
-    "node_id": "semiconductor::电子特气-大宗/氦气",
-    "chain": "半导体",
-    "chain_en": "semiconductor",
-    "node": "电子特气-大宗/氦气"
-  },
-  {
-    "node_id": "semiconductor::电子特气-气械一体",
-    "chain": "半导体",
-    "chain_en": "semiconductor",
-    "node": "电子特气-气械一体"
-  },
-  {
-    "node_id": "semiconductor::电子特气-大宗/综合",
-    "chain": "半导体",
-    "chain_en": "semiconductor",
-    "node": "电子特气-大宗/综合"
-  },
-  {
-    "node_id": "compute_infra::服务器整机",
-    "chain": "算力配套",
-    "chain_en": "compute_infra",
-    "node": "服务器整机"
-  },
-  {
-    "node_id": "compute_infra::高速PCB",
-    "chain": "算力配套",
-    "chain_en": "compute_infra",
-    "node": "高速PCB"
-  },
-  {
-    "node_id": "compute_infra::覆铜板/基材",
-    "chain": "算力配套",
-    "chain_en": "compute_infra",
-    "node": "覆铜板/基材"
-  },
-  {
-    "node_id": "compute_infra::AI电源/供电",
-    "chain": "算力配套",
-    "chain_en": "compute_infra",
-    "node": "AI电源/供电"
-  },
-  {
-    "node_id": "compute_infra::液冷/散热",
-    "chain": "算力配套",
-    "chain_en": "compute_infra",
-    "node": "液冷/散热"
-  },
-  {
-    "node_id": "compute_infra::其他被动元件",
-    "chain": "算力配套",
-    "chain_en": "compute_infra",
-    "node": "其他被动元件"
-  },
-  {
-    "node_id": "compute_infra::连接器/铜缆",
-    "chain": "算力配套",
-    "chain_en": "compute_infra",
-    "node": "连接器/铜缆"
-  },
-  {
-    "node_id": "mlcc::上游材料",
-    "chain": "MLCC",
-    "chain_en": "mlcc",
-    "node": "上游材料"
-  },
-  {
-    "node_id": "mlcc::制程辅材",
-    "chain": "MLCC",
-    "chain_en": "mlcc",
-    "node": "制程辅材"
-  },
-  {
-    "node_id": "mlcc::中游制造",
-    "chain": "MLCC",
-    "chain_en": "mlcc",
-    "node": "中游制造"
-  },
-  {
-    "node_id": "mlcc::军工高可靠",
-    "chain": "MLCC",
-    "chain_en": "mlcc",
-    "node": "军工高可靠"
-  },
-  {
-    "node_id": "mlcc::设备",
-    "chain": "MLCC",
-    "chain_en": "mlcc",
-    "node": "设备"
-  },
-  {
-    "node_id": "photoresist::半导体光刻胶",
-    "chain": "光刻胶",
-    "chain_en": "photoresist",
-    "node": "半导体光刻胶"
-  },
-  {
-    "node_id": "photoresist::面板/PCB光刻胶",
-    "chain": "光刻胶",
-    "chain_en": "photoresist",
-    "node": "面板/PCB光刻胶"
-  },
-  {
-    "node_id": "robotics::整机/本体",
-    "chain": "机器人",
-    "chain_en": "robotics",
-    "node": "整机/本体"
-  },
-  {
-    "node_id": "robotics::减速器",
-    "chain": "机器人",
-    "chain_en": "robotics",
-    "node": "减速器"
-  },
-  {
-    "node_id": "robotics::伺服/电机",
-    "chain": "机器人",
-    "chain_en": "robotics",
-    "node": "伺服/电机"
-  },
-  {
-    "node_id": "robotics::传感器",
-    "chain": "机器人",
-    "chain_en": "robotics",
-    "node": "传感器"
-  },
-  {
-    "node_id": "robotics::丝杠/传动",
-    "chain": "机器人",
-    "chain_en": "robotics",
-    "node": "丝杠/传动"
-  },
-  {
-    "node_id": "robotics::视觉/大脑(交叉)",
-    "chain": "机器人",
-    "chain_en": "robotics",
-    "node": "视觉/大脑(交叉)"
-  },
-  {
-    "node_id": "robotics::执行器/结构件",
-    "chain": "机器人",
-    "chain_en": "robotics",
-    "node": "执行器/结构件"
-  }
+ {
+  "node_id": "optical::光模块成品",
+  "chain": "光通信",
+  "chain_en": "optical",
+  "node": "光模块成品"
+ },
+ {
+  "node_id": "optical::光芯片",
+  "chain": "光通信",
+  "chain_en": "optical",
+  "node": "光芯片"
+ },
+ {
+  "node_id": "optical::光器件/CPO封装",
+  "chain": "光通信",
+  "chain_en": "optical",
+  "node": "光器件/CPO封装"
+ },
+ {
+  "node_id": "optical::光纤光缆",
+  "chain": "光通信",
+  "chain_en": "optical",
+  "node": "光纤光缆"
+ },
+ {
+  "node_id": "optical::通信设备",
+  "chain": "光通信",
+  "chain_en": "optical",
+  "node": "通信设备"
+ },
+ {
+  "node_id": "semiconductor::AI算力芯片",
+  "chain": "半导体",
+  "chain_en": "semiconductor",
+  "node": "AI算力芯片"
+ },
+ {
+  "node_id": "semiconductor::晶圆代工",
+  "chain": "半导体",
+  "chain_en": "semiconductor",
+  "node": "晶圆代工"
+ },
+ {
+  "node_id": "semiconductor::半导体设备",
+  "chain": "半导体",
+  "chain_en": "semiconductor",
+  "node": "半导体设备"
+ },
+ {
+  "node_id": "semiconductor::设备零部件",
+  "chain": "半导体",
+  "chain_en": "semiconductor",
+  "node": "设备零部件"
+ },
+ {
+  "node_id": "semiconductor::半导体材料",
+  "chain": "半导体",
+  "chain_en": "semiconductor",
+  "node": "半导体材料"
+ },
+ {
+  "node_id": "semiconductor::先进封测",
+  "chain": "半导体",
+  "chain_en": "semiconductor",
+  "node": "先进封测"
+ },
+ {
+  "node_id": "semiconductor::存储",
+  "chain": "半导体",
+  "chain_en": "semiconductor",
+  "node": "存储"
+ },
+ {
+  "node_id": "semiconductor::接口/IP芯片",
+  "chain": "半导体",
+  "chain_en": "semiconductor",
+  "node": "接口/IP芯片"
+ },
+ {
+  "node_id": "semiconductor::芯片设计",
+  "chain": "半导体",
+  "chain_en": "semiconductor",
+  "node": "芯片设计"
+ },
+ {
+  "node_id": "semiconductor::功率/化合物",
+  "chain": "半导体",
+  "chain_en": "semiconductor",
+  "node": "功率/化合物"
+ },
+ {
+  "node_id": "semiconductor::EDA",
+  "chain": "半导体",
+  "chain_en": "semiconductor",
+  "node": "EDA"
+ },
+ {
+  "node_id": "semiconductor::存储-内存接口",
+  "chain": "半导体",
+  "chain_en": "semiconductor",
+  "node": "存储-内存接口"
+ },
+ {
+  "node_id": "semiconductor::存储-主控/模组",
+  "chain": "半导体",
+  "chain_en": "semiconductor",
+  "node": "存储-主控/模组"
+ },
+ {
+  "node_id": "semiconductor::存储-利基/细分",
+  "chain": "半导体",
+  "chain_en": "semiconductor",
+  "node": "存储-利基/细分"
+ },
+ {
+  "node_id": "semiconductor::存储-HBM/分销",
+  "chain": "半导体",
+  "chain_en": "semiconductor",
+  "node": "存储-HBM/分销"
+ },
+ {
+  "node_id": "semiconductor::CoWoS载板-ABF/FCBGA",
+  "chain": "半导体",
+  "chain_en": "semiconductor",
+  "node": "CoWoS载板-ABF/FCBGA"
+ },
+ {
+  "node_id": "semiconductor::CoWoS载板-ABF膜材",
+  "chain": "半导体",
+  "chain_en": "semiconductor",
+  "node": "CoWoS载板-ABF膜材"
+ },
+ {
+  "node_id": "semiconductor::电子特气-含氟蚀刻",
+  "chain": "半导体",
+  "chain_en": "semiconductor",
+  "node": "电子特气-含氟蚀刻"
+ },
+ {
+  "node_id": "semiconductor::电子特气-光刻气",
+  "chain": "半导体",
+  "chain_en": "semiconductor",
+  "node": "电子特气-光刻气"
+ },
+ {
+  "node_id": "semiconductor::电子特气-材料一体化",
+  "chain": "半导体",
+  "chain_en": "semiconductor",
+  "node": "电子特气-材料一体化"
+ },
+ {
+  "node_id": "semiconductor::电子特气-大宗/氦气",
+  "chain": "半导体",
+  "chain_en": "semiconductor",
+  "node": "电子特气-大宗/氦气"
+ },
+ {
+  "node_id": "semiconductor::电子特气-气械一体",
+  "chain": "半导体",
+  "chain_en": "semiconductor",
+  "node": "电子特气-气械一体"
+ },
+ {
+  "node_id": "semiconductor::电子特气-大宗/综合",
+  "chain": "半导体",
+  "chain_en": "semiconductor",
+  "node": "电子特气-大宗/综合"
+ },
+ {
+  "node_id": "compute_infra::服务器整机",
+  "chain": "算力配套",
+  "chain_en": "compute_infra",
+  "node": "服务器整机"
+ },
+ {
+  "node_id": "compute_infra::高速PCB",
+  "chain": "算力配套",
+  "chain_en": "compute_infra",
+  "node": "高速PCB"
+ },
+ {
+  "node_id": "compute_infra::覆铜板/基材",
+  "chain": "算力配套",
+  "chain_en": "compute_infra",
+  "node": "覆铜板/基材"
+ },
+ {
+  "node_id": "compute_infra::AI电源/供电",
+  "chain": "算力配套",
+  "chain_en": "compute_infra",
+  "node": "AI电源/供电"
+ },
+ {
+  "node_id": "compute_infra::液冷/散热",
+  "chain": "算力配套",
+  "chain_en": "compute_infra",
+  "node": "液冷/散热"
+ },
+ {
+  "node_id": "compute_infra::其他被动元件",
+  "chain": "算力配套",
+  "chain_en": "compute_infra",
+  "node": "其他被动元件"
+ },
+ {
+  "node_id": "compute_infra::连接器/铜缆",
+  "chain": "算力配套",
+  "chain_en": "compute_infra",
+  "node": "连接器/铜缆"
+ },
+ {
+  "node_id": "mlcc::上游材料",
+  "chain": "MLCC",
+  "chain_en": "mlcc",
+  "node": "上游材料"
+ },
+ {
+  "node_id": "mlcc::制程辅材",
+  "chain": "MLCC",
+  "chain_en": "mlcc",
+  "node": "制程辅材"
+ },
+ {
+  "node_id": "mlcc::中游制造",
+  "chain": "MLCC",
+  "chain_en": "mlcc",
+  "node": "中游制造"
+ },
+ {
+  "node_id": "mlcc::军工高可靠",
+  "chain": "MLCC",
+  "chain_en": "mlcc",
+  "node": "军工高可靠"
+ },
+ {
+  "node_id": "mlcc::设备",
+  "chain": "MLCC",
+  "chain_en": "mlcc",
+  "node": "设备"
+ },
+ {
+  "node_id": "photoresist::半导体光刻胶",
+  "chain": "光刻胶",
+  "chain_en": "photoresist",
+  "node": "半导体光刻胶"
+ },
+ {
+  "node_id": "photoresist::面板/PCB光刻胶",
+  "chain": "光刻胶",
+  "chain_en": "photoresist",
+  "node": "面板/PCB光刻胶"
+ },
+ {
+  "node_id": "robotics::3D视觉/感知",
+  "chain": "机器人",
+  "chain_en": "robotics",
+  "node": "3D视觉/感知",
+  "layer": "Brain"
+ },
+ {
+  "node_id": "robotics::谐波减速器",
+  "chain": "机器人",
+  "chain_en": "robotics",
+  "node": "谐波减速器",
+  "layer": "Body-传动"
+ },
+ {
+  "node_id": "robotics::RV减速器/齿轮",
+  "chain": "机器人",
+  "chain_en": "robotics",
+  "node": "RV减速器/齿轮",
+  "layer": "Body-传动"
+ },
+ {
+  "node_id": "robotics::行星滚柱丝杠",
+  "chain": "机器人",
+  "chain_en": "robotics",
+  "node": "行星滚柱丝杠",
+  "layer": "Body-传动"
+ },
+ {
+  "node_id": "robotics::无框力矩/空心杯电机",
+  "chain": "机器人",
+  "chain_en": "robotics",
+  "node": "无框力矩/空心杯电机",
+  "layer": "Body-传动"
+ },
+ {
+  "node_id": "robotics::编码器",
+  "chain": "机器人",
+  "chain_en": "robotics",
+  "node": "编码器",
+  "layer": "Body-传动"
+ },
+ {
+  "node_id": "robotics::结构件/轻量化",
+  "chain": "机器人",
+  "chain_en": "robotics",
+  "node": "结构件/轻量化",
+  "layer": "Body-传动"
+ },
+ {
+  "node_id": "robotics::力/力矩传感器",
+  "chain": "机器人",
+  "chain_en": "robotics",
+  "node": "力/力矩传感器",
+  "layer": "Body-传感"
+ },
+ {
+  "node_id": "robotics::灵巧手/微型传动",
+  "chain": "机器人",
+  "chain_en": "robotics",
+  "node": "灵巧手/微型传动",
+  "layer": "Body-灵巧手"
+ },
+ {
+  "node_id": "robotics::能源/电池",
+  "chain": "机器人",
+  "chain_en": "robotics",
+  "node": "能源/电池",
+  "layer": "Body-能源"
+ },
+ {
+  "node_id": "robotics::工业机器人本体",
+  "chain": "机器人",
+  "chain_en": "robotics",
+  "node": "工业机器人本体",
+  "layer": "Integrator"
+ },
+ {
+  "node_id": "robotics::人形整机",
+  "chain": "机器人",
+  "chain_en": "robotics",
+  "node": "人形整机",
+  "layer": "Integrator"
+ },
+ {
+  "node_id": "robotics::Tier1总成(热管理/执行器)",
+  "chain": "机器人",
+  "chain_en": "robotics",
+  "node": "Tier1总成(热管理/执行器)",
+  "layer": "Integrator"
+ },
+ {
+  "node_id": "robotics::Tier1总成(底盘/执行器)",
+  "chain": "机器人",
+  "chain_en": "robotics",
+  "node": "Tier1总成(底盘/执行器)",
+  "layer": "Integrator"
+ },
+ {
+  "node_id": "robotics::运动控制/控制器",
+  "chain": "机器人",
+  "chain_en": "robotics",
+  "node": "运动控制/控制器",
+  "layer": "Enabler"
+ }
 ]
