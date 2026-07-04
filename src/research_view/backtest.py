@@ -269,6 +269,142 @@ def diag1(start: str, end: str, short_start: str = "20260601") -> dict:
     return out
 
 
+# ---------- 诊断二/三共用:前向超额 + 截面秩相关 + block bootstrap ----------
+
+def _forward_node_excess(panel: dict, members: dict[str, list[str]], h: int,
+                         anchor: str = "judgment") -> pd.DataFrame:
+    """date×node 前向 h 开市日等权超额 pp。judgment: close(d)→close(d+h);
+    executable: open(d+1)→close(d+h)。行=信号日 d。"""
+    if anchor == "judgment":
+        f = (panel["aclose"].shift(-h) / panel["aclose"] - 1) * 100
+    else:
+        f = (panel["aclose"].shift(-h) / panel["aopen"].shift(-1) - 1) * 100
+    node_cols = {nid: [t for t in mem if t in f.columns] for nid, mem in members.items()}
+    node_cols = {k: v for k, v in node_cols.items() if v}
+    pool_ret = f.mean(axis=1)
+    out = pd.DataFrame(index=f.index)
+    for nid, cols in node_cols.items():
+        out[nid] = f.reindex(columns=cols).mean(axis=1) - pool_ret
+    return out
+
+
+def _daily_rank_ic(sig: pd.DataFrame, fwd: pd.DataFrame) -> pd.Series:
+    """逐日截面 Spearman IC(信号 vs 前向超额,across 节点)。"""
+    common = sig.columns.intersection(fwd.columns)
+    a = sig[common].rank(axis=1)
+    b = fwd[common].rank(axis=1)
+    am, bm = a.sub(a.mean(axis=1), axis=0), b.sub(b.mean(axis=1), axis=0)
+    num = (am * bm).sum(axis=1)
+    den = np.sqrt((am ** 2).sum(axis=1) * (bm ** 2).sum(axis=1))
+    return (num / den.where(den > 0)).dropna()
+
+
+def _block_boot_ci(x: np.ndarray, n_boot: int = 1000, block: int = 10,
+                   seed: int = 42) -> tuple[float, float, float]:
+    """移动块 bootstrap 的均值 95% CI(日度序列自相关,禁裸 t)。返回(mean, lo, hi)。"""
+    n = len(x)
+    if n < block * 2:
+        return float(np.mean(x)), float("nan"), float("nan")
+    rng = np.random.default_rng(seed)
+    starts = rng.integers(0, n - block + 1, size=(n_boot, int(np.ceil(n / block))))
+    means = np.array([np.concatenate([x[s:s + block] for s in row])[:n].mean() for row in starts])
+    return float(np.mean(x)), float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5))
+
+
+def _resonance(zs: dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """生产权重子集(evidence._W:price1.0/mf1.0/lhb0.6)——只复刻,不调参。"""
+    return 1.0 * zs["price"] + 1.0 * zs["mf"] + 0.6 * zs["lhb"]
+
+
+def diag2(start: str, end: str, hmax: int = 10) -> dict:
+    """诊断二:IC(截面秩相关)按 horizon 1..hmax 的衰减曲线,分源+共振分,block bootstrap CI。"""
+    members, pool_ts, _names = _pool()
+    panel = load_panel(start, end, pool_ts)
+    zs = signal_panels(panel, members)
+    sigs = {"resonance": _resonance(zs), **zs}
+    curves: dict[str, list] = {k: [] for k in sigs}
+    for h in range(1, hmax + 1):
+        fwd = _forward_node_excess(panel, members, h)
+        for k, sig in sigs.items():
+            ic = _daily_rank_ic(sig.iloc[5:-h], fwd.iloc[5:-h])
+            mean, lo, hi = _block_boot_ci(ic.to_numpy())
+            curves[k].append({"h": h, "ic": round(mean, 4), "lo": round(lo, 4),
+                              "hi": round(hi, 4), "n_days": int(len(ic))})
+    out = {"window": {"start": start, "end": end}, "method":
+           "逐日截面Spearman IC(47节点),judgment锚前向超额;移动块bootstrap(块10日,1000次,seed42)95%CI",
+           "curves": curves,
+           "findings": ["horizon=5 是拍的,本诊断给出经验衰减;IC为节点截面秩相关,量级参考:"
+                        "|IC|≈0.05 已有经济意义(截面只有47个节点,噪声大)"]}
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    p = OUT_DIR / f"diag2_{start}_{end}.json"
+    p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
+    print(json.dumps(out, ensure_ascii=False, indent=1))
+    print(f"\n→ {p}")
+    return out
+
+
+def diag3(start: str, end: str, horizon: int = 5, n_q: int = 5) -> dict:
+    """诊断三:共振分分位组合单调性 + 基线对照(纯动量/随机安慰剂),block bootstrap CI。
+    每日按信号把 47 节点分 n_q 档,档内等权前向超额取均值;Q_top-Q_bottom 为价差序列。"""
+    members, pool_ts, _names = _pool()
+    panel = load_panel(start, end, pool_ts)
+    zs = signal_panels(panel, members)
+    res = _resonance(zs)
+    rng = np.random.default_rng(42)
+    placebo = res.copy()
+    placebo[:] = rng.permuted(res.to_numpy(), axis=1)  # 逐日打乱节点标签=随机安慰剂
+    sigs = {"resonance": res, "price_only": zs["price"], "placebo": placebo}
+    fwd_j = _forward_node_excess(panel, members, horizon, "judgment")
+    fwd_e = _forward_node_excess(panel, members, horizon, "executable")
+    out: dict = {"window": {"start": start, "end": end}, "horizon": horizon, "n_q": n_q,
+                 "method": "逐日截面按信号分位(等权),judgment锚;spread=Qtop-Qbottom,"
+                           "移动块bootstrap(块10日,1000次,seed42)95%CI;executable锚只报顶档",
+                 "signals": {}}
+    for k, sig in sigs.items():
+        sub = sig.iloc[5:-horizon]
+        f = fwd_j.reindex(index=sub.index)
+        ranks = sub.rank(axis=1, pct=True)
+        qmeans = {q: [] for q in range(n_q)}
+        spread = []
+        top_exec = []
+        fe = fwd_e.reindex(index=sub.index)
+        for d in sub.index:
+            r, fr = ranks.loc[d].dropna(), f.loc[d]
+            if len(r) < n_q * 2:
+                continue
+            qs = np.minimum((r * n_q).apply(np.ceil).astype(int) - 1, n_q - 1)
+            m = {}
+            for q in range(n_q):
+                vals = fr.reindex(qs.index[qs == q]).dropna()
+                if len(vals):
+                    m[q] = float(vals.mean())
+                    qmeans[q].append(m[q])
+            if 0 in m and (n_q - 1) in m:
+                spread.append(m[n_q - 1] - m[0])
+            ev = fe.loc[d].reindex(qs.index[qs == n_q - 1]).dropna()
+            if len(ev):
+                top_exec.append(float(ev.mean()))
+        mean, lo, hi = _block_boot_ci(np.array(spread))
+        em, elo, ehi = _block_boot_ci(np.array(top_exec))
+        out["signals"][k] = {
+            "q_mean_excess_pp": {f"Q{q + 1}": round(float(np.mean(v)), 3) for q, v in qmeans.items() if v},
+            "spread_top_bottom": {"mean": round(mean, 3), "lo": round(lo, 3), "hi": round(hi, 3),
+                                  "n_days": len(spread)},
+            "top_q_executable": {"mean": round(em, 3), "lo": round(elo, 3), "hi": round(ehi, 3)},
+        }
+    out["findings"] = [
+        "placebo 为逐日打乱节点标签的同分布对照,预期 spread≈0 且 CI 跨 0——若不为 0 说明管道有泄漏",
+        "price_only=纯动量基线:共振分若不明显优于它,多源共振的增量存疑(0b 在线基准对照的离线预演)",
+        "幸存者免责与 3 源上限同 diag1,引用必须带上",
+    ]
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    p = OUT_DIR / f"diag3_{start}_{end}_h{horizon}.json"
+    p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
+    print(json.dumps(out, ensure_ascii=False, indent=1))
+    print(f"\n→ {p}")
+    return out
+
+
 # ---------- 双锚模块对账(与在线 B7 记分交叉验证) ----------
 
 def validate(date_utc8: str = "20260618", horizon: int = 5) -> None:
@@ -300,10 +436,14 @@ def main() -> None:
     kv = dict(a.split("=", 1) for a in args[1:] if "=" in a)
     if cmd == "diag1":
         diag1(kv.get("start", "20240701"), kv.get("end", "20260703"), kv.get("short_start", "20260601"))
+    elif cmd == "diag2":
+        diag2(kv.get("start", "20240701"), kv.get("end", "20260703"), int(kv.get("hmax", 10)))
+    elif cmd == "diag3":
+        diag3(kv.get("start", "20240701"), kv.get("end", "20260703"), int(kv.get("horizon", 5)))
     elif cmd == "validate":
         validate(kv.get("date", "20260618"), int(kv.get("horizon", 5)))
     else:
-        print("用法: python -m research_view.backtest diag1 [start=YYYYMMDD end=YYYYMMDD] | validate [date=YYYYMMDD]")
+        print("用法: python -m research_view.backtest diag1|diag2|diag3|validate [k=v ...]")
 
 
 if __name__ == "__main__":
