@@ -87,6 +87,7 @@ scripts/:`run_pipeline.py`(盘后主管道 16 步,含 calibration_freeze/ref_sna
 | 周三 07:00 | run_fund_letters | 信函 4 源 |
 | 周日 20:00 | run_scorecard | B7 补记分+周报+lessons |
 | 每日 21:00+23:30(数据节点) | backup_db | pg_dump(同日文件覆盖,23:30档含当日判断卡/记分),盘后 rsync 异地留存,两地各14天 |
+| 每日 23:50(含周末) | watchdog | 独立看门狗:停摆(>20h)/交易日静默零/周一🟢心跳,只异常出声(飞书) |
 
 ## 7. 前端(web/,React+TS+Vite+Tailwind+ECharts,Bloomberg 暗色,A股红涨绿跌)
 
@@ -97,3 +98,7 @@ scripts/:`run_pipeline.py`(盘后主管道 16 步,含 calibration_freeze/ref_sna
 - 每步 task_run 落 task_log → health(绿黄红,按源落地时点判新鲜);前端 StatusBar 红横幅(alert.json 按 job 分旗标)+StaleBadge 陈旧标注+新闻停更检测。
 - 台北 18 外网源:注册表(data/sources.json,enabled 开关)×逐源上报→系统页面板(静默失效可见化)。
 - 防御:LLM 指数退避 / SAVEPOINT 防整批丢 / 兜底导出(单步失败 dashboard 照刷) / ErrorBoundary / nginx 限流+bot 403(**curl 调试须 -A 浏览器UA**)。
+- **独立看门狗**(`scripts/watchdog.py`,DECISIONS #33):不 import 管线代码、只读 dashboard.json——覆盖
+  lib_alert 盲区(cron 整体没跑/flock 卡死时没有任何 job 会告警)。🔴 停摆>20h 或 .env 丢失(经备份副本
+  `~/.config/mofang_watchdog.env` 发出,**轮换 webhook 须两处同步**);🟡 交易日收口后"成功但为空"
+  (B6/B8 无当日卡、新闻 0 条、资金/热点/B3 回退,radar P0-3 模式);🟢 周一心跳(没收到=整机宕,人肉 dead-man)。

@@ -13,6 +13,11 @@
 
 - 想法与落地分离:讨论中被否/暂缓的方案也要写进 ROADMAP(已明确不做/三档),防止重复议。
 - 判断链路(B1-B8 prompt/口径)的任何改动,commit message 必须写清改了哪个口径、实测结果。
+- **进实现前过"反向自查四问"**(前置门,列表作答后再动手;吸收自 radar 审视纪律,DECISIONS #33):
+  ①幻觉——这步会不会让 LLM 输出输入之外的数字/来源?怎么防(溯源校验/数值由代码算)?
+  ②越界——会不会让某层填了不该它填的(事实层出判断、LLM 碰参照层/记分)?
+  ③红线——违不违反 §8?
+  ④地基——有没有事后补不上的决定(schema/口径/唯一键/时间戳)?种错要返工的单独标出等拍板。
 
 ## 2. SQL 迁移规范
 
@@ -39,6 +44,10 @@ RSYNC_RSH="ssh -i ~/.ssh/<key> -o IdentitiesOnly=yes" rsync -az \
   --exclude __pycache__ --exclude web/node_modules --exclude web/dist \
   --exclude webdata --exclude logs --exclude backups --exclude exports \
   ./ <user>@<数据节点>:/opt/research_view/
+# ①b 部署留痕(radar DEPLOY_STATE 教训:生产跑的是哪个 commit 必须可追溯;脏树部署纪律上视为阻断)
+ssh <user>@<数据节点> "printf 'commit: %s\nat: %s UTC+8\ndirty: %s 条未提交\n' \
+  '$(git rev-parse --short HEAD)' \"$(TZ=Asia/Shanghai date '+%F %T')\" \
+  '$(git status --porcelain | wc -l)' > /opt/research_view/DEPLOY_STATE.md"
 # ② 迁移(如有) → ③ 实测 → ④ 数据节点重建 dashboard(核对当天日期!误用未来日期会把线上翻空)
 # ⑤ 拉回(brace 展开须在引号外)
 rsync -az "<user>@<数据节点>:/opt/research_view/exports/"{dashboard,trends}.json webdata/
@@ -67,6 +76,10 @@ curl -s -A "Mozilla/5.0" http://localhost:8092/data/dashboard.json | python3 -c 
 ## 7. 观察点制度
 
 每次上线登记"次日/首跑观察点"(ROADMAP 当前阶段节),之后**回看 cron 日志与 task_log 确认**,不是发完就算完。规则:**观察点优先于新功能**——新机器先跑顺,再往上摞。
+
+**季度全项目审视**(制度,DECISIONS #33):每季度(或大阶段收口后)做一次全项目体检——多路代码审查
++生产库实况核查+战略层审视,产出 P0/P1/P2 分级清单留档 docs/,逐项拍板实施;"查过没问题的"也留档,
+防止将来重复怀疑。首次排 2026-10(首批战绩样本成熟后)。值班模式下这是新功能之外唯一的主动开发入口。
 
 ## 8. 红线(违反即 bug)
 
