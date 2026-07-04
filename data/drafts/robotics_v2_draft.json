@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "title": "机器人产业链 v2 草案(参照层v2第一块)",
+    "status": "draft——未入库。切换时点=07-12首份周报后整批上线,记DECISIONS+参照层版本号",
+    "based_on": "使用者 v0.2 龙头缩表(2026-07-03) + 2026-07-04 拍板的三个默认方案",
+    "decisions": [
+      "落选龙头降级留池(贝斯特/中大力德/雷赛智能),纯蹭概念不进(凯龙高科/上纬新材/丰光精密/万达轴承/三瑞智能/长盛轴承)",
+      "未提及的现有成员就近归位;港股两只维持仅映射模式(ts_code NULL)",
+      "宁德/兆威只留文字注(赛道锚/C档),不做硬口径",
+      "奥比中光代码修正:使用者笔误300653(正海生物)→688322(已核验security表)"
+    ],
+    "layer_taxonomy": "Brain/Body-传动/Body-传感/Body-灵巧手/Body-能源/Integrator/Enabler(新增层级,入节点元数据作分组显示,node_id 仍=chain::node)",
+    "note_未上市": "行星滚柱丝杠真龙头新剑传动未上市,北特科技为A股最靠前",
+    "open_questions": [
+      "长盈精密归位:暂放'结构件/轻量化'(原执行器/结构件龙三),待使用者过目",
+      "地平线(HK)归位:暂留'3D视觉/感知'作大脑映射,待使用者过目",
+      "节点数 7→13,机器人链占全表比重上升,截面z分母变化在切换DECISIONS里注明"
+    ]
+  },
+  "nodes": [
+    {"node_id": "robotics::3D视觉/感知", "layer": "Brain", "members": [
+      {"code": "688322", "name": "奥比中光", "tier": "龙一", "note": "A股3D视觉龙头,工业已兑现(使用者confirmed,代码已修正)"},
+      {"code": "09660.HK", "name": "地平线", "tier": "龙二", "note": "机器人大脑(港股,仅映射,待使用者确认归位)"}
+    ]},
+    {"node_id": "robotics::谐波减速器", "layer": "Body-传动", "members": [
+      {"code": "688017", "name": "绿的谐波", "tier": "龙一", "purity": "⭐", "note": "兑现之王,SKF合资26年底运营;领涨=地位被认,价格买的是人形期权(使用者原注)"}
+    ]},
+    {"node_id": "robotics::RV减速器/齿轮", "layer": "Body-传动", "members": [
+      {"code": "002472", "name": "双环传动", "tier": "龙一", "note": "齿轮/RV龙头,拿三代图纸量产验证阶段"},
+      {"code": "002896", "name": "中大力德", "tier": "龙二", "note": "RV第二梯队(使用者定降级留池)"}
+    ]},
+    {"node_id": "robotics::行星滚柱丝杠", "layer": "Body-传动", "members": [
+      {"code": "603009", "name": "北特科技", "tier": "龙一", "note": "A股丝杠最靠前,C5级,2026量产;真龙头新剑传动未上市(使用者原注)"},
+      {"code": "601100", "name": "恒立液压", "tier": "龙二", "note": "电动缸集成形态非单件龙头,净利率26.85%(使用者candidates采纳)"},
+      {"code": "603667", "name": "五洲新春", "tier": "龙三", "note": "国产突破(原池成员就近归位)"},
+      {"code": "300809", "name": "华辰装备", "tier": "龙三", "note": "丝杠磨削设备端(原池成员就近归位)"},
+      {"code": "300580", "name": "贝斯特", "tier": null, "note": "外围普通成分(使用者定降级留池:'离龙头远')"}
+    ]},
+    {"node_id": "robotics::无框力矩/空心杯电机", "layer": "Body-传动", "members": [
+      {"code": "603728", "name": "鸣志电器", "tier": "龙一", "note": "空心杯电机龙头(灵巧手命门),工业已兑现"},
+      {"code": "300660", "name": "江苏雷利", "tier": "龙二", "note": "灵巧手电机(原池成员就近归位)"}
+    ]},
+    {"node_id": "robotics::力/力矩传感器", "layer": "Body-传感", "members": [
+      {"code": "603662", "name": "柯力传感", "tier": "龙一", "purity": "⭐", "note": "六维力布局;罗兰贝格:六维力是2026国产替代空间最大细分(why-now),仍属预期,追问订单内生性(使用者原注)"},
+      {"code": "301413", "name": "安培龙", "tier": "龙二", "note": "触觉早期(原池成员)"},
+      {"code": "300354", "name": "东华测试", "tier": "龙三", "note": "传感(原池成员)"}
+    ]},
+    {"node_id": "robotics::灵巧手/微型传动", "layer": "Body-灵巧手", "members": [
+      {"code": "003021", "name": "兆威机电", "tier": "龙一", "note": "⚠热门标的非确立龙头,C档概念区——该细分尚无公认龙头(使用者原注,只文字注不硬化)"}
+    ]},
+    {"node_id": "robotics::编码器", "layer": "Body-传动", "members": [
+      {"code": "688320", "name": "禾川科技", "tier": "龙一", "note": "国产编码器+伺服龙头之一,工业兑现(使用者candidates采纳)"}
+    ]},
+    {"node_id": "robotics::结构件/轻量化", "layer": "Body-传动", "members": [
+      {"code": "688716", "name": "中研股份", "tier": "龙一", "note": "PEEK龙头,人形轻量化材料,地位待验(使用者candidates采纳)"},
+      {"code": "300115", "name": "长盈精密", "tier": "龙三", "note": "精密结构件(原池成员就近归位,待使用者过目)"}
+    ]},
+    {"node_id": "robotics::能源/电池", "layer": "Body-能源", "members": [
+      {"code": "300750", "name": "宁德时代", "tier": "龙一", "note": "⚠当赛道锚不当买点——机器人纯度极低,巨头顺手做的增量;续航/功率密度是真瓶颈(使用者原注,只文字注不硬化)"}
+    ]},
+    {"node_id": "robotics::工业机器人本体", "layer": "Integrator", "members": [
+      {"code": "002747", "name": "埃斯顿", "tier": "龙一", "note": "工业本体龙头,收购酷卓整合(07-03曾提议未加,本次使用者confirmed)"},
+      {"code": "300124", "name": "汇川技术", "tier": "龙二", "note": "本体第二极(使用者candidates,与运动控制双映射)"}
+    ]},
+    {"node_id": "robotics::人形整机", "layer": "Integrator", "members": [
+      {"code": "09880.HK", "name": "优必选", "tier": "龙一", "purity": "⭐", "note": "人形整机(港股,仅映射,无A股行情资金流)"}
+    ]},
+    {"node_id": "robotics::Tier1总成(热管理/执行器)", "layer": "Integrator", "members": [
+      {"code": "002050", "name": "三花智控", "tier": "龙一", "note": "Optimus Tier-1龙头,主业保底+期权"}
+    ]},
+    {"node_id": "robotics::Tier1总成(底盘/执行器)", "layer": "Integrator", "members": [
+      {"code": "601689", "name": "拓普集团", "tier": "龙一", "note": "已披露1359万机器人执行器收入,A股第一个"}
+    ]},
+    {"node_id": "robotics::运动控制/控制器", "layer": "Enabler", "members": [
+      {"code": "300124", "name": "汇川技术", "tier": "龙一", "note": "运动控制绝对龙头,使能层唯一已兑现核心"},
+      {"code": "002979", "name": "雷赛智能", "tier": "龙二", "note": "运动控制第二梯队(使用者定降级留池)"}
+    ]}
+  ],
+  "removed_from_pool": [],
+  "excluded_never_in": [
+    {"name": "凯龙高科", "reason": "主业尾气处理,蹭机器人"},
+    {"name": "丰光精密/万达轴承/三瑞智能", "reason": "小盘弹性票,细分地位模糊,情绪beta"},
+    {"name": "长盛轴承", "reason": "轴承外围,搭车"},
+    {"name": "上纬新材", "reason": "老概念股反复炒作"}
+  ],
+  "diff_summary": {
+    "nodes": "7 → 14(减速器拆谐波/RV,新增丝杠独立/空心杯/灵巧手/编码器/结构件轻量化/能源/人形整机/运动控制,Tier1拆二)",
+    "new_members": ["603009 北特科技", "003021 兆威机电", "002747 埃斯顿", "300750 宁德时代", "688320 禾川科技", "688716 中研股份"],
+    "kept_all_existing": "原20只成员(含2港股)全部保留,重新归位与定级,零踢除"
+  }
+}

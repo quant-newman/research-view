@@ -28,6 +28,32 @@ SYSTEM = """你是投研复盘员,对上周方向判断的错误卡做归因,只
 lessons 是给下周研判员的注意事项,必须可操作(如"资金与行情背离时降置信"),不写空话。输出严格JSON。"""
 
 
+# ---------- 参照层快照(留痕,记分按发卡日成分锚定) ----------
+
+def snapshot_membership(date_utc8: str) -> int:
+    """当日成分快照(幂等):参照层此后改版不追溯污染在途卡分数。含仅映射票(ts_code NULL)。"""
+    with db.rv_conn() as conn, conn.cursor() as cur:
+        cur.execute("DELETE FROM ref_membership_snap WHERE snap_date = to_date(%s,'YYYYMMDD')", (date_utc8,))
+        cur.execute("""INSERT INTO ref_membership_snap(snap_date, node_id, code, ts_code, tier)
+            SELECT to_date(%s,'YYYYMMDD'), sn.node_id, sn.code, s.ts_code, sn.tier
+            FROM stock_node sn JOIN stock s USING(code)""", (date_utc8,))
+        return cur.rowcount
+
+
+def _members_asof(cur, d0) -> dict[str, list[str]] | None:
+    """发卡日(或其前最近)成分快照。无快照(历史卡/快照未启用)返回 None,调用方回退当前表。"""
+    cur.execute("SELECT max(snap_date) FROM ref_membership_snap WHERE snap_date <= %s", (d0,))
+    sd = cur.fetchone()[0]
+    if not sd:
+        return None
+    cur.execute("""SELECT node_id, ts_code FROM ref_membership_snap
+        WHERE snap_date = %s AND ts_code IS NOT NULL""", (sd,))
+    members: dict[str, list[str]] = {}
+    for nid, ts in cur.fetchall():
+        members.setdefault(nid, []).append(ts)
+    return members or None
+
+
 # ---------- 到期记分(代码算,盘后每日跑,幂等) ----------
 
 def _horizon_end(mcur, trade_date, horizon: int):
@@ -60,6 +86,23 @@ def _verdict(direction: str, excess: float) -> str:
     return "平"
 
 
+def _mech_dir(x) -> str:
+    """机械基线方向(0b):sign(共振分/对齐分),零 LLM。"""
+    if x is None:
+        return "中性"
+    x = float(x)
+    return "偏多" if x > 0 else "偏空" if x < 0 else "中性"
+
+
+def baseline_stats(rows) -> dict:
+    """三列对照的两条基线。rows: [(excess, mech_verdict)]。
+    mech = sign(共振/对齐)方向按同规则记分;always_long = 恒偏多(从 excess 分布直接得出)。"""
+    mech = _stats([(m,) for _e, m in rows if m])
+    al = [("对" if float(e) >= _HIT_TH else "错" if float(e) <= -_HIT_TH else "平",)
+          for e, _m in rows if e is not None]
+    return {"mech": mech, "always_long": _stats(al)}
+
+
 def score_mature(conn=None) -> dict:
     """给所有已到期未记分的卡记分——节点卡(B6)与个股卡(B8)同一套口径,同窗口共享行情查询。
     每节点/每股每日只认最新 card_id(旧重跑卡不记分)。conn 传入时由调用方管事务(测试用)。"""
@@ -71,30 +114,30 @@ def score_mature(conn=None) -> dict:
         cur = conn.cursor()
         cur.execute("""WITH latest AS (
                 SELECT DISTINCT ON (trade_date, node_id)
-                       card_id, trade_date, node_id, direction, horizon_days
+                       card_id, trade_date, node_id, direction, horizon_days, resonance
                 FROM judgment_card ORDER BY trade_date, node_id, card_id DESC)
-            SELECT l.card_id, l.trade_date, l.node_id, l.direction, l.horizon_days FROM latest l
+            SELECT l.card_id, l.trade_date, l.node_id, l.direction, l.horizon_days, l.resonance
+            FROM latest l
             WHERE NOT EXISTS (SELECT 1 FROM card_score cs WHERE cs.card_id = l.card_id)
             ORDER BY l.trade_date""")
         ntodo = [("node", *r) for r in cur.fetchall()]
         cur.execute("""WITH latest AS (
                 SELECT DISTINCT ON (trade_date, code)
-                       card_id, trade_date, code, ts_code, direction, horizon_days
+                       card_id, trade_date, code, ts_code, direction, horizon_days, alignment
                 FROM decision_card ORDER BY trade_date, code, card_id DESC)
-            SELECT l.card_id, l.trade_date, l.code, l.ts_code, l.direction, l.horizon_days
+            SELECT l.card_id, l.trade_date, l.code, l.ts_code, l.direction, l.horizon_days, l.alignment
             FROM latest l
             WHERE NOT EXISTS (SELECT 1 FROM decision_score ds WHERE ds.card_id = l.card_id)
             ORDER BY l.trade_date""")
         stodo = [("stock", *r) for r in cur.fetchall()]
         if not ntodo and not stodo:
             return {"scored": 0, "pending": 0, "stock_scored": 0, "stock_pending": 0}
-        # 成分映射 + 全池
+        # 成分映射 + 全池(当前表,作发卡日快照缺失时的回退——快照 2026-07-04 起才有)
         cur.execute("""SELECT sn.node_id, s.ts_code FROM stock_node sn
             JOIN stock s USING(code) WHERE s.ts_code IS NOT NULL""")
-        members: dict[str, list[str]] = {}
+        members_now: dict[str, list[str]] = {}
         for nid, ts in cur.fetchall():
-            members.setdefault(nid, []).append(ts)
-        pool_ts = sorted({t for v in members.values() for t in v})
+            members_now.setdefault(nid, []).append(ts)
 
         n = {"scored": 0, "pending": 0, "stock_scored": 0, "stock_pending": 0}
         with db.marketdata_conn() as mc, mc.cursor() as mcur:
@@ -107,6 +150,9 @@ def score_mature(conn=None) -> dict:
             for card in stodo:
                 by_window.setdefault((card[2], card[6]), []).append(card)
             for (d0, horizon), cards in by_window.items():
+                # 记分按发卡日成分快照锚定(参照层改版不追溯污染);无快照回退当前表
+                members = _members_asof(cur, d0) or members_now
+                pool_ts = sorted({t for v in members.values() for t in v})
                 d1 = _horizon_end(mcur, d0, horizon)
                 ok_window = not (d1 is None or latest_bar is None or d1 > latest_bar)
                 rets = _interval_rets(mcur, pool_ts, d0, d1) if ok_window else {}
@@ -117,7 +163,7 @@ def score_mature(conn=None) -> dict:
                 pool_ret = sum(rets.values()) / len(rets)
                 for card in cards:
                     if card[0] == "node":
-                        _k, card_id, _d0, nid, direction, _h = card
+                        _k, card_id, _d0, nid, direction, _h, reso = card
                         node_rets = [rets[t] for t in members.get(nid, []) if t in rets]
                         if not node_rets:  # 成分无行情(不该发生:发卡有 scorable 门)
                             n["pending"] += 1
@@ -125,29 +171,33 @@ def score_mature(conn=None) -> dict:
                         node_ret = sum(node_rets) / len(node_rets)
                         excess = node_ret - pool_ret
                         cur.execute("""INSERT INTO card_score(card_id,trade_date,node_id,end_date,
-                                node_ret,pool_ret,excess,n_members,verdict)
-                            VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                                node_ret,pool_ret,excess,n_members,verdict,mech_verdict)
+                            VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                             ON CONFLICT(card_id) DO UPDATE SET end_date=EXCLUDED.end_date,
                                 node_ret=EXCLUDED.node_ret, pool_ret=EXCLUDED.pool_ret,
                                 excess=EXCLUDED.excess, n_members=EXCLUDED.n_members,
-                                verdict=EXCLUDED.verdict, created_at=now()""",
+                                verdict=EXCLUDED.verdict, mech_verdict=EXCLUDED.mech_verdict,
+                                created_at=now()""",
                             (card_id, d0, nid, d1, round(node_ret, 2), round(pool_ret, 2),
-                             round(excess, 2), len(node_rets), _verdict(direction, excess)))
+                             round(excess, 2), len(node_rets), _verdict(direction, excess),
+                             _verdict(_mech_dir(reso), excess)))
                         n["scored"] += 1
                     else:
-                        _k, card_id, _d0, code, ts, direction, _h = card
+                        _k, card_id, _d0, code, ts, direction, _h, align = card
                         if ts not in rets:  # 停牌/退市等无区间行情
                             n["stock_pending"] += 1
                             continue
                         excess = rets[ts] - pool_ret
                         cur.execute("""INSERT INTO decision_score(card_id,trade_date,code,end_date,
-                                stock_ret,pool_ret,excess,verdict)
-                            VALUES(%s,%s,%s,%s,%s,%s,%s,%s)
+                                stock_ret,pool_ret,excess,verdict,mech_verdict)
+                            VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)
                             ON CONFLICT(card_id) DO UPDATE SET end_date=EXCLUDED.end_date,
                                 stock_ret=EXCLUDED.stock_ret, pool_ret=EXCLUDED.pool_ret,
-                                excess=EXCLUDED.excess, verdict=EXCLUDED.verdict, created_at=now()""",
+                                excess=EXCLUDED.excess, verdict=EXCLUDED.verdict,
+                                mech_verdict=EXCLUDED.mech_verdict, created_at=now()""",
                             (card_id, d0, code, d1, round(rets[ts], 2), round(pool_ret, 2),
-                             round(excess, 2), _verdict(direction, excess)))
+                             round(excess, 2), _verdict(direction, excess),
+                             _verdict(_mech_dir(align), excess)))
                         n["stock_scored"] += 1
         return n
     finally:
@@ -259,6 +309,11 @@ def weekly(date_utc8: str) -> dict:
         week = _stats([(r[-1],) for r in wk])
         swk = _week_stock_rows(cur, date_utc8)
         stock_week = _stats([(r[-1],) for r in swk])
+        # 0b 三列对照:LLM方向 vs 机械基线(sign共振/对齐) vs 恒多基线
+        cur.execute("SELECT excess, mech_verdict FROM card_score")
+        baseline = baseline_stats(cur.fetchall())
+        cur.execute("SELECT excess, mech_verdict FROM decision_score")
+        stock_baseline = baseline_stats(cur.fetchall())
         blocks = [_wrong_block(f"【节点】{chain}/{node}", nid, d, cf, th, ev, mx, ex, nr, pr)
                   for nid, chain, node, d, cf, th, ev, mx, ex, nr, pr, v in wk if v == "错"]
         blocks += [_wrong_block(f"【个股】{name}({code})", code, d, cf, th, ev, mx, ex, sr, pr)
@@ -266,7 +321,8 @@ def weekly(date_utc8: str) -> dict:
         wrong = blocks
     rv = _review_wrong(date_utc8, wrong)
     stats = {"cum": cum, "week": week, "by_direction": by_dir, "by_source": by_src,
-             "stock_cum": stock_cum, "stock_week": stock_week}
+             "stock_cum": stock_cum, "stock_week": stock_week,
+             "baseline": baseline, "stock_baseline": stock_baseline}
     with db.rv_conn() as conn, conn.cursor() as cur:
         cur.execute("""INSERT INTO b7_weekly(week_end, stats, review, lessons)
             VALUES(to_date(%s,'YYYYMMDD'), %s, %s, %s)
@@ -317,6 +373,9 @@ def dashboard_block() -> dict | None:
         recent = [{"card_id": r[0], "chain": r[1], "node": r[2], "direction": r[3],
                    "confidence": r[4], "excess": float(r[5]), "verdict": r[6],
                    "trade_date": str(r[7]), "end_date": str(r[8])} for r in cur.fetchall()]
+        # 0b 三列对照(累计)
+        cur.execute("SELECT excess, mech_verdict FROM card_score")
+        baseline = baseline_stats(cur.fetchall())
         cur.execute("SELECT week_end, review, lessons FROM b7_weekly ORDER BY week_end DESC LIMIT 1")
         row = cur.fetchone()
         weekly_out = ({"week_end": str(row[0]), "review": row[1] or [], "lessons": row[2] or []}
@@ -337,10 +396,13 @@ def dashboard_block() -> dict | None:
         s_recent = [{"card_id": r[0], "code": r[1], "name": r[2], "direction": r[3],
                      "excess": float(r[4]), "verdict": r[5], "trade_date": str(r[6]),
                      "end_date": str(r[7])} for r in cur.fetchall()]
-        stock = ({"pending": s_pending, "cum": s_cum, "recent": s_recent}
+        cur.execute("SELECT excess, mech_verdict FROM decision_score")
+        s_baseline = baseline_stats(cur.fetchall())
+        stock = ({"pending": s_pending, "cum": s_cum, "recent": s_recent, "baseline": s_baseline}
                  if (s_pending or s_cum["n"]) else None)
     return {"pending": pending, "cum": cum, "by_direction": by_dir, "by_source": by_src,
-            "curve": curve, "recent": recent, "weekly": weekly_out, "stock": stock}
+            "curve": curve, "recent": recent, "weekly": weekly_out, "stock": stock,
+            "baseline": baseline}
 
 
 def latest_lessons() -> tuple[str, list[str]] | None:

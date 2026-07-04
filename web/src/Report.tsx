@@ -538,6 +538,13 @@ function ScorecardPanel({ sc }: { sc: Scorecard }) {
           <span className="text-dim text-[12px]">待记分 {sc.pending} 张 · 发卡后第5个交易日到期</span>
         )}
       </div>
+      {sc.baseline && sc.baseline.mech.n > 0 && (
+        <div className="text-[12px] text-dim">
+          基线对照：机械(sign共振) {sc.baseline.mech.hit_rate != null ? `${sc.baseline.mech.hit_rate}%` : "—"}
+          {" · "}恒偏多 {sc.baseline.always_long.hit_rate != null ? `${sc.baseline.always_long.hit_rate}%` : "—"}
+          {" —— LLM 方向层不优于基线即应被砍掉，对照公开"}
+        </div>
+      )}
       {sc.stock && (
         <div className="flex items-center gap-3 flex-wrap text-[13px]">
           <span className="text-dim">个股卡(B8)</span>

@@ -129,6 +129,7 @@ export interface ScoredCard {
   card_id: number; chain: string; node: string; direction: string; confidence?: string | null;
   excess: number; verdict: string; trade_date: string; end_date: string;
 }
+export interface BaselineStats { mech: ScoreStats; always_long: ScoreStats }
 export interface Scorecard {
   pending: number; cum: ScoreStats;
   by_direction: Record<string, ScoreStats>;
@@ -136,9 +137,11 @@ export interface Scorecard {
   curve: ({ week: string } & ScoreStats)[];
   recent: ScoredCard[];
   weekly?: { week_end: string; review: { error_type: string; why: string; [k: string]: any }[]; lessons: string[] } | null;
+  baseline?: BaselineStats | null;
   stock?: {
     pending: number; cum: ScoreStats;
     recent: { card_id: number; code: string; name: string; direction: string; excess: number; verdict: string; trade_date: string; end_date: string }[];
+    baseline?: BaselineStats | null;
   } | null;
 }
 

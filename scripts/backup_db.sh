@@ -9,5 +9,11 @@ mkdir -p backups
 DATE=$(date +%Y%m%d)
 OUT="backups/research_view_${DATE}.sql.gz"
 pg_dump "$RESEARCH_VIEW_DSN" | gzip > "$OUT"
-find backups -name 'research_view_*.sql.gz' -mtime +14 -delete
+find backups -maxdepth 1 -name 'research_view_*.sql.gz' -mtime +14 -delete
+# 月度归档(轻量,使用者定"备份不要太重"):每月1号快照存 archive/,只滚动保留12份
+if [ "$(date +%d)" = "01" ]; then
+  mkdir -p backups/archive
+  cp "$OUT" "backups/archive/research_view_$(date +%Y%m).sql.gz"
+  ls -1t backups/archive/research_view_*.sql.gz 2>/dev/null | tail -n +13 | xargs -r rm --
+fi
 echo "backup ok: $OUT ($(du -h "$OUT" | cut -f1))"
