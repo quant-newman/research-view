@@ -19,9 +19,15 @@ _alert_merge() {
 
 alert_set() {
   mkdir -p "$ALERT_DIR"
+  # 飞书即时告警(DECISIONS #32):同 key 同 msg 不重复推(盘中每15min重试同错只推第一次)
+  local old_msg=""
+  old_msg=$(grep -o '"msg":"[^"]*"' "$ALERT_DIR/$1.json" 2>/dev/null || true)
   printf '{"job":"%s","at":"%s","msg":"%s"}\n' \
     "$2" "$(TZ=Asia/Shanghai date '+%F %T')" "$3" > "$ALERT_DIR/$1.json"
   _alert_merge
+  if [ "$old_msg" != "\"msg\":\"$3\"" ]; then
+    python3 "$(dirname "${BASH_SOURCE[0]}")/notify_feishu.py" alert "$2" "$3" >/dev/null 2>&1 || true
+  fi
 }
 
 alert_clear() {

@@ -42,4 +42,6 @@ else
 fi
 
 alert_clear afterhours
+# 飞书盘后收口摘要(DECISIONS #32):发卡/记分/health 一眼确认机器干完活
+python3 scripts/notify_feishu.py summary || true
 echo "[afterhours] 完成。前端 8092 已更新。"
