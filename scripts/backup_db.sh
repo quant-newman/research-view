@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# research_view 库每日备份(阿里云侧跑,cron 21:00 UTC+8)。
+# research_view 库每日备份(数据节点跑,cron 21:00+23:30 UTC+8;同日文件覆盖,23:30 档含当日判断卡/记分)。
 # ledger/daily_report/fund_letter 是不可重算的历史资产,丢盘即全灭 → pg_dump 每日快照。
 # 台北 run_afterhours.sh 会把 backups/ 拉回台北异地留存(两地各保 14 天)。
 set -euo pipefail
