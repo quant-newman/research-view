@@ -43,11 +43,17 @@ def _z_frame(df: pd.DataFrame) -> pd.DataFrame:
 
 # ---------- 数据装载(只读) ----------
 
-def _pool():
-    """参照层:node→成分 ts_code(仅 A 股行情票),全池 ts 列表,节点名。"""
+def _pool(snap_date: str | None = None):
+    """参照层:node→成分 ts_code(仅 A 股行情票),全池 ts 列表,节点名。
+    snap_date(YYYYMMDD)=按 ref_membership_snap 历史快照取池——参照层改版后的复测必须
+    锚定改版前快照,否则"换锚"与"换池"两个变量混杂(07-04 v2 切换后为 0a 补测加)。"""
     with db.rv_conn() as conn, conn.cursor() as cur:
-        cur.execute("""SELECT sn.node_id, s.ts_code FROM stock_node sn
-            JOIN stock s USING(code) WHERE s.ts_code IS NOT NULL""")
+        if snap_date:
+            cur.execute("""SELECT node_id, ts_code FROM ref_membership_snap
+                WHERE snap_date = to_date(%s,'YYYYMMDD') AND ts_code IS NOT NULL""", (snap_date,))
+        else:
+            cur.execute("""SELECT sn.node_id, s.ts_code FROM stock_node sn
+                JOIN stock s USING(code) WHERE s.ts_code IS NOT NULL""")
         members: dict[str, list[str]] = {}
         for nid, ts in cur.fetchall():
             members.setdefault(nid, []).append(ts)
@@ -316,27 +322,38 @@ def _resonance(zs: dict[str, pd.DataFrame]) -> pd.DataFrame:
     return 1.0 * zs["price"] + 1.0 * zs["mf"] + 0.6 * zs["lhb"]
 
 
-def diag2(start: str, end: str, hmax: int = 10) -> dict:
-    """诊断二:IC(截面秩相关)按 horizon 1..hmax 的衰减曲线,分源+共振分,block bootstrap CI。"""
-    members, pool_ts, _names = _pool()
+def diag2(start: str, end: str, hmax: int = 10, anchor: str = "judgment",
+          pool_snap: str | None = None) -> dict:
+    """诊断二:IC(截面秩相关)按 horizon 1..hmax 的衰减曲线,分源+共振分,block bootstrap CI。
+    anchor="executable" = open(d0+1)→close(d0+h) 前向超额(0a 关单补测:龙虎榜盘后公布,
+    judgment 锚 h1 含 T收盘→T+1开盘跳空——看到数据的人吃不到的段)。"""
+    members, pool_ts, _names = _pool(pool_snap)
     panel = load_panel(start, end, pool_ts)
     zs = signal_panels(panel, members)
     sigs = {"resonance": _resonance(zs), **zs}
     curves: dict[str, list] = {k: [] for k in sigs}
     for h in range(1, hmax + 1):
-        fwd = _forward_node_excess(panel, members, h)
+        fwd = _forward_node_excess(panel, members, h, anchor)
         for k, sig in sigs.items():
             ic = _daily_rank_ic(sig.iloc[5:-h], fwd.iloc[5:-h])
             mean, lo, hi = _block_boot_ci(ic.to_numpy())
             curves[k].append({"h": h, "ic": round(mean, 4), "lo": round(lo, 4),
                               "hi": round(hi, 4), "n_days": int(len(ic))})
-    out = {"window": {"start": start, "end": end}, "method":
-           "逐日截面Spearman IC(47节点),judgment锚前向超额;移动块bootstrap(块10日,1000次,seed42)95%CI",
-           "curves": curves,
-           "findings": ["horizon=5 是拍的,本诊断给出经验衰减;IC为节点截面秩相关,量级参考:"
-                        "|IC|≈0.05 已有经济意义(截面只有47个节点,噪声大)"]}
+    findings = ["horizon=5 是拍的,本诊断给出经验衰减;IC为节点截面秩相关,量级参考:"
+                "|IC|≈0.05 已有经济意义(截面只有约50个节点,噪声大)"]
+    if anchor == "executable":
+        findings.append(
+            "executable 锚 h=1 窗口=T+1日内段(open→close),天然比 judgment 的 close→close 短一段"
+            "(被剔掉的正是跳空)——两锚 IC 不作数值横比,只各自看 CI 是否含 0")
+    if pool_snap:
+        findings.append(f"池按 ref_membership_snap {pool_snap} 快照锚定(参照层改版后复测,与原诊断同池)")
+    out = {"window": {"start": start, "end": end}, "anchor": anchor, "pool_snap": pool_snap,
+           "method": f"逐日截面Spearman IC(全部产业链节点),{anchor}锚前向超额;"
+                     "移动块bootstrap(块10日,1000次,seed42)95%CI",
+           "curves": curves, "findings": findings}
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    p = OUT_DIR / f"diag2_{start}_{end}.json"
+    suffix = ("" if anchor == "judgment" else f"_{anchor}") + (f"_snap{pool_snap}" if pool_snap else "")
+    p = OUT_DIR / f"diag2_{start}_{end}{suffix}.json"
     p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
     print(json.dumps(out, ensure_ascii=False, indent=1))
     print(f"\n→ {p}")
@@ -437,7 +454,8 @@ def main() -> None:
     if cmd == "diag1":
         diag1(kv.get("start", "20240701"), kv.get("end", "20260703"), kv.get("short_start", "20260601"))
     elif cmd == "diag2":
-        diag2(kv.get("start", "20240701"), kv.get("end", "20260703"), int(kv.get("hmax", 10)))
+        diag2(kv.get("start", "20240701"), kv.get("end", "20260703"), int(kv.get("hmax", 10)),
+              kv.get("anchor", "judgment"), kv.get("pool_snap"))
     elif cmd == "diag3":
         diag3(kv.get("start", "20240701"), kv.get("end", "20260703"), int(kv.get("horizon", 5)))
     elif cmd == "validate":
