@@ -55,3 +55,5 @@ bar_daily_raw(1990起,未复权,复权乘 adj_factor) / moneyflow(2010起,主力
 
 日 pg_dump 21:00+23:30(同日覆盖,23:30含当日卡)→ 两地各14天 → 月度归档 archive/ 滚动12份 →
 使用者侧云盘日快照(整机,阶梯保留)。恢复以 pg_dump 为权威,快照作保底。
+2026-07-05 起 exports/ 观测层按日 blob(美股/X舆情/事件/信函,不进 PG,LLM 当时综合的 PIT 证据,
+台架回测比对用)每日 tar 同链备份:exports_YYYYMMDD.tar.gz,同样两地14天+月度归档12份(DECISIONS #34)。

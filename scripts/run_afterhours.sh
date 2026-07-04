@@ -33,6 +33,7 @@ echo "[afterhours] 拉回最新数据库备份(异地留存,两地各保14天)..
 mkdir -p backups
 rsync -az "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/backups/" backups/
 find backups -name 'research_view_*.sql.gz' -mtime +14 -delete 2>/dev/null || true
+find backups -name 'exports_*.tar.gz' -mtime +14 -delete 2>/dev/null || true
 # 备份新鲜度哨兵:最新备份老于 ~2 天=阿里云 21:00 备份 cron 已断,告警但不阻塞主流程
 if ! find backups -name 'research_view_*.sql.gz' -mtime -2 | grep -q .; then
   alert_set backup 备份 "数据库备份超过2天未更新,查阿里云 logs/backup.log"
