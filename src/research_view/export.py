@@ -320,7 +320,10 @@ def build_dashboard(date_utc8: str) -> Path:
                 cur.execute("""SELECT sn.node_id, sn.code, s.name, sn.tier
                     FROM stock_node sn JOIN stock s USING(code)
                     WHERE sn.node_id = ANY(%s)
-                    ORDER BY sn.node_id, sn.tier NULLS LAST, sn.code""",
+                    ORDER BY sn.node_id,
+                        CASE sn.tier WHEN '龙一' THEN 1 WHEN '龙二' THEN 2
+                             WHEN '龙三' THEN 3 ELSE 4 END,  -- 文本排序会把龙二排龙三后(码点 三<二)
+                        sn.code""",
                     ([c["node_id"] for c in cards],))
                 members: dict = {}
                 for nid, code, name, tier in cur.fetchall():
