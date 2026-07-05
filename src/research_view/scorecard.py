@@ -207,14 +207,27 @@ def score_mature(conn=None) -> dict:
 
 # ---------- 统计与归因(代码算) ----------
 
+_Z95 = 1.96  # 95% Wilson;全局纪律:命中率必须带区间,点估计禁裸报
+
+
 def _stats(rows) -> dict:
-    """rows: [(verdict,)...] → {n, right, wrong, flat, hit_rate}。hit_rate 只算对/(对+错)。"""
+    """rows: [(verdict,)...] → {n, right, wrong, flat, hit_rate, hit_lo, hit_hi}。
+    hit_rate 只算对/(对+错);hit_lo/hi = 95% Wilson 区间(百分数,同 hit_rate 量纲)。"""
     n = len(rows)
     right = sum(1 for (v,) in rows if v == "对")
     wrong = sum(1 for (v,) in rows if v == "错")
     decided = right + wrong
-    return {"n": n, "right": right, "wrong": wrong, "flat": n - decided,
-            "hit_rate": round(right / decided * 100, 1) if decided else None}
+    out = {"n": n, "right": right, "wrong": wrong, "flat": n - decided,
+           "hit_rate": round(right / decided * 100, 1) if decided else None,
+           "hit_lo": None, "hit_hi": None}
+    if decided:
+        p, z2 = right / decided, _Z95 * _Z95
+        denom = 1 + z2 / decided
+        center = (p + z2 / (2 * decided)) / denom
+        half = _Z95 * ((p * (1 - p) / decided + z2 / (4 * decided * decided)) ** 0.5) / denom
+        out["hit_lo"] = round(max(0.0, center - half) * 100, 1)
+        out["hit_hi"] = round(min(1.0, center + half) * 100, 1)
+    return out
 
 
 def source_attrib(rows) -> dict:
@@ -235,6 +248,60 @@ def source_attrib(rows) -> dict:
             out["letter"]["n"] += 1
             out["letter"]["right"] += verdict == "对"
     return out
+
+
+def _sign(x) -> int:
+    if x is None:
+        return 0
+    x = float(x)
+    return 1 if x > 0 else -1 if x < 0 else 0
+
+
+def override_slices(rows) -> dict:
+    """覆写切片(#30 五件套①):按 LLM 方向 vs 机械符号(共振/对齐)分四桶,
+    桶内对**同一批卡**配对报告 LLM / 机械双列——比总体三列对照强一个数量级的读法。
+    rows: [(direction, mech_raw, verdict, mech_verdict)]
+
+    agree    符号一致。两列 verdict 按构造恒等,只看规模与命中,不含增量信息。
+    override 符号相反。判出对错的卡上两列一对一错互补 ⇒ 本桶 LLM 去平命中率
+             >50% 即 LLM 有增量、<50% 即 LLM 在帮倒忙——全平台最快先导证据。
+    llm_only 机械中性、LLM 给方向。LLM 独判,同为增量证据(方向二)。
+    suppress LLM 中性、机械有符号(LLM 压掉机械信号)。注意两列判定规则不对称
+             (中性卡走 ±2pp 带,方向卡走 ±1pp 阈),本桶配对只作参考不作裁决。
+    双中性丢弃(无信息)。"""
+    buckets: dict[str, list] = {"agree": [], "override": [], "llm_only": [], "suppress": []}
+    for direction, raw, verdict, mech_verdict in rows:
+        ls = _DIR_SIGN.get(direction, 0)
+        ms = _sign(raw)
+        if ls == 0 and ms == 0:
+            continue
+        key = ("suppress" if ls == 0 else "llm_only" if ms == 0
+               else "agree" if ls * ms > 0 else "override")
+        buckets[key].append((verdict, mech_verdict))
+    return {k: {"llm": _stats([(v,) for v, _m in rs]),
+                "mech": _stats([(m,) for _v, m in rs if m])}  # None=存量早卡缺列,跳过
+            for k, rs in buckets.items()}
+
+
+# prompt_hash → 人读标签。新版本上线时在此登记一行;未登记哈希原样显示,不阻塞。
+# 库内真值 07-05 实测(键=前16位,sql/024 口径):存量20卡(07-03发,早于加列)全 NULL→unversioned;
+# B6 v1 模板哈希(b2f7cf70...)早于加列,库里永远不会出现,不登记。
+# ⚠ 参照层 v2→v3(07-05,DECISIONS #37,截面z分母57→76)不改 prompt_hash——ffb0a6cc 组内混
+#   两个截面口径的样本,本分组承担不了 #37 周报义务:07-12 周报正文仍须手写注明两次参照层变更。
+_PROMPT_LABELS = {
+    "ffb0a6cccf2c61b7": "B6 v2模板(07-04起;参照层v2/v3同哈希,07-05起z分母57→76)",
+    "fe67e54832acdb4f": "B8 模板(07-04起;参照层v2/v3同哈希,同上)",
+    "unversioned": "07-04 加列前存量卡(参照层v1口径)",
+}
+
+
+def version_stats(rows) -> dict:
+    """rows: [(prompt_hash, verdict)] → {hash: {label, ...统计}}。
+    样本按 prompt/参照层版本分组不混算(#28/#31);空哈希(存量早卡)归 unversioned。"""
+    grp: dict[str, list] = {}
+    for h, v in rows:
+        grp.setdefault(h or "unversioned", []).append((v,))
+    return {h: {"label": _PROMPT_LABELS.get(h, h), **_stats(rs)} for h, rs in grp.items()}
 
 
 # ---------- 周度收口(周日 cron:汇总 + DeepSeek 错误归纳 + lessons 回灌) ----------
@@ -314,6 +381,20 @@ def weekly(date_utc8: str) -> dict:
         baseline = baseline_stats(cur.fetchall())
         cur.execute("SELECT excess, mech_verdict FROM decision_score")
         stock_baseline = baseline_stats(cur.fetchall())
+        # 覆写切片:LLM vs 机械符号 四桶配对(#30 五件套①,值班期唯一新增测量)
+        cur.execute("""SELECT jc.direction, jc.resonance, cs.verdict, cs.mech_verdict
+            FROM card_score cs JOIN judgment_card jc USING(card_id)""")
+        override = override_slices(cur.fetchall())
+        cur.execute("""SELECT dc.direction, dc.alignment, ds.verdict, ds.mech_verdict
+            FROM decision_score ds JOIN decision_card dc USING(card_id)""")
+        stock_override = override_slices(cur.fetchall())
+        # 版本分组:prompt_hash 同界标记 prompt/参照层变更(#28/#31 周报义务)
+        cur.execute("""SELECT jc.prompt_hash, cs.verdict
+            FROM card_score cs JOIN judgment_card jc USING(card_id)""")
+        by_version = version_stats(cur.fetchall())
+        cur.execute("""SELECT dc.prompt_hash, ds.verdict
+            FROM decision_score ds JOIN decision_card dc USING(card_id)""")
+        stock_by_version = version_stats(cur.fetchall())
         blocks = [_wrong_block(f"【节点】{chain}/{node}", nid, d, cf, th, ev, mx, ex, nr, pr)
                   for nid, chain, node, d, cf, th, ev, mx, ex, nr, pr, v in wk if v == "错"]
         blocks += [_wrong_block(f"【个股】{name}({code})", code, d, cf, th, ev, mx, ex, sr, pr)
@@ -322,7 +403,9 @@ def weekly(date_utc8: str) -> dict:
     rv = _review_wrong(date_utc8, wrong)
     stats = {"cum": cum, "week": week, "by_direction": by_dir, "by_source": by_src,
              "stock_cum": stock_cum, "stock_week": stock_week,
-             "baseline": baseline, "stock_baseline": stock_baseline}
+             "baseline": baseline, "stock_baseline": stock_baseline,
+             "override": override, "stock_override": stock_override,
+             "by_version": by_version, "stock_by_version": stock_by_version}
     with db.rv_conn() as conn, conn.cursor() as cur:
         cur.execute("""INSERT INTO b7_weekly(week_end, stats, review, lessons)
             VALUES(to_date(%s,'YYYYMMDD'), %s, %s, %s)
