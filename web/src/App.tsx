@@ -13,9 +13,11 @@ import { StockDetail } from "./StockDetail";
 import { StockCtx, type StockSel } from "./stockCtx";
 import { StatusBar, type Market } from "./StatusBar";
 import { ReportPageView } from "./Report";
+import { JudgmentPageView } from "./Judgment";
 
 const NAV = [
   { key: "report", label: "报告" },
+  { key: "judgment", label: "研判" },
   { key: "hotspot", label: "热点" },
   { key: "flow", label: "资金" },
   { key: "heatmap", label: "热力" },
@@ -90,7 +92,7 @@ export default function App() {
   if (!d) return <div className="p-6 text-muted">加载中…</div>;
 
   const isUS = market === "US";
-  const enabled = new Set(["report", "hotspot", "flow", "heatmap", "research", "letters", "system"]);
+  const enabled = new Set(["report", "judgment", "hotspot", "flow", "heatmap", "research", "letters", "system"]);
 
   return (
     <StockCtx.Provider value={setStock}>
@@ -134,6 +136,7 @@ export default function App() {
         )}
         <StatusBar d={d} market={market} onMarket={setMarket} onHealth={() => setView("system")} />
         {view === "report" && <ReportPageView d={d} isUS={isUS} usNewsNodes={usNewsNodes} />}
+        {view === "judgment" && <JudgmentPageView d={d} isUS={isUS} />}
         {view === "hotspot" && (() => {
           const hasWire = isUS && !!d.us?.wire?.some((w) => w.group === "推特X");
           return (
