@@ -10,3 +10,18 @@ services:
       - "8092:80"          # 宿主 8092(8090 已被 Crucible 占用)→ 容器 nginx 80
     volumes:
       - ./webdata:/usr/share/nginx/html/data:ro   # 前端实时数据(阿里云同步 dashboard.json 到此),只读挂载
+    depends_on:
+      - chat               # nginx 启动时解析 chat 主机名,需 chat 先起
+
+  # chat 问答后端:DeepSeek两段式(选片→回答),只读 webdata。不暴露宿主端口,仅 nginx 内网反代。
+  chat:
+    build: ./chat
+    image: research-view-chat:latest
+    container_name: research-view-chat
+    restart: unless-stopped
+    environment:
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - DEEPSEEK_BASE_URL=${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
+    volumes:
+      - ./webdata:/data:ro      # 与前端同源数据
+      - ./logs/chat:/state      # 每日用量计数落盘(熔断护栏,重启不清零)

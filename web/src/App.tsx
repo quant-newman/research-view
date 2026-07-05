@@ -14,6 +14,7 @@ import { StockCtx, type StockSel } from "./stockCtx";
 import { StatusBar, type Market } from "./StatusBar";
 import { ReportPageView } from "./Report";
 import { JudgmentPageView } from "./Judgment";
+import { ChatView } from "./Chat";
 
 const NAV = [
   { key: "report", label: "报告" },
@@ -23,6 +24,7 @@ const NAV = [
   { key: "heatmap", label: "热力" },
   { key: "research", label: "研究" },
   { key: "letters", label: "信函" },
+  { key: "chat", label: "问答" },
   { key: "system", label: "系统" },
 ];
 
@@ -92,7 +94,7 @@ export default function App() {
   if (!d) return <div className="p-6 text-muted">加载中…</div>;
 
   const isUS = market === "US";
-  const enabled = new Set(["report", "judgment", "hotspot", "flow", "heatmap", "research", "letters", "system"]);
+  const enabled = new Set(["report", "judgment", "hotspot", "flow", "heatmap", "research", "letters", "chat", "system"]);
 
   return (
     <StockCtx.Provider value={setStock}>
@@ -182,6 +184,7 @@ export default function App() {
         {view === "letters" && (
           <div className="flex-1 p-3 md:p-5 overflow-auto"><LettersView r={d.research} /></div>
         )}
+        {view === "chat" && <ChatView />}
         {view === "system" && (
           <div className="flex-1 p-3 md:p-5 overflow-auto"><SystemView h={d.health} sources={d.sources?.taipei} /></div>
         )}
