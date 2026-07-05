@@ -11,6 +11,8 @@ import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+import alert
+
 TZ8 = timezone(timedelta(hours=8))
 STATE = Path(os.environ.get("STATE_DIR", "/state")) / "usage.json"
 
@@ -56,11 +58,14 @@ def check(ip: str) -> str | None:
     with _lock:
         _roll()
         if _day["tokens"] >= TOKEN_DAY or _day["reqs"] >= GLOBAL_DAY:
+            alert.notify("burn", f"每日熔断已触发:req={_day['reqs']} tokens={_day['tokens']},"
+                                 f"来源IP数={len(_day['per_ip'])},请查 usage.json 是否被刷", min_gap=6 * 3600)
             return "今日问答额度已用完,明天再来(每日有全局熔断,防滥用)"
         win = [t for t in _minute.get(ip, []) if now - t < 60]
         if len(win) >= PER_IP_MIN:
             return "问得太快了,歇几秒再问"
         if _day["per_ip"].get(ip, 0) >= PER_IP_DAY:
+            alert.notify(f"ip:{ip}", f"单IP触顶:{ip} 已达每日{PER_IP_DAY}问上限(疑似滥用)", min_gap=24 * 3600)
             return "你今天问得够多了,明天再来"
         win.append(now)
         _minute[ip] = win

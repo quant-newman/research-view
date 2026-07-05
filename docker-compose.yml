@@ -22,6 +22,8 @@ services:
     environment:
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
       - DEEPSEEK_BASE_URL=${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
+      - FEISHU_WEBHOOK=${FEISHU_WEBHOOK:-}   # 告警走平台同一个值班机器人,未配置=静默跳过
+      - FEISHU_SECRET=${FEISHU_SECRET:-}
     volumes:
       - ./webdata:/data:ro      # 与前端同源数据
       - ./logs/chat:/state      # 每日用量计数落盘(熔断护栏,重启不清零)

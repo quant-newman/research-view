@@ -11,6 +11,7 @@ import json
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
+import alert
 import data
 import guard
 import llm
@@ -79,7 +80,8 @@ async def chat(req: Request):
             try:
                 sel, tk = await llm.route_json(ROUTER_SYS, f"{data.catalog()}\n\n【对话】\n{convo}")
                 guard.add_tokens(tk)
-            except Exception:
+            except Exception as e:  # noqa: BLE001 选片失败降级到默认块,服务不断,但要知道
+                alert.notify("route", f"选片降级(用默认数据块兜底):{type(e).__name__}: {e}")
                 sel = {"sections": FALLBACK_SECTIONS, "node_ids": [], "codes": []}
             sections = [s for s in (sel.get("sections") or []) if s in data.SECTION_DESC][:6] or FALLBACK_SECTIONS
             slices = data.build_slices(sections, sel.get("node_ids") or [], sel.get("codes") or [])
@@ -97,6 +99,7 @@ async def chat(req: Request):
                     yield _sse(ev)
             yield _sse({"type": "done"})
         except Exception as e:  # noqa: BLE001 出错也走 SSE 告知前端,别让流悬着
+            alert.notify(f"err:{type(e).__name__}", f"回答服务异常:{type(e).__name__}: {e}")
             yield _sse({"type": "error", "t": f"服务出错:{type(e).__name__}"})
 
     return StreamingResponse(gen(), media_type="text/event-stream",
