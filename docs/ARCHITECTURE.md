@@ -82,6 +82,7 @@ scripts/:`run_pipeline.py`(盘后主管道 16 步,含 calibration_freeze/ref_sna
 |---|---|---|
 | 08:30 | run_premarket | yfinance 隔夜→盘前报告(锚点)→dashboard |
 | 08:00-23:30 每15min | run_intraday(run_light) | 新闻(整半点,配额台账)/研报/热点/**盘中增量**/资金快照+自采 |
+| 周末 09:00-23:00 每2h | run_intraday(run_light) | **周末低频档(DECISIONS #36)**:周末新闻发酵补采(同走配额台账)+热点/看板保鲜;资金步非交易日自动零开销 |
 | 22:30 | run_afterhours(run_pipeline) | 全量:采集→漏斗→B1→事件→热力→研报→**B3→热点→B6发卡→B8发卡→B7记分**→导出;顺带拉备份 |
 | 21:30 + 22:00-05:00 整点 | run_us | build_us 全量美股 blob(约12min,锁等900s);21:30档=夏令时开盘(冬令时为开盘前预热) |
 | 周三 07:00 | run_fund_letters | 信函 4 源 |
