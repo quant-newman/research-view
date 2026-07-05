@@ -355,5 +355,119 @@
   "chain_en": "robotics",
   "node": "运动控制/控制器",
   "layer": "Enabler"
+ },
+ {
+  "node_id": "finance::国有大行",
+  "chain": "金融",
+  "chain_en": "finance",
+  "node": "国有大行"
+ },
+ {
+  "node_id": "finance::股份制银行",
+  "chain": "金融",
+  "chain_en": "finance",
+  "node": "股份制银行"
+ },
+ {
+  "node_id": "finance::城农商行",
+  "chain": "金融",
+  "chain_en": "finance",
+  "node": "城农商行"
+ },
+ {
+  "node_id": "finance::证券",
+  "chain": "金融",
+  "chain_en": "finance",
+  "node": "证券"
+ },
+ {
+  "node_id": "finance::保险",
+  "chain": "金融",
+  "chain_en": "finance",
+  "node": "保险"
+ },
+ {
+  "node_id": "finance::多元金融",
+  "chain": "金融",
+  "chain_en": "finance",
+  "node": "多元金融"
+ },
+ {
+  "node_id": "finance::金融科技",
+  "chain": "金融",
+  "chain_en": "finance",
+  "node": "金融科技"
+ },
+ {
+  "node_id": "pharma::化药创新",
+  "chain": "创新医药",
+  "chain_en": "pharma",
+  "node": "化药创新"
+ },
+ {
+  "node_id": "pharma::生物药/ADC",
+  "chain": "创新医药",
+  "chain_en": "pharma",
+  "node": "生物药/ADC"
+ },
+ {
+  "node_id": "pharma::CXO",
+  "chain": "创新医药",
+  "chain_en": "pharma",
+  "node": "CXO"
+ },
+ {
+  "node_id": "pharma::原料药/上游",
+  "chain": "创新医药",
+  "chain_en": "pharma",
+  "node": "原料药/上游"
+ },
+ {
+  "node_id": "pharma::疫苗",
+  "chain": "创新医药",
+  "chain_en": "pharma",
+  "node": "疫苗"
+ },
+ {
+  "node_id": "pharma::细胞基因",
+  "chain": "创新医药",
+  "chain_en": "pharma",
+  "node": "细胞基因"
+ },
+ {
+  "node_id": "pharma::GLP-1/减肥药",
+  "chain": "创新医药",
+  "chain_en": "pharma",
+  "node": "GLP-1/减肥药"
+ },
+ {
+  "node_id": "space::火箭/发射",
+  "chain": "商业航天",
+  "chain_en": "space",
+  "node": "火箭/发射"
+ },
+ {
+  "node_id": "space::卫星制造",
+  "chain": "商业航天",
+  "chain_en": "space",
+  "node": "卫星制造"
+ },
+ {
+  "node_id": "space::卫星运营/应用",
+  "chain": "商业航天",
+  "chain_en": "space",
+  "node": "卫星运营/应用"
+ },
+ {
+  "node_id": "space::星载/终端设备",
+  "chain": "商业航天",
+  "chain_en": "space",
+  "node": "星载/终端设备"
+ },
+ {
+  "node_id": "space::北斗导航",
+  "chain": "商业航天",
+  "chain_en": "space",
+  "node": "北斗导航"
  }
 ]

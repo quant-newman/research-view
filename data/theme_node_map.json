@@ -275,5 +275,117 @@
  ],
  "运动控制": [
   "robotics::运动控制/控制器"
+ ],
+ "银行": [
+  "finance::国有大行",
+  "finance::股份制银行",
+  "finance::城农商行"
+ ],
+ "券商": [
+  "finance::证券"
+ ],
+ "证券": [
+  "finance::证券"
+ ],
+ "保险": [
+  "finance::保险"
+ ],
+ "金融科技": [
+  "finance::金融科技"
+ ],
+ "数字货币": [
+  "finance::金融科技"
+ ],
+ "稳定币": [
+  "finance::金融科技"
+ ],
+ "跨境支付": [
+  "finance::金融科技"
+ ],
+ "创新药": [
+  "pharma::化药创新",
+  "pharma::生物药/ADC"
+ ],
+ "ADC": [
+  "pharma::生物药/ADC"
+ ],
+ "双抗": [
+  "pharma::生物药/ADC"
+ ],
+ "license": [
+  "pharma::化药创新",
+  "pharma::生物药/ADC"
+ ],
+ "BD出海": [
+  "pharma::化药创新",
+  "pharma::生物药/ADC"
+ ],
+ "CXO": [
+  "pharma::CXO"
+ ],
+ "CRO": [
+  "pharma::CXO"
+ ],
+ "CDMO": [
+  "pharma::CXO",
+  "pharma::原料药/上游"
+ ],
+ "疫苗": [
+  "pharma::疫苗"
+ ],
+ "HPV": [
+  "pharma::疫苗"
+ ],
+ "CAR-T": [
+  "pharma::细胞基因"
+ ],
+ "基因测序": [
+  "pharma::细胞基因"
+ ],
+ "GLP-1": [
+  "pharma::GLP-1/减肥药"
+ ],
+ "减肥药": [
+  "pharma::GLP-1/减肥药"
+ ],
+ "司美格鲁肽": [
+  "pharma::GLP-1/减肥药"
+ ],
+ "多肽": [
+  "pharma::GLP-1/减肥药",
+  "pharma::CXO"
+ ],
+ "AI制药": [
+  "pharma::CXO",
+  "pharma::化药创新"
+ ],
+ "商业航天": [
+  "space::火箭/发射",
+  "space::卫星制造"
+ ],
+ "火箭": [
+  "space::火箭/发射"
+ ],
+ "卫星互联网": [
+  "space::卫星制造",
+  "space::星载/终端设备",
+  "space::卫星运营/应用"
+ ],
+ "星座": [
+  "space::卫星制造",
+  "space::卫星运营/应用"
+ ],
+ "星链": [
+  "space::卫星制造",
+  "space::星载/终端设备"
+ ],
+ "北斗": [
+  "space::北斗导航"
+ ],
+ "遥感": [
+  "space::卫星运营/应用"
+ ],
+ "手机直连卫星": [
+  "space::星载/终端设备"
  ]
 }

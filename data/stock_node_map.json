@@ -2038,5 +2038,605 @@
   "tier": "龙二",
   "purity": "",
   "judgment": "运动控制第二梯队(使用者定降级留池)"
+ },
+ {
+  "code": "601398",
+  "name": "工商银行",
+  "chain": "金融",
+  "node": "国有大行",
+  "node_id": "finance::国有大行",
+  "tier": "龙一",
+  "purity": "",
+  "judgment": "宇宙行,A股市值第一,高股息压舱石(东财:国有大型银行Ⅲ)"
+ },
+ {
+  "code": "601288",
+  "name": "农业银行",
+  "chain": "金融",
+  "node": "国有大行",
+  "node_id": "finance::国有大行",
+  "tier": "龙二",
+  "purity": "",
+  "judgment": "县域下沉逻辑,国有行里增速/涨幅领先"
+ },
+ {
+  "code": "601939",
+  "name": "建设银行",
+  "chain": "金融",
+  "node": "国有大行",
+  "node_id": "finance::国有大行",
+  "tier": "龙三",
+  "purity": "",
+  "judgment": "对公基建强,市值仅次工行"
+ },
+ {
+  "code": "600036",
+  "name": "招商银行",
+  "chain": "金融",
+  "node": "股份制银行",
+  "node_id": "finance::股份制银行",
+  "tier": "龙一",
+  "purity": "⭐",
+  "judgment": "零售之王,股份行估值锚(东财:股份制银行Ⅲ)"
+ },
+ {
+  "code": "601166",
+  "name": "兴业银行",
+  "chain": "金融",
+  "node": "股份制银行",
+  "node_id": "finance::股份制银行",
+  "tier": "龙二",
+  "purity": "",
+  "judgment": "同业+绿金,股份行第二市值"
+ },
+ {
+  "code": "600919",
+  "name": "江苏银行",
+  "chain": "金融",
+  "node": "城农商行",
+  "node_id": "finance::城农商行",
+  "tier": "龙一",
+  "purity": "",
+  "judgment": "城商行市值第一(2046亿),对公制造业强"
+ },
+ {
+  "code": "002142",
+  "name": "宁波银行",
+  "chain": "金融",
+  "node": "城农商行",
+  "node_id": "finance::城农商行",
+  "tier": "龙二",
+  "purity": "⭐",
+  "judgment": "资产质量标杆,城商行ROE天花板"
+ },
+ {
+  "code": "600926",
+  "name": "杭州银行",
+  "chain": "金融",
+  "node": "城农商行",
+  "node_id": "finance::城农商行",
+  "tier": "龙三",
+  "purity": "",
+  "judgment": "低不良+高拨备,弹性城商行"
+ },
+ {
+  "code": "601128",
+  "name": "常熟银行",
+  "chain": "金融",
+  "node": "城农商行",
+  "node_id": "finance::城农商行",
+  "tier": "龙三",
+  "purity": "",
+  "judgment": "农商行微贷模式标杆(东财:农商行Ⅲ)"
+ },
+ {
+  "code": "600030",
+  "name": "中信证券",
+  "chain": "金融",
+  "node": "证券",
+  "node_id": "finance::证券",
+  "tier": "龙一",
+  "purity": "",
+  "judgment": "券商一哥,机构业务全牌照龙头"
+ },
+ {
+  "code": "300059",
+  "name": "东方财富",
+  "chain": "金融",
+  "node": "证券",
+  "node_id": "finance::证券",
+  "tier": "龙一",
+  "purity": "⭐",
+  "judgment": "互联网券商+基金代销流量入口,牛市贝塔之王"
+ },
+ {
+  "code": "601211",
+  "name": "国泰海通",
+  "chain": "金融",
+  "node": "证券",
+  "node_id": "finance::证券",
+  "tier": "龙二",
+  "purity": "",
+  "judgment": "国泰君安+海通合并体,规模第二"
+ },
+ {
+  "code": "601318",
+  "name": "中国平安",
+  "chain": "金融",
+  "node": "保险",
+  "node_id": "finance::保险",
+  "tier": "龙一",
+  "purity": "",
+  "judgment": "综合金融标杆,保险板块定价锚"
+ },
+ {
+  "code": "601628",
+  "name": "中国人寿",
+  "chain": "金融",
+  "node": "保险",
+  "node_id": "finance::保险",
+  "tier": "龙一",
+  "purity": "",
+  "judgment": "纯寿险市值最大(超万亿),利率敏感龙头"
+ },
+ {
+  "code": "601601",
+  "name": "中国太保",
+  "chain": "金融",
+  "node": "保险",
+  "node_id": "finance::保险",
+  "tier": "龙二",
+  "purity": "",
+  "judgment": "产寿险均衡,分红稳定"
+ },
+ {
+  "code": "601336",
+  "name": "新华保险",
+  "chain": "金融",
+  "node": "保险",
+  "node_id": "finance::保险",
+  "tier": "龙三",
+  "purity": "",
+  "judgment": "纯寿险小盘,权益弹性最大(牛市进攻品种)"
+ },
+ {
+  "code": "000617",
+  "name": "中油资本",
+  "chain": "金融",
+  "node": "多元金融",
+  "node_id": "finance::多元金融",
+  "tier": "龙一",
+  "purity": "",
+  "judgment": "中石油系金控平台,多元金融市值第一(东财:多元金融)"
+ },
+ {
+  "code": "600901",
+  "name": "江苏金租",
+  "chain": "金融",
+  "node": "多元金融",
+  "node_id": "finance::多元金融",
+  "tier": "龙二",
+  "purity": "",
+  "judgment": "金融租赁稀缺标的,高ROE高分红"
+ },
+ {
+  "code": "600570",
+  "name": "恒生电子",
+  "chain": "金融",
+  "node": "金融科技",
+  "node_id": "finance::金融科技",
+  "tier": "龙一",
+  "purity": "⭐",
+  "judgment": "金融IT绝对龙头,券商/基金核心系统(东财:数字货币概念)"
+ },
+ {
+  "code": "300033",
+  "name": "同花顺",
+  "chain": "金融",
+  "node": "金融科技",
+  "node_id": "finance::金融科技",
+  "tier": "龙一",
+  "purity": "",
+  "judgment": "散户流量入口,AI+金融数据应用"
+ },
+ {
+  "code": "300773",
+  "name": "拉卡拉",
+  "chain": "金融",
+  "node": "金融科技",
+  "node_id": "finance::金融科技",
+  "tier": "龙二",
+  "purity": "",
+  "judgment": "第三方支付,跨境支付/数字货币双概念"
+ },
+ {
+  "code": "600276",
+  "name": "恒瑞医药",
+  "chain": "创新医药",
+  "node": "化药创新",
+  "node_id": "pharma::化药创新",
+  "tier": "龙一",
+  "purity": "",
+  "judgment": "创新药一哥,管线最厚,BD出海加速(东财:创新药+减肥药)"
+ },
+ {
+  "code": "688235",
+  "name": "百济神州",
+  "chain": "创新医药",
+  "node": "化药创新",
+  "node_id": "pharma::化药创新",
+  "tier": "龙一",
+  "purity": "",
+  "judgment": "泽布替尼全球放量,A/H/美三地,创新药市值第一"
+ },
+ {
+  "code": "002653",
+  "name": "海思科",
+  "chain": "创新医药",
+  "node": "化药创新",
+  "node_id": "pharma::化药创新",
+  "tier": "龙二",
+  "purity": "",
+  "judgment": "麻醉创新药+BD预期"
+ },
+ {
+  "code": "688578",
+  "name": "艾力斯",
+  "chain": "创新医药",
+  "node": "化药创新",
+  "node_id": "pharma::化药创新",
+  "tier": "龙二",
+  "purity": "⭐",
+  "judgment": "三代EGFR伏美替尼放量,盈利兑现的Biotech"
+ },
+ {
+  "code": "688506",
+  "name": "百利天恒",
+  "chain": "创新医药",
+  "node": "生物药/ADC",
+  "node_id": "pharma::生物药/ADC",
+  "tier": "龙一",
+  "purity": "⭐",
+  "judgment": "双抗ADC BL-B01D1授权BMS(84亿美元),ADC出海标杆"
+ },
+ {
+  "code": "688331",
+  "name": "荣昌生物",
+  "chain": "创新医药",
+  "node": "生物药/ADC",
+  "node_id": "pharma::生物药/ADC",
+  "tier": "龙二",
+  "purity": "",
+  "judgment": "维迪西妥单抗,ADC先行者"
+ },
+ {
+  "code": "002422",
+  "name": "科伦药业",
+  "chain": "创新医药",
+  "node": "生物药/ADC",
+  "node_id": "pharma::生物药/ADC",
+  "tier": "龙二",
+  "purity": "",
+  "judgment": "科伦博泰母公司,ADC平台与默沙东多单合作"
+ },
+ {
+  "code": "688336",
+  "name": "三生国健",
+  "chain": "创新医药",
+  "node": "生物药/ADC",
+  "node_id": "pharma::生物药/ADC",
+  "tier": "龙三",
+  "purity": "",
+  "judgment": "三生系创新药A股载体,双抗平台"
+ },
+ {
+  "code": "603259",
+  "name": "药明康德",
+  "chain": "创新医药",
+  "node": "CXO",
+  "node_id": "pharma::CXO",
+  "tier": "龙一",
+  "purity": "⭐",
+  "judgment": "一体化CRDMO全球龙头,CXO定价锚(东财:医疗研发外包)"
+ },
+ {
+  "code": "002821",
+  "name": "凯莱英",
+  "chain": "创新医药",
+  "node": "CXO",
+  "node_id": "pharma::CXO",
+  "tier": "龙二",
+  "purity": "",
+  "judgment": "小分子CDMO+多肽产能扩张(GLP-1受益)"
+ },
+ {
+  "code": "300759",
+  "name": "康龙化成",
+  "chain": "创新医药",
+  "node": "CXO",
+  "node_id": "pharma::CXO",
+  "tier": "龙二",
+  "purity": "",
+  "judgment": "CRO+CDMO一体化第二梯队"
+ },
+ {
+  "code": "300347",
+  "name": "泰格医药",
+  "chain": "创新医药",
+  "node": "CXO",
+  "node_id": "pharma::CXO",
+  "tier": "龙二",
+  "purity": "",
+  "judgment": "临床CRO龙头"
+ },
+ {
+  "code": "000739",
+  "name": "普洛药业",
+  "chain": "创新医药",
+  "node": "原料药/上游",
+  "node_id": "pharma::原料药/上游",
+  "tier": "龙一",
+  "purity": "",
+  "judgment": "原料药+CDMO双轮(东财:原料药)"
+ },
+ {
+  "code": "688690",
+  "name": "纳微科技",
+  "chain": "创新医药",
+  "node": "原料药/上游",
+  "node_id": "pharma::原料药/上游",
+  "tier": "龙二",
+  "purity": "⭐",
+  "judgment": "层析介质/色谱填料国产替代,生物药上游耗材"
+ },
+ {
+  "code": "301301",
+  "name": "川宁生物",
+  "chain": "创新医药",
+  "node": "原料药/上游",
+  "node_id": "pharma::原料药/上游",
+  "tier": "龙二",
+  "purity": "",
+  "judgment": "合成生物学原料平台"
+ },
+ {
+  "code": "603392",
+  "name": "万泰生物",
+  "chain": "创新医药",
+  "node": "疫苗",
+  "node_id": "pharma::疫苗",
+  "tier": "龙一",
+  "purity": "",
+  "judgment": "HPV疫苗龙头,疫苗板块市值第一(东财:疫苗Ⅲ)"
+ },
+ {
+  "code": "300122",
+  "name": "智飞生物",
+  "chain": "创新医药",
+  "node": "疫苗",
+  "node_id": "pharma::疫苗",
+  "tier": "龙二",
+  "purity": "",
+  "judgment": "代理+自研双轮,渠道之王"
+ },
+ {
+  "code": "688114",
+  "name": "华大智造",
+  "chain": "创新医药",
+  "node": "细胞基因",
+  "node_id": "pharma::细胞基因",
+  "tier": "龙一",
+  "purity": "⭐",
+  "judgment": "基因测序仪国产龙头,卡脖子替代(东财:基因测序)"
+ },
+ {
+  "code": "600196",
+  "name": "复星医药",
+  "chain": "创新医药",
+  "node": "细胞基因",
+  "node_id": "pharma::细胞基因",
+  "tier": "龙二",
+  "purity": "",
+  "judgment": "CAR-T奕凯达国内首个商业化(东财:CAR-T细胞疗法)"
+ },
+ {
+  "code": "300009",
+  "name": "安科生物",
+  "chain": "创新医药",
+  "node": "细胞基因",
+  "node_id": "pharma::细胞基因",
+  "tier": "龙三",
+  "purity": "",
+  "judgment": "生长激素+CAR-T参股布局"
+ },
+ {
+  "code": "000963",
+  "name": "华东医药",
+  "chain": "创新医药",
+  "node": "GLP-1/减肥药",
+  "node_id": "pharma::GLP-1/减肥药",
+  "tier": "龙一",
+  "purity": "",
+  "judgment": "利拉鲁肽已上市+口服GLP-1管线(东财:减肥药)"
+ },
+ {
+  "code": "603087",
+  "name": "甘李药业",
+  "chain": "创新医药",
+  "node": "GLP-1/减肥药",
+  "node_id": "pharma::GLP-1/减肥药",
+  "tier": "龙二",
+  "purity": "",
+  "judgment": "胰岛素龙头,GLP-1双靶点管线"
+ },
+ {
+  "code": "002317",
+  "name": "众生药业",
+  "chain": "创新医药",
+  "node": "GLP-1/减肥药",
+  "node_id": "pharma::GLP-1/减肥药",
+  "tier": "龙三",
+  "purity": "",
+  "judgment": "东财减肥药概念核心标的,GLP-1双靶点管线"
+ },
+ {
+  "code": "300199",
+  "name": "翰宇药业",
+  "chain": "创新医药",
+  "node": "GLP-1/减肥药",
+  "node_id": "pharma::GLP-1/减肥药",
+  "tier": "龙三",
+  "purity": "",
+  "judgment": "多肽原料药/CDMO,GLP-1产业链卖水人"
+ },
+ {
+  "code": "600879",
+  "name": "航天电子",
+  "chain": "商业航天",
+  "node": "火箭/发射",
+  "node_id": "space::火箭/发射",
+  "tier": "龙一",
+  "purity": "",
+  "judgment": "航天科技集团箭上电子/测控核心配套(东财:航天装备Ⅲ)"
+ },
+ {
+  "code": "003009",
+  "name": "中天火箭",
+  "chain": "商业航天",
+  "node": "火箭/发射",
+  "node_id": "space::火箭/发射",
+  "tier": "龙二",
+  "purity": "⭐",
+  "judgment": "固体火箭稀缺标的,商业发射弹性"
+ },
+ {
+  "code": "688523",
+  "name": "航天环宇",
+  "chain": "商业航天",
+  "node": "火箭/发射",
+  "node_id": "space::火箭/发射",
+  "tier": "龙二",
+  "purity": "",
+  "judgment": "箭/星结构件+工装,民营配套"
+ },
+ {
+  "code": "600118",
+  "name": "中国卫星",
+  "chain": "商业航天",
+  "node": "卫星制造",
+  "node_id": "space::卫星制造",
+  "tier": "龙一",
+  "purity": "",
+  "judgment": "小卫星总装稀缺整机标的,航天五院旗下"
+ },
+ {
+  "code": "688818",
+  "name": "电科蓝天",
+  "chain": "商业航天",
+  "node": "卫星制造",
+  "node_id": "space::卫星制造",
+  "tier": "龙二",
+  "purity": "",
+  "judgment": "航天电源龙头,中国电科系新上市平台"
+ },
+ {
+  "code": "601698",
+  "name": "中国卫通",
+  "chain": "商业航天",
+  "node": "卫星运营/应用",
+  "node_id": "space::卫星运营/应用",
+  "tier": "龙一",
+  "purity": "",
+  "judgment": "高轨通信卫星运营商,牌照稀缺(东财:商业航天+卫星互联网)"
+ },
+ {
+  "code": "688568",
+  "name": "中科星图",
+  "chain": "商业航天",
+  "node": "卫星运营/应用",
+  "node_id": "space::卫星运营/应用",
+  "tier": "龙二",
+  "purity": "⭐",
+  "judgment": "空天大数据/数字地球,应用层龙头"
+ },
+ {
+  "code": "688066",
+  "name": "航天宏图",
+  "chain": "商业航天",
+  "node": "卫星运营/应用",
+  "node_id": "space::卫星运营/应用",
+  "tier": "龙三",
+  "purity": "",
+  "judgment": "遥感应用+女娲星座"
+ },
+ {
+  "code": "001270",
+  "name": "铖昌科技",
+  "chain": "商业航天",
+  "node": "星载/终端设备",
+  "node_id": "space::星载/终端设备",
+  "tier": "龙一",
+  "purity": "⭐",
+  "judgment": "星载相控阵T/R芯片,卫星互联网纯度最高"
+ },
+ {
+  "code": "688375",
+  "name": "国博电子",
+  "chain": "商业航天",
+  "node": "星载/终端设备",
+  "node_id": "space::星载/终端设备",
+  "tier": "龙二",
+  "purity": "",
+  "judgment": "T/R组件龙头(东财:军工电子Ⅲ)"
+ },
+ {
+  "code": "300620",
+  "name": "光库科技",
+  "chain": "商业航天",
+  "node": "星载/终端设备",
+  "node_id": "space::星载/终端设备",
+  "tier": "龙二",
+  "purity": "",
+  "judgment": "星间激光通信光器件(跨链:光通信)"
+ },
+ {
+  "code": "300136",
+  "name": "信维通信",
+  "chain": "商业航天",
+  "node": "星载/终端设备",
+  "node_id": "space::星载/终端设备",
+  "tier": "龙三",
+  "purity": "",
+  "judgment": "卫星终端天线,手机直连卫星受益"
+ },
+ {
+  "code": "002465",
+  "name": "海格通信",
+  "chain": "商业航天",
+  "node": "北斗导航",
+  "node_id": "space::北斗导航",
+  "tier": "龙一",
+  "purity": "",
+  "judgment": "北斗军民通导一体龙头(东财:北斗导航)"
+ },
+ {
+  "code": "300627",
+  "name": "华测导航",
+  "chain": "商业航天",
+  "node": "北斗导航",
+  "node_id": "space::北斗导航",
+  "tier": "龙二",
+  "purity": "⭐",
+  "judgment": "高精度定位民用龙头,盈利兑现"
+ },
+ {
+  "code": "002151",
+  "name": "北斗星通",
+  "chain": "商业航天",
+  "node": "北斗导航",
+  "node_id": "space::北斗导航",
+  "tier": "龙三",
+  "purity": "",
+  "judgment": "北斗芯片/板卡老牌"
  }
 ]
