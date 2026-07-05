@@ -315,6 +315,18 @@ def build_dashboard(date_utc8: str) -> Path:
                       "n_agree": r[12], "n_active": r[13], "divergence": r[14] or []}
                      for r in cur.fetchall()]
             cards.sort(key=lambda c: -abs(c["resonance"] or 0))
+            # 节点成分股(涉及哪些票:龙头tier在前;港股映射票无A股行情也如实列出)
+            if cards:
+                cur.execute("""SELECT sn.node_id, sn.code, s.name, sn.tier
+                    FROM stock_node sn JOIN stock s USING(code)
+                    WHERE sn.node_id = ANY(%s)
+                    ORDER BY sn.node_id, sn.tier NULLS LAST, sn.code""",
+                    ([c["node_id"] for c in cards],))
+                members: dict = {}
+                for nid, code, name, tier in cur.fetchall():
+                    members.setdefault(nid, []).append({"code": code, "name": name, "tier": tier})
+                for c in cards:
+                    c["stocks"] = members.get(c["node_id"], [])
             judgment = {"date": str(jd), "cards": cards,
                         "fallback": jd.strftime("%Y%m%d") != date_utc8}
 

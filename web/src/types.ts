@@ -109,6 +109,7 @@ export interface JudgmentCard {
   thesis: string; evidence: CardEvidence[]; scenarios: CardScenario[];
   matrix: CardMatrix; resonance: number | null; n_agree: number; n_active: number;
   divergence: { pair: string; desc: string }[];
+  stocks?: { code: string; name: string; tier?: string | null }[]; // 节点成分股(旧blob无此键)
 }
 export interface JudgmentBlock { date: string; cards: JudgmentCard[]; fallback?: boolean; }
 

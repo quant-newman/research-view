@@ -12,6 +12,7 @@ const zCls = (z: number) =>
 
 // —— B6 节点研判卡(六源共振,方向判断可追责,5日窗口进 B7 记分) ——
 function CardRow({ c }: { c: JudgmentCard }) {
+  const open = useOpenStock();
   const m = c.matrix || {};
   const zs: [string, number | undefined][] = [
     ["新闻", m.news?.z], ["资金", m.mf?.z], ["行情", m.price?.z],
@@ -38,6 +39,18 @@ function CardRow({ c }: { c: JudgmentCard }) {
         ))}
         {m.letter?.hit && <span className="text-info">信函命中</span>}
       </div>
+      {(c.stocks?.length ?? 0) > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+          <span className="text-dim text-[12px] shrink-0">涉及</span>
+          {c.stocks!.map((s) => (
+            <button key={s.code} onClick={() => open({ code: s.code, name: s.name })}
+              className="text-[12px] text-muted bg-elevated/60 px-1.5 py-0.5 rounded hover:text-accent">
+              {s.name} <span className="mono text-dim">{s.code}</span>
+              {s.tier && <span className="text-dim">·{s.tier}</span>}
+            </button>
+          ))}
+        </div>
+      )}
       {c.evidence.length > 0 && (
         <ul className="mt-1.5 space-y-0.5">
           {c.evidence.map((e, i) => (
