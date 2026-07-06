@@ -221,6 +221,7 @@ z = 该源指标在全部产业链节点截面的标准分(衡量相对全池强
       "node_id": "照抄输入的 node_id",
       "direction": "偏多|偏空|中性",
       "confidence": "高|中|低",
+      "subjective_prob": "0到1之间的两位小数(开区间,禁止0和1):你对本卡判断兑现的主观概率。兑现的精确定义——偏多/偏空卡:到期(5个交易日)该节点相对全池超额×判断方向≥+1个百分点;中性卡:|超额|≤2个百分点。方向卡带内(±1pp)不算兑现。按真实把握报数,不要扎堆0.7,系统将用Brier分数长期校验你的校准度",
       "thesis": "≤60字带方向的一句话研判(是判断不是陈列;有背离必须正面处理:说明你信哪一源、为什么)",
       "evidence": [{{"src":"新闻|资金|行情|龙虎榜|研报|信函","fact":"支撑方向的具体事实,带数字,只能来自该节点的输入块"}}],
       "scenarios": [{{"cond":"若未来1周出现X(具体可观察)","expect":"则方向判断成立/强化","falsify":"什么情况说明你上面的 direction 判断错了(注意:是让你的判断作废的条件,不是判断成立的条件),具体、1周内可验证(如偏多卡:'主力连续3日净流出且周涨幅落后全池')"}}]
@@ -253,6 +254,15 @@ def prompt_hash(lessons_seg: str) -> str:
     return hashlib.sha256((SYSTEM + _USER_TMPL + lessons_seg).encode("utf-8")).hexdigest()[:16]
 
 
+def parse_prob(v) -> float | None:
+    """LLM 自报主观概率:开区间 (0,1) 才收(与 sql/028 CHECK 同口径),报废值落 NULL 不阻塞发卡。"""
+    try:
+        p = float(v)
+    except (TypeError, ValueError):
+        return None
+    return round(p, 4) if 0 < p < 1 else None
+
+
 def generate(date_utc8: str, top: int = 8) -> list[dict]:
     """六源矩阵 → 取激活≥2源的 Top 节点 → DeepSeek 出研判卡。返回带矩阵快照的卡列表。"""
     rows = build_matrix(date_utc8)
@@ -274,7 +284,8 @@ def generate(date_utc8: str, top: int = 8) -> list[dict]:
         conf = c.get("confidence") if c.get("confidence") in ("高", "中", "低") else None
         cards.append({
             "node_id": r["node_id"], "chain": r["chain"], "node": r["node"],
-            "direction": direction, "confidence": conf, "horizon_days": HORIZON_DAYS,
+            "direction": direction, "confidence": conf,
+            "subjective_prob": parse_prob(c.get("subjective_prob")), "horizon_days": HORIZON_DAYS,
             "thesis": (c.get("thesis") or "").strip()[:120],
             "evidence": [e for e in (c.get("evidence") or []) if isinstance(e, dict) and e.get("fact")][:4],
             "scenarios": [s for s in (c.get("scenarios") or []) if isinstance(s, dict)][:2],
@@ -294,9 +305,11 @@ def persist(date_utc8: str) -> int:
     with db.rv_conn() as conn, conn.cursor() as cur:
         for c in cards:
             cur.execute("""INSERT INTO judgment_card(trade_date,node_id,direction,confidence,
-                    horizon_days,thesis,evidence,scenarios,matrix,resonance,n_agree,n_active,divergence,model,prompt_hash)
-                VALUES(to_date(%s,'YYYYMMDD'),%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
-                (date_utc8, c["node_id"], c["direction"], c["confidence"], c["horizon_days"],
+                    subjective_prob,horizon_days,thesis,evidence,scenarios,matrix,resonance,
+                    n_agree,n_active,divergence,model,prompt_hash)
+                VALUES(to_date(%s,'YYYYMMDD'),%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                (date_utc8, c["node_id"], c["direction"], c["confidence"], c["subjective_prob"],
+                 c["horizon_days"],
                  c["thesis"], json.dumps(c["evidence"], ensure_ascii=False),
                  json.dumps(c["scenarios"], ensure_ascii=False),
                  json.dumps(c["matrix"], ensure_ascii=False), c["resonance"],

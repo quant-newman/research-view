@@ -290,7 +290,9 @@ def override_slices(rows) -> dict:
 #   两个截面口径的样本,本分组承担不了 #37 周报义务:07-12 周报正文仍须手写注明两次参照层变更。
 _PROMPT_LABELS = {
     "ffb0a6cccf2c61b7": "B6 v2模板(07-04起;参照层v2/v3同哈希,07-05起z分母57→76)",
-    "fe67e54832acdb4f": "B8 模板(07-04起;参照层v2/v3同哈希,同上)",
+    "fe67e54832acdb4f": "B8 v1模板(07-04起;参照层v2/v3同哈希,同上)",
+    "a778927f2c31ef56": "B6 v3模板(07-06起,+subjective_prob;DECISIONS #40)",
+    "cd3655bba4858708": "B8 v2模板(07-06起,+subjective_prob;DECISIONS #40)",
     "unversioned": "07-04 加列前存量卡(参照层v1口径)",
 }
 
@@ -302,6 +304,41 @@ def version_stats(rows) -> dict:
     for h, v in rows:
         grp.setdefault(h or "unversioned", []).append((v,))
     return {h: {"label": _PROMPT_LABELS.get(h, h), **_stats(rs)} for h, rs in grp.items()}
+
+
+# ---------- 校准(Brier,DECISIONS #40):subjective_prob 卡的概率校准,增量不替换 ----------
+
+def brier_stats(rows, nbins: int = 5) -> dict:
+    """rows: [(subjective_prob, verdict)] → Brier 均分 + 校准曲线数据点(等宽5桶)。
+    事件E=「verdict=对」,outcome: 对=1,错/平=0——平不剔除:模型报的是"兑现"概率,
+    兑现门槛(方向卡超额×方向≥+1pp)在发卡 prompt 里明示,带内=未兑现;剔平等于把概率
+    条件化在"分出对错"上,与模型面对的事件不一致,校准曲线会系统性偏高。
+    (与 hit_rate 只算 对/(对+错) 是两个指标两个口径。)无带 prob 样本返回 n=0。"""
+    pts = [(float(p), 1.0 if v == "对" else 0.0) for p, v in rows if p is not None]
+    if not pts:
+        return {"n": 0, "brier": None, "bins": []}
+    brier = sum((p - o) ** 2 for p, o in pts) / len(pts)
+    bins = []
+    for i in range(nbins):
+        lo, hi = i / nbins, (i + 1) / nbins
+        grp = [(p, o) for p, o in pts if lo <= p < hi]  # prob 开区间,p=1 不存在,右开安全
+        if grp:
+            bins.append({"lo": lo, "hi": hi, "n": len(grp),
+                         "p_mean": round(sum(p for p, _ in grp) / len(grp), 3),
+                         "hit_rate": round(sum(o for _, o in grp) / len(grp), 3)})
+    return {"n": len(pts), "brier": round(brier, 4), "bins": bins}
+
+
+def brier_by_version(rows) -> dict:
+    """rows: [(prompt_hash, subjective_prob, verdict)] → 按 prompt 版本分组 Brier
+    (#28 同纪律:换模板换哈希,校准样本不混算;只出 n/brier,桶看总体)。"""
+    grp: dict[str, list] = {}
+    for h, p, v in rows:
+        if p is not None:
+            grp.setdefault(h or "unversioned", []).append((p, v))
+    return {h: {"label": _PROMPT_LABELS.get(h, h),
+                **{k: brier_stats(rs)[k] for k in ("n", "brier")}}
+            for h, rs in grp.items()}
 
 
 # ---------- 周度收口(周日 cron:汇总 + DeepSeek 错误归纳 + lessons 回灌) ----------
@@ -395,6 +432,19 @@ def weekly(date_utc8: str) -> dict:
         cur.execute("""SELECT dc.prompt_hash, ds.verdict
             FROM decision_score ds JOIN decision_card dc USING(card_id)""")
         stock_by_version = version_stats(cur.fetchall())
+        # 校准(#40):带 subjective_prob 的到期卡累积 Brier + 校准曲线数据点(按版本分组同 #28)
+        cur.execute("""SELECT jc.prompt_hash, jc.subjective_prob, cs.verdict
+            FROM card_score cs JOIN judgment_card jc USING(card_id)
+            WHERE jc.subjective_prob IS NOT NULL""")
+        prows = cur.fetchall()
+        calibration = {**brier_stats([(p, v) for _h, p, v in prows]),
+                       "by_version": brier_by_version(prows)}
+        cur.execute("""SELECT dc.prompt_hash, dc.subjective_prob, ds.verdict
+            FROM decision_score ds JOIN decision_card dc USING(card_id)
+            WHERE dc.subjective_prob IS NOT NULL""")
+        sprows = cur.fetchall()
+        stock_calibration = {**brier_stats([(p, v) for _h, p, v in sprows]),
+                             "by_version": brier_by_version(sprows)}
         blocks = [_wrong_block(f"【节点】{chain}/{node}", nid, d, cf, th, ev, mx, ex, nr, pr)
                   for nid, chain, node, d, cf, th, ev, mx, ex, nr, pr, v in wk if v == "错"]
         blocks += [_wrong_block(f"【个股】{name}({code})", code, d, cf, th, ev, mx, ex, sr, pr)
@@ -405,7 +455,8 @@ def weekly(date_utc8: str) -> dict:
              "stock_cum": stock_cum, "stock_week": stock_week,
              "baseline": baseline, "stock_baseline": stock_baseline,
              "override": override, "stock_override": stock_override,
-             "by_version": by_version, "stock_by_version": stock_by_version}
+             "by_version": by_version, "stock_by_version": stock_by_version,
+             "calibration": calibration, "stock_calibration": stock_calibration}
     with db.rv_conn() as conn, conn.cursor() as cur:
         cur.execute("""INSERT INTO b7_weekly(week_end, stats, review, lessons)
             VALUES(to_date(%s,'YYYYMMDD'), %s, %s, %s)

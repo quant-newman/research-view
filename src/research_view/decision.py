@@ -11,7 +11,7 @@ from __future__ import annotations
 import hashlib
 import json
 
-from . import config, db, llm
+from . import config, db, evidence, llm
 from .evidence import _z
 
 _W = {"price": 1.0, "mf": 1.0, "news": 0.8, "lhb": 0.6}
@@ -207,6 +207,7 @@ z=该指标在核心池全体个股截面的标准分(相对全池强弱);对齐
       "code": "照抄输入的6位代码",
       "direction": "偏多|偏空|中性",
       "confidence": "高|中|低",
+      "subjective_prob": "0到1之间的两位小数(开区间,禁止0和1):你对本卡判断兑现的主观概率。兑现的精确定义——偏多/偏空卡:到期(5个交易日)该股相对全池超额×判断方向≥+1个百分点;中性卡:|超额|≤2个百分点。方向卡带内(±1pp)不算兑现。按真实把握报数,不要扎堆0.7,系统将用Brier分数长期校验你的校准度",
       "thesis": "≤60字带方向的一句话决策逻辑(个股层面,不是复读节点卡)",
       "entry": "入场条件:具体可观察(偏多卡必填;价位只能以现价按百分比换算并写明;偏空/中性卡可留空字符串)",
       "exit": "退出/止损条件:具体可验证(偏多卡必填,含止损价位锚;偏空卡=回避解除条件;中性卡可留空)",
@@ -253,7 +254,9 @@ def generate(date_utc8: str) -> list[dict]:
         cards.append({
             "code": f["code"], "name": f["name"], "ts_code": f["ts_code"],
             "node_id": f["node_id"], "node_card_id": f["node_card_id"],
-            "direction": direction, "confidence": conf, "horizon_days": HORIZON_DAYS,
+            "direction": direction, "confidence": conf,
+            "subjective_prob": evidence.parse_prob(c.get("subjective_prob")),
+            "horizon_days": HORIZON_DAYS,
             "thesis": (c.get("thesis") or "").strip()[:120],
             "entry_cond": (c.get("entry") or "").strip()[:200] or None,
             "exit_cond": (c.get("exit") or "").strip()[:200] or None,
@@ -274,12 +277,13 @@ def persist(date_utc8: str) -> int:
     with db.rv_conn() as conn, conn.cursor() as cur:
         for c in cards:
             cur.execute("""INSERT INTO decision_card(trade_date,code,name,ts_code,node_id,
-                    node_card_id,direction,confidence,horizon_days,thesis,entry_cond,exit_cond,
+                    node_card_id,direction,confidence,subjective_prob,horizon_days,thesis,
+                    entry_cond,exit_cond,
                     evidence,falsify,matrix,alignment,close,model,prompt_hash)
-                VALUES(to_date(%s,'YYYYMMDD'),%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                VALUES(to_date(%s,'YYYYMMDD'),%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                 (date_utc8, c["code"], c["name"], c["ts_code"], c["node_id"], c["node_card_id"],
-                 c["direction"], c["confidence"], c["horizon_days"], c["thesis"],
-                 c["entry_cond"], c["exit_cond"],
+                 c["direction"], c["confidence"], c["subjective_prob"], c["horizon_days"],
+                 c["thesis"], c["entry_cond"], c["exit_cond"],
                  json.dumps(c["evidence"], ensure_ascii=False), c["falsify"],
                  json.dumps(c["matrix"], ensure_ascii=False), c["alignment"], c["close"],
                  model, c["prompt_hash"]))
