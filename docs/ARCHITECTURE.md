@@ -88,7 +88,8 @@ scripts/:`run_pipeline.py`(盘后主管道 16 步,含 calibration_freeze/ref_sna
 | 21:30 + 22:00-05:00 整点 | run_us | build_us 全量美股 blob(约12min,锁等900s);21:30档=夏令时开盘(冬令时为开盘前预热) |
 | 周三 07:00 | run_fund_letters | 信函 4 源 |
 | 周日 20:00 | run_scorecard | B7 补记分+周报+lessons |
-| 每日 21:00+23:30(数据节点) | backup_db | pg_dump(同日文件覆盖,23:30档含当日判断卡/记分),盘后 rsync 异地留存,两地各14天 |
+| 每日 21:00+23:30(数据节点) | backup_db | pg_dump 自定义格式 .dump+产出即 pg_restore --list 校验 TOC(失败删残件退出非零)(同日文件覆盖,23:30档含当日判断卡/记分),exports tar 含数据节点 .env;盘后 rsync 异地留存,两地各14天(DECISIONS #39) |
+| 每月2号 16:10 | restore_drill | **月度还原演练**:最新异地 .dump 真还原进一次性 postgres 容器+核心资产表行数校验,失败 lib_alert+飞书,容器用后即弃(DECISIONS #39) |
 | 每日 23:50(含周末) | watchdog | 独立看门狗:停摆(>20h)/交易日静默零/周一🟢心跳,只异常出声(飞书) |
 
 ## 7. 前端(web/,React+TS+Vite+Tailwind+ECharts,Bloomberg 暗色,A股红涨绿跌)

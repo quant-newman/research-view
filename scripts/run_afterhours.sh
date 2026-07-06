@@ -31,11 +31,15 @@ rsync -az "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/"{dashboard,trends}.j
 
 echo "[afterhours] 拉回最新数据库备份(异地留存,两地各保14天)..."
 mkdir -p backups
+# 台北 .env(凭证单点)推到阿里云备份目录做交叉异地,随拉回同步回来(chmod 600)
+rsync -az --chmod=F600 .env "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/backups/env_taipei_${DATE}" || true
 rsync -az "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/backups/" backups/
-find backups -name 'research_view_*.sql.gz' -mtime +14 -delete 2>/dev/null || true
-find backups -name 'exports_*.tar.gz' -mtime +14 -delete 2>/dev/null || true
-# 备份新鲜度哨兵:最新备份老于 ~2 天=阿里云 21:00 备份 cron 已断,告警但不阻塞主流程
-if ! find backups -name 'research_view_*.sql.gz' -mtime -2 | grep -q .; then
+# -maxdepth 1 保护 backups/archive/ 月度归档(旧版无此限定,台北侧归档14天即被误删)
+find backups -maxdepth 1 -name 'research_view_*' -mtime +14 -delete 2>/dev/null || true
+find backups -maxdepth 1 -name 'exports_*.tar.gz' -mtime +14 -delete 2>/dev/null || true
+find backups -maxdepth 1 -name 'env_taipei_*' -mtime +14 -delete 2>/dev/null || true
+# 备份新鲜度哨兵:最新备份老于 ~2 天=阿里云 21:00 备份 cron 已断或校验连败,告警不阻塞
+if ! find backups -name 'research_view_*' -mtime -2 | grep -q .; then
   alert_set backup 备份 "数据库备份超过2天未更新,查阿里云 logs/backup.log"
   echo "[afterhours] ⚠ 备份陈旧告警已写(不阻塞)"
 else
