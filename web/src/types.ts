@@ -18,7 +18,8 @@ export interface MarketGauge {
 export interface Sector { chain: string; status: string; }
 export interface Falsification { claim: string; condition: string; draft_by: string; pinned_id?: number; pinned_falsified?: boolean; }
 export interface UsItem { ticker: string; name: string; mapping: string; close: number | null; pct: number | null; }
-export interface UsOvernight { us_session_date: string; items: UsItem[]; n_ok: number; fetched_at: string; }
+export interface MacroItem { ticker: string; name: string; unit: string; value: number; date: string; spark?: number[]; chg_bp?: number; chg_pct?: number; }
+export interface UsOvernight { us_session_date: string; items: UsItem[]; n_ok: number; fetched_at: string; macro?: { items: MacroItem[] }; }
 export interface Report {
   report_id: string; session: string; data_cutoff: string;
   headline: Headline; top3: Top3Item[]; sectors: Sector[];

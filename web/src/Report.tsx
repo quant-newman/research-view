@@ -334,6 +334,25 @@ function UsOvernightBoard({ us }: { us: NonNullable<Dashboard["report"]>["us_ove
           <span className="text-dim text-[13px] truncate">{it.mapping}</span>
         </div>
       ))}
+      {us.macro && us.macro.items.length > 0 && (
+        <div className="pt-1.5 mt-1.5 border-t border-[#232B36] space-y-1">
+          <div className="text-[12px] text-dim">宏观锚 · 参照线,不进研判矩阵(红=上行绿=下行,USDCNY涨=人民币贬)</div>
+          {us.macro.items.map((m) => {
+            const chg = m.chg_bp ?? m.chg_pct;
+            const chgStr = chg === undefined ? "—"
+              : `${chg > 0 ? "+" : ""}${chg}${m.chg_bp !== undefined ? "bp" : "%"}`;
+            return (
+              <div key={m.ticker} className="flex items-center gap-2 text-[14px]">
+                <span className="text-primary w-36 shrink-0 truncate">{m.name}</span>
+                <span className="mono text-muted w-16 shrink-0 text-right">{m.value}{m.unit}</span>
+                <span className={`mono w-16 shrink-0 text-right ${pctCls(chg ?? 0)}`}>{chgStr}</span>
+                <Spark vals={m.spark} />
+                <span className="mono text-dim text-[12px] shrink-0">{m.date.slice(5)}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

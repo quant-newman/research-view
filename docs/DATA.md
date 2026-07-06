@@ -60,5 +60,7 @@ bar_daily_raw(1990起,未复权,复权乘 adj_factor) / moneyflow(2010起,主力
 使用者侧云盘日快照(整机,阶梯保留)。恢复以 pg_dump 为权威,快照作保底。
 2026-07-05 起 exports/ 观测层按日 blob(美股/X舆情/事件/信函,不进 PG,LLM 当时综合的 PIT 证据,
 台架回测比对用)每日 tar 同链备份:exports_YYYYMMDD.tar.gz,同样两地14天+月度归档12份(DECISIONS #34)。
+2026-07-06 起 us_overnight blob 增 macro 键(宏观锚:美债10Y/美元指数/USDCNY 在岸,yfinance,
+展示层参照线不进 B6 矩阵;离岸 CNH=X Yahoo 历史仅回1行不可用,实测后以在岸替代)。
 数据纪律总纲见 docs/DATA_CONSTITUTION.md(DECISIONS #35,含资产清单×备份覆盖对照表)。
 恢复演练:2026-07-05 首演通过(20260705 dump→临时库零错误,13表行数对齐,触发器拒改);每半年一次挂季度审视。
