@@ -9,7 +9,8 @@ from decimal import Decimal
 
 from research_view.evidence import parse_prob
 from research_view.scorecard import (_PROMPT_LABELS, _stats, brier_by_version,
-                                     brier_stats, override_slices, version_stats)
+                                     brier_stats, calibration_block, override_slices,
+                                     version_stats)
 
 
 def test_wilson():
@@ -40,34 +41,50 @@ def test_override_buckets():
 
 
 def test_version_group():
-    # 16位真值键(sql/024 口径)+ 存量 NULL 卡归 unversioned
-    out = version_stats([("ffb0a6cccf2c61b7", "对"), ("ffb0a6cccf2c61b7", "错"), (None, "对")])
-    assert out["ffb0a6cccf2c61b7"]["n"] == 2 and out["ffb0a6cccf2c61b7"]["hit_rate"] == 50.0
-    assert out["ffb0a6cccf2c61b7"]["label"].startswith("B6 v2模板")
+    # 16位真值键(sql/024 口径,#41 重登后:07-06 复合版本纪元)+ 存量 NULL 卡归 unversioned
+    out = version_stats([("8528ca795ca4c6b8", "对"), ("8528ca795ca4c6b8", "错"), (None, "对")])
+    assert out["8528ca795ca4c6b8"]["n"] == 2 and out["8528ca795ca4c6b8"]["hit_rate"] == 50.0
+    assert out["8528ca795ca4c6b8"]["label"].startswith("B6 v3·07-06起")
+    assert _PROMPT_LABELS["780916554dc9be8b"].startswith("B8 v2·07-06起")
     assert out["unversioned"]["n"] == 1
     assert out["unversioned"]["label"] == _PROMPT_LABELS["unversioned"]
+    # 死键已删(库内永不出现:0b 周末零卡 + 0a 质检修正前零卡)
+    for dead in ("ffb0a6cccf2c61b7", "fe67e54832acdb4f", "a778927f2c31ef56", "cd3655bba4858708"):
+        assert dead not in _PROMPT_LABELS
     # 未登记哈希原样显示,不阻塞
     assert version_stats([("deadbeef00000000", "对")])["deadbeef00000000"]["label"] == "deadbeef00000000"
 
 
 def test_brier():
-    # 人工复算(#40 验收口径):对=1,错/平=0,平不剔除
-    # ((0.7-1)²+(0.7-0)²+(0.5-0)²)/3 = (0.09+0.49+0.25)/3 = 0.2767
-    s = brier_stats([(Decimal("0.7"), "对"), (0.7, "错"), (0.5, "平")])
-    assert s["n"] == 3 and s["brier"] == 0.2767
-    # 校准桶:0.7×2 落 [0.6,0.8) 实际兑现率 0.5;0.5 落 [0.4,0.6) 兑现率 0
+    # BRIER_SPEC 口径:样本域=对/错,平剔除但必报未判定率(SPEC第1条);对=1/错=0(第2条)
+    # 人工复算(SPEC第5条审计口径):((0.7-1)²+(0.7-0)²)/2 = (0.09+0.49)/2 = 0.29
+    s = brier_stats([(Decimal("0.7"), "对"), (0.7, "错"), (0.55, "平")])
+    assert s["n"] == 2 and s["brier"] == 0.29
+    assert s["n_flat"] == 1 and s["flat_rate"] == round(1 / 3, 3)
+    # 固定边界桶(SPEC第4条):0.7×2 落 [0.7,0.8);0.55(平)已剔除不进桶
     b = {(x["lo"], x["hi"]): x for x in s["bins"]}
-    assert b[(0.6, 0.8)]["n"] == 2 and b[(0.6, 0.8)]["hit_rate"] == 0.5
-    assert b[(0.4, 0.6)]["p_mean"] == 0.5 and b[(0.4, 0.6)]["hit_rate"] == 0.0
-    # NULL prob 卡不参与;全 NULL = 诚实空态
+    assert b[(0.7, 0.8)]["n"] == 2 and b[(0.7, 0.8)]["hit_rate"] == 0.5
+    assert (0.5, 0.6) not in b
+    # NULL prob 卡跳过(存量旧卡,SPEC第1条);全 NULL/空 = 诚实空态
     assert brier_stats([(None, "对")])["n"] == 0
-    assert brier_stats([])["brier"] is None
-    # 版本分组:NULL 哈希归 unversioned,已登记哈希带标签
-    bv = brier_by_version([("a778927f2c31ef56", 0.6, "对"), (None, None, "错"),
-                           (None, 0.8, "错")])
-    assert bv["a778927f2c31ef56"]["n"] == 1 and bv["a778927f2c31ef56"]["brier"] == 0.16
-    assert bv["a778927f2c31ef56"]["label"].startswith("B6 v3模板")
+    assert brier_stats([])["brier"] is None and brier_stats([])["flat_rate"] is None
+    # 全平:Brier 无样本但未判定率必报
+    allflat = brier_stats([(0.8, "平")])
+    assert allflat["n"] == 0 and allflat["n_flat"] == 1 and allflat["flat_rate"] == 1.0
+    # 卡型分层(SPEC第3条):中性卡与方向卡禁混桶
+    cb = calibration_block([("8528ca795ca4c6b8", "偏多", 0.7, "对"),
+                            ("8528ca795ca4c6b8", "偏空", 0.7, "错"),
+                            ("8528ca795ca4c6b8", "中性", 0.8, "对")])
+    assert cb["direction"]["n"] == 2 and cb["direction"]["brier"] == 0.29
+    assert cb["neutral"]["n"] == 1 and cb["neutral"]["brier"] == 0.04
+    assert cb["by_version"]["8528ca795ca4c6b8"]["n"] == 3  # 版本标量跨卡型,仅漂移检测
+    # 版本分组:NULL 哈希归 unversioned,已登记哈希带标签,平剔除同口径
+    bv = brier_by_version([("8528ca795ca4c6b8", 0.6, "对"), (None, None, "错"),
+                           (None, 0.8, "错"), (None, 0.9, "平")])
+    assert bv["8528ca795ca4c6b8"]["n"] == 1 and bv["8528ca795ca4c6b8"]["brier"] == 0.16
+    assert bv["8528ca795ca4c6b8"]["label"].startswith("B6 v3·07-06起")
     assert bv["unversioned"]["n"] == 1 and bv["unversioned"]["brier"] == 0.64
+    assert bv["unversioned"]["n_flat"] == 1
 
 
 def test_parse_prob():

@@ -15,12 +15,13 @@
 - 判定:方向卡 |超额|≥1pp 才定对/错,带内=**平**(不给贴边判断白捡命中);中性卡 |超额|≤2pp=对。
 - 每节点每日只记**最新 card_id**(append-only 重跑卡不记分);记分本身是行情的函数,card_score 可重算,PK upsert 幂等。
 
-## 概率校准(Brier,DECISIONS #40,2026-07-06 起)
+## 概率校准(Brier,DECISIONS #40/#41,2026-07-06 起)
 
-- 发卡时 LLM 自报 `subjective_prob`(开区间 0-1)= 对"本卡判断兑现"的主观概率;**兑现事件在 prompt 里精确定义且与记分判定同口径**:方向卡=到期超额×方向≥+1pp,中性卡=|超额|≤2pp。报废值(0/1/越界/非数)落 NULL 不阻塞发卡;旧卡 NULL 不回填。
-- 到期后累积 **Brier 分数** = mean((prob − outcome)²),outcome:对=1,**错/平=0(平不剔除)**——模型报的是"兑现"概率,带内(±1pp)确实未兑现;剔平等于条件化在"分出对错"上,校准曲线会系统性偏高。与 hit_rate 只算 对/(对+错) 是**两个指标两个口径**。
-- 校准曲线数据点:等宽 5 桶(预测均值 vs 实际兑现率,`brier_stats`),只出数据不画图(可视化等成色报告)。按 prompt_hash 分组不混算(`brier_by_version`,#28 同纪律)。
-- 进 `b7_weekly.stats.calibration / stock_calibration`(增量,不替换现有记分口径)。Brier 基准感:瞎报 0.5 恒得 0.25,低于 0.25 才开始说明概率有信息量;与 confidence 高/中/低并存对照(高置信卡报的 prob 是否系统性更高)。
+**口径预注册于 [BRIER_SPEC.md](BRIER_SPEC.md)(07-06 落档,早于首张 prob 卡到期;与代码不符时改代码就文档,不许反向)**,此处只留导航:
+
+- 发卡时 LLM 自报 `subjective_prob`(开区间 0-1)= "本卡判断兑现"的主观概率;兑现事件在 prompt 里与记分判定同口径钉死(方向卡 ±1pp 阈/中性卡 ±2pp 带),并明示与 confidence 相互独立(定性档 vs 定量频率,禁机械换算)。报废值落 NULL 不阻塞发卡;旧卡 NULL 不回填。
+- Brier = mean((prob−outcome)²),**样本域=对/错,平剔除但每期必报未判定率**(SPEC 第1条;读曲线须配合 flat_rate,见 SPEC 附注);固定边界分桶 [0,.5,.6,.7,.8,.9,1) 禁改;卡型分层 direction/neutral × node/stock 禁混桶;按 prompt_hash 分组(#28 同纪律)。
+- 进 `b7_weekly.stats.calibration / stock_calibration`(增量,不替换现有记分口径);只出数据不画图(可视化等成色报告)。Brier 基准感:瞎报 0.5 恒得 0.25。
 
 ## 分源归因(代码算)
 

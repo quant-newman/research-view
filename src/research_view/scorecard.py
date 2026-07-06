@@ -289,10 +289,12 @@ def override_slices(rows) -> dict:
 # ⚠ 参照层 v2→v3(07-05,DECISIONS #37,截面z分母57→76)不改 prompt_hash——ffb0a6cc 组内混
 #   两个截面口径的样本,本分组承担不了 #37 周报义务:07-12 周报正文仍须手写注明两次参照层变更。
 _PROMPT_LABELS = {
-    "ffb0a6cccf2c61b7": "B6 v2模板(07-04起;参照层v2/v3同哈希,07-05起z分母57→76)",
-    "fe67e54832acdb4f": "B8 v1模板(07-04起;参照层v2/v3同哈希,同上)",
-    "a778927f2c31ef56": "B6 v3模板(07-06起,+subjective_prob;DECISIONS #40)",
-    "cd3655bba4858708": "B8 v2模板(07-06起,+subjective_prob;DECISIONS #40)",
+    # 07-06 重登(#41 取证核查):库内真值=存量20卡(07-03)全NULL,07-04/05周末与07-06(截至质检修正)
+    # 零发卡——旧预登记 ffb0a6cc/fe67e548(v2模板)与 a778927f/cd3655bb(prob初版,当日质检修正前)
+    # 均为库内永不出现的死键,已删。07-06=复合版本硬边界:prob自报+参照层v3 合并为单一版本纪元,
+    # 效应归因整体隔离,禁止事后声称拆出单项贡献(#41)。
+    "8528ca795ca4c6b8": "B6 v3·07-06起:prob自报+参照层v3(76节点)",
+    "780916554dc9be8b": "B8 v2·07-06起:prob自报+参照层v3(76节点)",
     "unversioned": "07-04 加列前存量卡(参照层v1口径)",
 }
 
@@ -306,38 +308,55 @@ def version_stats(rows) -> dict:
     return {h: {"label": _PROMPT_LABELS.get(h, h), **_stats(rs)} for h, rs in grp.items()}
 
 
-# ---------- 校准(Brier,DECISIONS #40):subjective_prob 卡的概率校准,增量不替换 ----------
+# ---------- 校准(Brier,#40/#41):口径预注册于 docs/BRIER_SPEC.md,改代码就文档,不许反向 ----------
 
-def brier_stats(rows, nbins: int = 5) -> dict:
-    """rows: [(subjective_prob, verdict)] → Brier 均分 + 校准曲线数据点(等宽5桶)。
-    事件E=「verdict=对」,outcome: 对=1,错/平=0——平不剔除:模型报的是"兑现"概率,
-    兑现门槛(方向卡超额×方向≥+1pp)在发卡 prompt 里明示,带内=未兑现;剔平等于把概率
-    条件化在"分出对错"上,与模型面对的事件不一致,校准曲线会系统性偏高。
-    (与 hit_rate 只算 对/(对+错) 是两个指标两个口径。)无带 prob 样本返回 n=0。"""
-    pts = [(float(p), 1.0 if v == "对" else 0.0) for p, v in rows if p is not None]
+_BIN_EDGES = (0.0, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0)  # SPEC第4条:固定边界,落档日起写死,禁分位桶/事后改桶
+
+
+def brier_stats(rows) -> dict:
+    """rows: [(subjective_prob, verdict)] → Brier 均分 + 校准曲线数据点(BRIER_SPEC 六条口径)。
+    样本域=verdict∈{对,错}(SPEC第1条);平剔除但必报 n_flat/flat_rate(未判定率)——防±1pp阈
+    成为事后调节样本的旋钮;读曲线须配合 flat_rate(剔平后实际兑现率≈无条件率/(1-flat_rate),
+    模型自报的是无条件概率,见 SPEC 附注)。outcome 对=1/错=0(SPEC第2条,完全继承主记分判定)。
+    NULL prob 卡跳过(存量旧卡)。无样本返回 n=0 诚实空态。"""
+    withp = [(float(p), v) for p, v in rows if p is not None]
+    pts = [(p, 1.0 if v == "对" else 0.0) for p, v in withp if v in ("对", "错")]
+    n_flat = sum(1 for _p, v in withp if v == "平")
+    out = {"n": len(pts), "n_flat": n_flat,
+           "flat_rate": round(n_flat / (len(pts) + n_flat), 3) if (pts or n_flat) else None,
+           "brier": None, "bins": []}
     if not pts:
-        return {"n": 0, "brier": None, "bins": []}
-    brier = sum((p - o) ** 2 for p, o in pts) / len(pts)
-    bins = []
-    for i in range(nbins):
-        lo, hi = i / nbins, (i + 1) / nbins
+        return out
+    out["brier"] = round(sum((p - o) ** 2 for p, o in pts) / len(pts), 4)
+    for lo, hi in zip(_BIN_EDGES, _BIN_EDGES[1:]):
         grp = [(p, o) for p, o in pts if lo <= p < hi]  # prob 开区间,p=1 不存在,右开安全
         if grp:
-            bins.append({"lo": lo, "hi": hi, "n": len(grp),
-                         "p_mean": round(sum(p for p, _ in grp) / len(grp), 3),
-                         "hit_rate": round(sum(o for _, o in grp) / len(grp), 3)})
-    return {"n": len(pts), "brier": round(brier, 4), "bins": bins}
+            out["bins"].append({"lo": lo, "hi": hi, "n": len(grp),
+                                "p_mean": round(sum(p for p, _ in grp) / len(grp), 3),
+                                "hit_rate": round(sum(o for _, o in grp) / len(grp), 3)})
+    return out
+
+
+def calibration_block(rows) -> dict:
+    """rows: [(prompt_hash, direction, subjective_prob, verdict)] → SPEC第3条卡型分层:
+    direction(偏多/偏空)与 neutral(中性)基准兑现率结构不同(±1pp阈 vs ±2pp带),禁止混桶下结论;
+    node/stock 分层由调用方分表天然隔离(calibration/stock_calibration)。
+    by_version 按 prompt 版本分组(#28 同纪律),只出 n/n_flat/brier 标量(跨卡型聚合,仅作漂移检测,
+    不当校准曲线读)。"""
+    return {"direction": brier_stats([(p, v) for _h, d, p, v in rows if d != "中性"]),
+            "neutral": brier_stats([(p, v) for _h, d, p, v in rows if d == "中性"]),
+            "by_version": brier_by_version([(h, p, v) for h, _d, p, v in rows])}
 
 
 def brier_by_version(rows) -> dict:
     """rows: [(prompt_hash, subjective_prob, verdict)] → 按 prompt 版本分组 Brier
-    (#28 同纪律:换模板换哈希,校准样本不混算;只出 n/brier,桶看总体)。"""
+    (#28 同纪律:换模板换哈希,校准样本不混算;只出标量,桶看 calibration_block 分层)。"""
     grp: dict[str, list] = {}
     for h, p, v in rows:
         if p is not None:
             grp.setdefault(h or "unversioned", []).append((p, v))
     return {h: {"label": _PROMPT_LABELS.get(h, h),
-                **{k: brier_stats(rs)[k] for k in ("n", "brier")}}
+                **{k: brier_stats(rs)[k] for k in ("n", "n_flat", "brier")}}
             for h, rs in grp.items()}
 
 
@@ -432,19 +451,16 @@ def weekly(date_utc8: str) -> dict:
         cur.execute("""SELECT dc.prompt_hash, ds.verdict
             FROM decision_score ds JOIN decision_card dc USING(card_id)""")
         stock_by_version = version_stats(cur.fetchall())
-        # 校准(#40):带 subjective_prob 的到期卡累积 Brier + 校准曲线数据点(按版本分组同 #28)
-        cur.execute("""SELECT jc.prompt_hash, jc.subjective_prob, cs.verdict
+        # 校准(#40/#41,BRIER_SPEC 口径):带 subjective_prob 的到期卡累积 Brier+校准数据点,
+        # 卡型分层 direction/neutral(禁混桶),node/stock 分表天然隔离,按版本分组同 #28
+        cur.execute("""SELECT jc.prompt_hash, jc.direction, jc.subjective_prob, cs.verdict
             FROM card_score cs JOIN judgment_card jc USING(card_id)
             WHERE jc.subjective_prob IS NOT NULL""")
-        prows = cur.fetchall()
-        calibration = {**brier_stats([(p, v) for _h, p, v in prows]),
-                       "by_version": brier_by_version(prows)}
-        cur.execute("""SELECT dc.prompt_hash, dc.subjective_prob, ds.verdict
+        calibration = calibration_block(cur.fetchall())
+        cur.execute("""SELECT dc.prompt_hash, dc.direction, dc.subjective_prob, ds.verdict
             FROM decision_score ds JOIN decision_card dc USING(card_id)
             WHERE dc.subjective_prob IS NOT NULL""")
-        sprows = cur.fetchall()
-        stock_calibration = {**brier_stats([(p, v) for _h, p, v in sprows]),
-                             "by_version": brier_by_version(sprows)}
+        stock_calibration = calibration_block(cur.fetchall())
         blocks = [_wrong_block(f"【节点】{chain}/{node}", nid, d, cf, th, ev, mx, ex, nr, pr)
                   for nid, chain, node, d, cf, th, ev, mx, ex, nr, pr, v in wk if v == "错"]
         blocks += [_wrong_block(f"【个股】{name}({code})", code, d, cf, th, ev, mx, ex, sr, pr)

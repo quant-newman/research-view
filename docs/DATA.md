@@ -19,7 +19,7 @@
 | judgment_card | B6 节点卡,append-only(触发器焊死);matrix=发卡时六源z快照;resonance=方向源加权z(price1.0/mf1.0/news0.8/lhb0.6/letter0.5,z截断±3);horizon=5开市日;prompt_hash=sha256(SYSTEM+规则模板+lessons段)前16位,2026-07-04 起,NULL=之前口径;subjective_prob=LLM自报"兑现"概率(开区间0-1,兑现=超额×方向≥+1pp/中性≤2pp,sql/028),2026-07-06 起,NULL=之前卡或报废值 | 2026-07-03 |
 | decision_card | B8 个股卡,候选=当日方向节点卡成分,对齐分门槛1.0/每节点Top3/日≤12;close=发卡日收盘价锚;node_card_id=追责链;subjective_prob 同节点卡(2026-07-06 起) | 2026-07-03 |
 | card_score / decision_score | 到期(第5开市日,trade_calendar 必须 DISTINCT)记分;未复权 close→close 节点(成分等权)vs 全池等权超额pp;方向卡\|超额\|≥1pp 定对错,带内=平;中性卡≤2pp=对;**成分按发卡日 ref_membership_snap 锚定(2026-07-04 起,更早回退当前表)**;mech_verdict=机械基线(sign共振/对齐,同规则)——0b 三列对照:LLM vs 机械 vs 恒多(恒多从 excess 分布统计,无列) | 首批 2026-07-10 到期 |
-| b7_weekly | 周日收口;stats 含 baseline/stock_baseline(0b)+calibration/stock_calibration(Brier均分+等宽5桶校准点+按prompt版本分组,outcome 对=1/错平=0,#40) | 2026-07-05 首跑(预期空单) |
+| b7_weekly | 周日收口;stats 含 baseline/stock_baseline(0b)+calibration/stock_calibration(BRIER_SPEC 口径:样本域对/错+平剔除必报未判定率、固定边界桶、direction/neutral 分层、按prompt版本分组,#40/#41) | 2026-07-05 首跑(预期空单) |
 | ref_membership_snap | 参照层每日成分快照(盘后 pipeline ref_snapshot 步,幂等);含仅映射票(ts_code NULL) | 2026-07-04 |
 
 ## 信息层(rv 库)
@@ -50,7 +50,7 @@ bar_daily_raw(1990起,未复权,复权乘 adj_factor) / moneyflow(2010起,主力
 | 2026-07-04 | **参照层 v2 切换(机器人链7→14节点,+6票,DECISIONS #31)**:截面z分母49→57;此前 raw_news.matched_node_ids/mf_intraday_node/hotspot_daily 里的旧机器人 node_id 不迁移,过渡窗内旧数据挂旧id属正常 |
 | 2026-07-04 | B6 prompt_hash 变更 b2f7cf70df6678da→ffb0a6cccf2c61b7(模板"48节点"改"全部产业链节点",与参照层版本同界)——样本分组的两个版本轴切在同一天 |
 | 2026-07-05 | **参照层 v3 扩容(+金融/创新医药/商业航天三链19节点60票,DECISIONS #37)**:截面z分母57→76;新链票07-05前无任何历史(研报/新闻域此前不含金融/医药/军工,盘中资金流07-06起走rt_extra自采生效)——新链节点的多日窗口指标在过渡周内基数不足属正常 |
-| 2026-07-06 | **B6/B8 模板加 subjective_prob(DECISIONS #40)**:prompt_hash 变更 B6 ffb0a6cc→a778927f、B8 fe67e548→cd3655bb;旧卡 subjective_prob=NULL 不回填,Brier/校准曲线样本从 07-06 卡起算(07-13 首批到期) |
+| 2026-07-06 | **B6/B8 模板加 subjective_prob+当日质检修正(DECISIONS #40/#41)**:prompt_hash 最终真值 B6 8528ca795ca4c6b8、B8 780916554dc9be8b(当日中间版 a778927f/cd3655bb 与周末零发卡的 ffb0a6cc/fe67e548 均为库内零出现死键);**07-06=复合版本硬边界**(prob自报+参照层v3 单一纪元,禁拆单项贡献);旧卡 NULL 不回填,Brier/校准样本从 07-06 卡起算(07-13 首批到期,口径预注册 BRIER_SPEC.md) |
 | 2026-07-05 前的周末 | **周末新闻从未自动采集**(cron 全周一~五+单日抓取窗口):pub_time 落在周六/周日的 major_news 缺失——07-04(周六)已于 07-05 手动补抓,更早周末(如 06-27/28)不补(#34 回填纪律);07-05 起周末低频档生效(DECISIONS #36) |
 | 持续 | heatmap_stock/heatmap_node 每日 TRUNCATE,无历史(行情可重算,设计如此) |
 | 持续 | 参照层 2026-07-04 前的修订无快照(如 07-03 执行器节点拆分),此前时点成分不可精确还原 |
