@@ -7,9 +7,12 @@ import { MoreList, pctCls } from "./ui";
 // A股习惯:流入暖(红) / 流出冷(绿)
 const UP = "#F6465D", DOWN = "#2EBD85";
 
-// 流入(暖)/流出(冷)各一组色阶,同向多条线也能区分
-const WARM = ["#F6465D", "#FA8C16", "#F0B90B", "#E85D75", "#D4380D", "#FF7A45", "#C41D7F", "#AD6800"];
-const COOL = ["#2EBD85", "#13C2C2", "#52C41A", "#36CFC9", "#389E0D", "#5CDBD3", "#1677FF", "#08979C"];
+// 流入(暖)/流出(冷)各一组色阶,同向多条线也能区分。色只编码方向(极性),
+// 线的身份靠右端标注——各11阶已实测对暗底对比度全过(≥3:1),超出后循环可接受。
+const WARM = ["#F6465D", "#FA8C16", "#F0B90B", "#E85D75", "#D4380D", "#FF7A45", "#C41D7F", "#AD6800",
+              "#FFA39E", "#FFC53D", "#FF85C0"];
+const COOL = ["#2EBD85", "#13C2C2", "#52C41A", "#36CFC9", "#389E0D", "#5CDBD3", "#1677FF", "#08979C",
+              "#95DE64", "#69B1FF", "#A0D911"];
 
 // 当日节点累计主力净额多线图:零轴居中,前N条全部右端标注"节点名+累计值"
 // 且防重叠(labelLayout shiftY 自动错开);其余节点合并为一条灰虚线"其他合计"。
@@ -30,6 +33,7 @@ function FlowChart({ intraday, onPick, chain, topN }: {
       .sort((a, b) => Math.abs(b.last) - Math.abs(a.last));
     const shown = ranked.slice(0, TOP);
     const rest = ranked.slice(TOP);
+    const dense = shown.length > 20;  // 前30/全部档:线变细字变小,靠图高自适应保标签不叠
     const restVals = intraday.times.map((_, i) =>
       Math.round(rest.reduce((acc, s) => acc + (s.values[i] ?? 0), 0) * 100) / 100);
     const restLast = restVals.length ? restVals[restVals.length - 1] : 0;
@@ -41,11 +45,11 @@ function FlowChart({ intraday, onPick, chain, topN }: {
       return {
         name: `${s.chain}/${s.node}`, type: "line" as const, data: s.values, connectNulls: true,
         symbol: "none", triggerLineEvent: true,
-        lineStyle: { width: Math.abs(s.last) === topAbs ? 3 : 1.6, color, opacity: 0.95 },
+        lineStyle: { width: Math.abs(s.last) === topAbs ? 3 : dense ? 1.1 : 1.6, color, opacity: 0.95 },
         emphasis: { focus: "series" as const, lineStyle: { width: 3.2 } },
         labelLayout: { moveOverlap: "shiftY" as const },
         endLabel: {
-          show: true, color, fontSize: narrow ? 9 : 11, distance: 5,
+          show: true, color, fontSize: narrow ? 9 : dense ? 10 : 11, distance: 5,
           formatter: () => `${s.node} ${s.last > 0 ? "+" : ""}${s.last}`,
         },
       };
@@ -90,7 +94,13 @@ function FlowChart({ intraday, onPick, chain, topN }: {
     window.addEventListener("resize", onResize);
     return () => { window.removeEventListener("resize", onResize); chart.dispose(); };
   }, [intraday, onPick, chain, topN]);
-  return <div ref={ref} className="w-full h-[300px] md:h-[430px]" />;
+  // 图高随线数自适应:前20以内维持原高(300/430)不变,更多线时每条留足端标签纵向空间
+  // (10px标签+shiftY防叠需≥15px/线,全部75节点≈1335px,长图滚动是"全部"档的显式代价)
+  const isNarrow = typeof window !== "undefined" && window.innerWidth < 640;
+  const pool = chain ? intraday.series.filter((s) => s.chain === chain) : intraday.series;
+  const nShown = Math.min(topN, pool.filter((s) => Math.abs(s.last) >= 0.05).length);
+  const height = Math.min(1400, Math.max(isNarrow ? 300 : 430, nShown * (isNarrow ? 15 : 17) + 60));
+  return <div ref={ref} style={{ height }} className="w-full" />;
 }
 
 // 曲线过滤器:产业链 chips(v3 后 9 链 76 节点,全混一图看不清)+ 前N条切换
@@ -108,9 +118,10 @@ function ChartFilters({ chains, chain, onChain, topN, onTopN }: {
       ))}
       <span className="ml-auto flex items-center gap-1.5">
         <span className="text-dim">显示</span>
-        {[6, 12, 20].map((n) => (
+        {[6, 12, 20, 30].map((n) => (
           <button key={n} onClick={() => onTopN(n)} className={chip(topN === n)}>前{n}</button>
         ))}
+        <button onClick={() => onTopN(999)} className={chip(topN === 999)}>全部</button>
       </span>
     </div>
   );
