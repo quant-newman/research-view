@@ -32,6 +32,7 @@
 | hotspot_daily | 节点热度榜+DeepSeek 归因+利好利空 brief(sql/020) | 2026-06 下旬 |
 | daily_report / report_increment | B3 报告(盘前锚点/盘中增量/盘后收口);narrative 2026-07-02 起 | 2026-06 下旬 |
 | mf_intraday_node | 盘中15min 节点主力累计(东财 push2delay,DC池∪自采);POOL=去重合计 | 2026-07-03 |
+| chip_cost | 筹码成本(Tushare cyq_perf 东财式估算:加权平均成本/获利盘/90%区间),核心池每日盘后 upsert,滚动30日;**展示层专用(个股详情),不进 B6/B8 证据矩阵**(sql/027) | 2026-07-03(首采) |
 
 ## 常用 md 表(只读)
 

@@ -75,7 +75,7 @@ marketdata(只读):bar_daily_raw / moneyflow / margin_detail / top_list / hot_ra
 | **evidence / decision / scorecard** | B6 六源矩阵+研判卡 / B8 候选+决策卡 / B7 记分+归因+周报+lessons |
 | fund_letters / monitor / export | 信函入库 / health+task_run+台北信源状态 / dashboard.json 合成(**唯一出口**,_scrub 防 NaN) |
 
-scripts/:`run_pipeline.py`(盘后主管道 16 步,含 calibration_freeze/ref_snapshot 留痕步) `run_light.py`(盘中轻量) + 6 个编排 sh(盘前/盘中/盘后/美股/信函/成绩单,**flock 全局串行锁+lib_alert 旗标**) + 台北侧采集 fetch_*(us_board/us_overnight/tech_wire/fund_letters/build_us) + 运维(backup_db/manage_ledger/manage_holdings/source_status/init_db)。
+scripts/:`run_pipeline.py`(盘后主管道 17 步,含 calibration_freeze/ref_snapshot 留痕步与 chip_cost 筹码采集) `run_light.py`(盘中轻量) + 6 个编排 sh(盘前/盘中/盘后/美股/信函/成绩单,**flock 全局串行锁+lib_alert 旗标**) + 台北侧采集 fetch_*(us_board/us_overnight/tech_wire/fund_letters/build_us) + 运维(backup_db/manage_ledger/manage_holdings/source_status/init_db)。
 
 ## 6. 编排节奏(cron 全景,UTC+8,周一~五除注明)
 
