@@ -23,7 +23,7 @@
     {"key": "us_news", "name": "美股新闻(yfinance)", "layer": "美股", "cadence": "美股时段每小时+盘前", "threshold_hours": 60, "enabled": true},
     {"key": "us_trends", "name": "美股走势(yfinance)", "layer": "美股", "cadence": "美股时段每小时+盘前", "threshold_hours": 60, "enabled": true},
     {"key": "us_overnight", "name": "隔夜美股(yfinance)", "layer": "美股", "cadence": "盘前08:30", "threshold_hours": 80, "enabled": true},
-    {"key": "macro_anchor", "name": "宏观锚·美债/美元/CNH(yfinance)", "layer": "宏观", "cadence": "盘前08:30", "threshold_hours": 80, "enabled": true},
+    {"key": "macro_anchor", "name": "宏观锚·美债/美元/USDCNY(yfinance)", "layer": "宏观", "cadence": "盘前08:30", "threshold_hours": 80, "enabled": true},
     {"key": "letter_oaktree", "name": "Oaktree备忘录", "layer": "信函", "cadence": "每周三07:00", "threshold_hours": 192, "enabled": true},
     {"key": "letter_blackrock", "name": "BlackRock BII周评", "layer": "信函", "cadence": "每周三07:00", "threshold_hours": 192, "enabled": true},
     {"key": "letter_gs", "name": "GS Insights", "layer": "信函", "cadence": "每周三07:00", "threshold_hours": 192, "enabled": true},
