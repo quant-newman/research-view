@@ -147,7 +147,7 @@ def build_export(date_utc8: str) -> Path:
                     # 参照层改版后的旧节点id(过渡窗内旧新闻仍挂旧id):诚实标注,免前端 undefined
                     prefix = node_id.split("::", 1)[0]
                     meta = {"chain": chain_en2cn.get(prefix, prefix),
-                            "node": node_id.split("::", 1)[-1] + "(已重组)"}
+                            "node": node_id.split("::", 1)[-1] + "(已重组)", "legacy": True}
                 g = by_node.setdefault(node_id, {"node_id": node_id, "scope": "核心链",
                                                  **meta, "items": []})
                 g["items"].append(item)
@@ -157,9 +157,10 @@ def build_export(date_utc8: str) -> Path:
                 g = by_node.setdefault(gid, {"node_id": gid, "scope": "泛科技",
                                              "chain": "泛科技", "node": ind, "items": []})
                 g["items"].append({**item, "codes": tech_codes})
-    # 核心链在前,泛科技在后,组内按条数
+    # 核心链在前,泛科技在后,已重组旧节点垫底(时间停在改版前,别占头部位置),组内按条数
     news_by_node = sorted(by_node.values(),
-                          key=lambda g: (g.get("scope") == "泛科技", -len(g["items"])))
+                          key=lambda g: (bool(g.get("legacy")), g.get("scope") == "泛科技",
+                                         -len(g["items"])))
 
     events_out = [{"code": c, "event_type": et, "direction": d, "date": str(ed),
                    "summary": s, "node_ids": nids or [], **flags([c])}
