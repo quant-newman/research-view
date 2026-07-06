@@ -120,6 +120,8 @@ def build_export(date_utc8: str) -> Path:
 
         cur.execute("SELECT node_id, chain, node FROM node")
         node_meta = {nid: {"chain": ch, "node": nd} for nid, ch, nd in cur.fetchall()}
+        cur.execute("SELECT DISTINCT chain_en, chain FROM node")
+        chain_en2cn = dict(cur.fetchall())
 
     try:
         with db.marketdata_conn() as mc, mc.cursor() as mcur:
@@ -139,8 +141,15 @@ def build_export(date_utc8: str) -> Path:
                 "src": src, "url": url, "time": str(pub_time), "codes": codes or [], **flags(codes)}
         if node_ids:  # 命中核心链节点
             for node_id in node_ids:
+                if node_id in node_meta:
+                    meta = node_meta[node_id]
+                else:
+                    # 参照层改版后的旧节点id(过渡窗内旧新闻仍挂旧id):诚实标注,免前端 undefined
+                    prefix = node_id.split("::", 1)[0]
+                    meta = {"chain": chain_en2cn.get(prefix, prefix),
+                            "node": node_id.split("::", 1)[-1] + "(已重组)"}
                 g = by_node.setdefault(node_id, {"node_id": node_id, "scope": "核心链",
-                                                 **node_meta.get(node_id, {}), "items": []})
+                                                 **meta, "items": []})
                 g["items"].append(item)
         elif tech_codes:  # 纯泛科技(无核心节点)→ 按申万行业归组
             for ind in (tech_inds or ["泛科技"]):
