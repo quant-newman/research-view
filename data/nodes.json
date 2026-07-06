@@ -469,5 +469,11 @@
   "chain": "商业航天",
   "chain_en": "space",
   "node": "北斗导航"
+ },
+ {
+  "node_id": "consumer_elec::智能终端配件",
+  "chain": "消费电子",
+  "chain_en": "consumer_elec",
+  "node": "智能终端配件"
  }
 ]
