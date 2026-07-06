@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Dashboard, NewsNode } from "./types";
 import HeatmapView from "./Heatmap";
 import SystemView from "./System";
@@ -37,18 +37,20 @@ export default function App() {
   const [alert, setAlert] = useState<{ job?: string; at?: string; msg?: string } | null>(null);
   // 热点卡下钻 → 新闻流定位(ts 保证重复点击同一节点也重新触发滚动)
   const [newsFocus, setNewsFocus] = useState<{ id: string; ts: number } | null>(null);
-  useEffect(() => {
+  // 手动刷新可复用(盘中 dashboard.json 5-15min 重建,no-store 防浏览器缓存拿旧档)
+  const load = useCallback(() => Promise.all([
     // 核心键缺失时补默认值:后端某天少发一个键不该让整页白屏
-    fetch("/data/dashboard.json").then((r) => r.json()).then((raw) => setD({
+    fetch("/data/dashboard.json", { cache: "no-store" }).then((r) => r.json()).then((raw) => setD({
       ...raw,
       meta: raw?.meta || { date: "", generated_at: "", tz: "UTC+8" },
       temperature: raw?.temperature ?? null,
       news_by_node: raw?.news_by_node || [],
       stock_events: raw?.stock_events || [],
-    } as Dashboard)).catch((e) => setErr(String(e)));
+    } as Dashboard)).catch((e) => setErr(String(e))),
     // 管道失败旗标(run_*.sh 失败时写入,成功清除)→ 红横幅
-    fetch("/data/alert.json").then((r) => (r.ok ? r.json() : null)).then(setAlert).catch(() => setAlert(null));
-  }, []);
+    fetch("/data/alert.json", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then(setAlert).catch(() => setAlert(null)),
+  ]).then(() => undefined), []);
+  useEffect(() => { load(); }, [load]);
 
   // 美股新闻(扁平)→ 复用 A股 的按节点分组结构(按板块分组);报告页与新闻页共用
   const usNewsNodes: NewsNode[] = useMemo(() => {
@@ -163,7 +165,7 @@ export default function App() {
           );
         })()}
         {view === "flow" && (
-          <div className="flex-1 p-3 md:p-5 overflow-auto"><MoneyflowView mf={d.moneyflow} isUS={isUS} /></div>
+          <div className="flex-1 p-3 md:p-5 overflow-auto"><MoneyflowView mf={d.moneyflow} isUS={isUS} onReload={load} /></div>
         )}
         {view === "heatmap" && (
           <div className="flex-1 p-3 md:p-5 overflow-auto space-y-4">

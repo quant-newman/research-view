@@ -11,19 +11,22 @@ const UP = "#F6465D", DOWN = "#2EBD85";
 const WARM = ["#F6465D", "#FA8C16", "#F0B90B", "#E85D75", "#D4380D", "#FF7A45", "#C41D7F", "#AD6800"];
 const COOL = ["#2EBD85", "#13C2C2", "#52C41A", "#36CFC9", "#389E0D", "#5CDBD3", "#1677FF", "#08979C"];
 
-// 当日节点累计主力净额多线图:零轴居中,前12条(手机8)全部右端标注"节点名+累计值"
+// 当日节点累计主力净额多线图:零轴居中,前N条全部右端标注"节点名+累计值"
 // 且防重叠(labelLayout shiftY 自动错开);其余节点合并为一条灰虚线"其他合计"。
+// chain 筛选后 y 轴自动缩放到该链量级,小链的线不再被大链压成地平线。
 // 点击任意线 → 下钻该节点成分股。x 轴=实际采集时点(午休/未采样区间自然收拢)。
-function FlowChart({ intraday, onPick }: {
+function FlowChart({ intraday, onPick, chain, topN }: {
   intraday: NonNullable<Moneyflow["intraday"]>; onPick: (nid: string) => void;
+  chain: string | null; topN: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!ref.current) return;
     const chart = echarts.init(ref.current, undefined, { renderer: "canvas" });
     const narrow = ref.current.clientWidth < 640;
-    const TOP = narrow ? 8 : 12;
-    const ranked = [...intraday.series].filter((s) => Math.abs(s.last) >= 0.05)
+    const TOP = topN;
+    const pool = chain ? intraday.series.filter((s) => s.chain === chain) : intraday.series;
+    const ranked = [...pool].filter((s) => Math.abs(s.last) >= 0.05)
       .sort((a, b) => Math.abs(b.last) - Math.abs(a.last));
     const shown = ranked.slice(0, TOP);
     const rest = ranked.slice(TOP);
@@ -86,8 +89,31 @@ function FlowChart({ intraday, onPick }: {
     const onResize = () => chart.resize();
     window.addEventListener("resize", onResize);
     return () => { window.removeEventListener("resize", onResize); chart.dispose(); };
-  }, [intraday, onPick]);
+  }, [intraday, onPick, chain, topN]);
   return <div ref={ref} className="w-full h-[300px] md:h-[430px]" />;
+}
+
+// 曲线过滤器:产业链 chips(v3 后 9 链 76 节点,全混一图看不清)+ 前N条切换
+function ChartFilters({ chains, chain, onChain, topN, onTopN }: {
+  chains: string[]; chain: string | null; onChain: (c: string | null) => void;
+  topN: number; onTopN: (n: number) => void;
+}) {
+  const chip = (on: boolean) =>
+    `px-2 py-0.5 rounded border hairline ${on ? "bg-accent text-black font-semibold" : "text-muted hover:text-primary"}`;
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 text-[12px] mb-2">
+      <button onClick={() => onChain(null)} className={chip(chain === null)}>全部链</button>
+      {chains.map((c) => (
+        <button key={c} onClick={() => onChain(chain === c ? null : c)} className={chip(chain === c)}>{c}</button>
+      ))}
+      <span className="ml-auto flex items-center gap-1.5">
+        <span className="text-dim">显示</span>
+        {[6, 12, 20].map((n) => (
+          <button key={n} onClick={() => onTopN(n)} className={chip(topN === n)}>前{n}</button>
+        ))}
+      </span>
+    </div>
+  );
 }
 
 // 多日资金表行:按|5日|排序前N,背离行加 ⚠ 琥珀标;点节点名下钻成分股
@@ -135,10 +161,15 @@ function StockRow({ s, onOpen }: { s: MfStock; onOpen: () => void }) {
   );
 }
 
-export function MoneyflowView({ mf, isUS }: { mf?: Moneyflow | null; isUS: boolean }) {
+export function MoneyflowView({ mf, isUS, onReload }: {
+  mf?: Moneyflow | null; isUS: boolean; onReload?: () => Promise<void>;
+}) {
   const openStock = useOpenStock();
   const [nid, setNid] = useState<string | null>(null);
   const [tab, setTab] = useState<"today" | "multi">("today");
+  const [busy, setBusy] = useState(false);
+  const [chain, setChain] = useState<string | null>(null);
+  const [topN, setTopN] = useState(typeof window !== "undefined" && window.innerWidth < 640 ? 6 : 12);
   if (isUS) return <div className="text-muted p-4">资金面为 A股口径(主力=大单+超大单净额),请切回「A股」查看。</div>;
   if (!mf || !mf.nodes?.length) return <div className="text-muted p-4">暂无资金数据(交易日盘中/盘后生成)。</div>;
 
@@ -168,9 +199,17 @@ export function MoneyflowView({ mf, isUS }: { mf?: Moneyflow | null; isUS: boole
             </button>
           ))}
         </div>
+        {onReload && (
+          <button disabled={busy}
+            onClick={() => { setBusy(true); onReload().finally(() => setBusy(false)); }}
+            className={`px-2 py-0.5 rounded border hairline text-[13px] ${busy ? "text-dim" : "text-muted hover:text-primary"}`}
+            title="重新拉取看板数据(盘中资金曲线每5分钟更新)">
+            {busy ? "刷新中…" : "↻ 刷新"}
+          </button>
+        )}
         {tab === "today" && <span className="text-dim">{label} · 核心池合计 <span className={`mono ${pctCls(mf.pool_main)}`}>{mf.pool_main > 0 ? "+" : ""}{mf.pool_main}亿</span></span>}
         {tab === "multi" && mf.multi && <span className="text-dim">EOD 截至 {mf.multi.asof}</span>}
-        <span className="text-dim text-[12px] ml-auto hidden lg:inline">主力=大单+超大单净额 · 口径=48产业链节点 · 只呈现事实不下判断</span>
+        <span className="text-dim text-[12px] ml-auto hidden lg:inline">主力=大单+超大单净额 · 口径=全部产业链节点 · 只呈现事实不下判断</span>
       </div>
 
       {tab === "today" && (<>
@@ -178,7 +217,10 @@ export function MoneyflowView({ mf, isUS }: { mf?: Moneyflow | null; isUS: boole
       {intraday && intraday.times.length > 1 ? (
         <div className="border hairline rounded bg-surface p-3">
           <div className="text-[13px] text-muted mb-1">当日累计净流入曲线 · {intraday.date} · 点击线条下钻成分股</div>
-          <FlowChart intraday={intraday} onPick={setNid} />
+          <ChartFilters
+            chains={[...new Set(intraday.series.map((s) => s.chain))]}
+            chain={chain} onChain={setChain} topN={topN} onTopN={setTopN} />
+          <FlowChart intraday={intraday} onPick={setNid} chain={chain} topN={topN} />
         </div>
       ) : (
         <div className="border hairline rounded bg-surface p-4 text-dim text-[14px]">
