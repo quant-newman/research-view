@@ -6,6 +6,8 @@
 新闻节流:Tushare major_news 配额 40次/天,cron 每15min 全抓必超限(64+盘后>40,实测 2026-07-03 午后连续
 频率超限)——只在 :00/:30 火点抓(32次/天+盘后1次=33,留7次余量给手动),:15/:45 档跳过只跑下游增量。
 用法: ./.venv/bin/python scripts/run_light.py [YYYYMMDD] [--news 强制抓新闻(手动补抓用)]
+      --mf-only 纯资金档:只跑 补采→快照→导出(三步共约2s,无 DeepSeek/新闻配额),
+      供 5 分钟高频 cron(run_mf.sh)在 :00/:15/:30/:45 全量档之间加密资金曲线。
 """
 from __future__ import annotations
 
@@ -35,6 +37,12 @@ def main() -> None:
     now = datetime.now(ZoneInfo(config.TZ))
     args = [a for a in sys.argv[1:] if not a.startswith("-")]
     date = args[0] if args else now.strftime("%Y%m%d")
+    if "--mf-only" in sys.argv:
+        print(f"[Light] {date} UTC+8 纯资金档")
+        step("moneyflow_rt_extra", moneyflow.collect_rt_extra)
+        step("mf_snapshot", moneyflow.snapshot_intraday)
+        step("export_dashboard", lambda: str(export.build_dashboard(date)))
+        return
     print(f"[Light] {date} UTC+8 盘中刷新")
     # cron 火点 :00/:15/:30/:45,minute%30<15 挑出 :00/:30 两档;
     # 再过滚动24h台账(失败也计数的真实配额窗口),超限后退避不重撞
