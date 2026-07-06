@@ -117,6 +117,10 @@ def rt() -> dict | None:
         cur.execute("""SELECT ts_code, main_net, last_min FROM moneyflow_rt_extra
             WHERE trade_date=current_date""")
         for ts, main, lm in cur.fetchall():
+            # 池子盘中调出的票在补采表滞留当日行,不在映射里→曾致 _aggregate KeyError
+            # (2026-07-03 和远气体002971被剔除后当晚 mf_snapshot 连败6次,跨天自愈)
+            if ts not in name_of:
+                continue
             flows.setdefault(ts, float(main or 0) / 1e8)
             stamp = max(stamp, lm or "")
         cur.execute("SELECT to_char(current_date,'YYYY-MM-DD')")
