@@ -368,6 +368,27 @@ def multi_day(windows: tuple[int, int] = (5, 20)) -> dict | None:
     return {"asof": str(dates[-1]), "market": market, "nodes": out}
 
 
+def stocks_d5() -> dict[str, float]:
+    """核心池个股近5交易日主力累计净额(亿),个股详情弹层展示用,键=6位代码。"""
+    with db.rv_conn() as conn, conn.cursor() as cur:
+        cur.execute("SELECT ts_code, code FROM heatmap_stock WHERE ts_code IS NOT NULL")
+        code_of = dict(cur.fetchall())
+    if not code_of:
+        return {}
+    with db.marketdata_conn() as mc:
+        cur = mc.cursor()
+        cur.execute("SELECT DISTINCT trade_date FROM md.moneyflow ORDER BY trade_date DESC LIMIT 5")
+        dates = [r[0] for r in cur.fetchall()]
+        if not dates:
+            return {}
+        cur.execute("""SELECT ts_code,
+                sum(coalesce(buy_lg_amount,0)-coalesce(sell_lg_amount,0)
+                    +coalesce(buy_elg_amount,0)-coalesce(sell_elg_amount,0))/1e4
+            FROM md.moneyflow WHERE trade_date >= %s AND ts_code = ANY(%s)
+            GROUP BY ts_code""", (min(dates), list(code_of)))
+        return {code_of[ts]: round(float(v), 2) for ts, v in cur.fetchall()}
+
+
 # ---------- 报告用文本行 ----------
 
 def lines(mf: dict, top: int = 8) -> list[str]:

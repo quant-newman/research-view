@@ -219,8 +219,14 @@ export interface MfMultiNode {
 export interface Moneyflow {
   kind: string; date: string; stamp?: string | null;
   nodes: MfNode[]; pool_main: number; stocks: Record<string, number>;
+  stocks5?: Record<string, number>;  // 个股5日主力累计(亿),旧blob无此键
   intraday?: MfIntraday | null;
   multi?: { asof: string; market?: { d5: number; d20: number }; nodes: MfMultiNode[] } | null;
+}
+
+// 筹码成本(东财式估算口径,盘后更新;个股详情弹层)
+export interface ChipCost {
+  date: string; avg: number | null; win: number | null; lo: number | null; hi: number | null;
 }
 
 export interface Dashboard {
@@ -234,4 +240,5 @@ export interface Dashboard {
   judgment?: JudgmentBlock | null;
   scorecard?: Scorecard | null;
   decision?: DecisionBlock | null;
+  chips?: Record<string, ChipCost> | null;
 }

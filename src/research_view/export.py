@@ -401,8 +401,20 @@ def build_dashboard(date_utc8: str) -> Path:
         if mflow:
             mflow["intraday"] = _mf.intraday_series()  # 当日节点累计曲线(资金页多线图)
             mflow["multi"] = _mf.multi_day()  # 5/20日累计+连续天数+背离(资金页多日表)
+            mflow["stocks5"] = _mf.stocks_d5()  # 个股5日累计(个股详情弹层)
     except Exception:  # noqa: BLE001 资金面失败不阻塞导出
         mflow = None
+
+    # 筹码成本(chip_cost 最新交易日,东财式估算口径):个股详情弹层「筹码/持仓成本」
+    try:
+        with db.rv_conn() as conn, conn.cursor() as cur:
+            cur.execute("""SELECT DISTINCT ON (code) code, to_char(trade_date,'YYYY-MM-DD'),
+                    weight_avg, winner_rate, cost_5pct, cost_95pct
+                FROM chip_cost ORDER BY code, trade_date DESC""")
+            chips = {r[0]: {"date": r[1], "avg": fnum(r[2]), "win": fnum(r[3]),
+                            "lo": fnum(r[4]), "hi": fnum(r[5])} for r in cur.fetchall()} or None
+    except Exception:  # noqa: BLE001 表未建/查询失败不阻塞导出
+        chips = None
 
     # 美股一等公民(台北 build_us 产出完整 blob→scp 到 exports/):
     # board/温度计/热力/新闻(B1)/研究(分析师)/报告(B3)。与 A股 同权,前端顶部一键切。
@@ -437,7 +449,7 @@ def build_dashboard(date_utc8: str) -> Path:
             "heatmap": heatmap, "health": health, "research": research, "ledger": ledger,
             "us": us, "hotspot": hotspot, "sources": {"taipei": taipei_src}, "moneyflow": mflow,
             "market": market_gauge, "judgment": judgment, "scorecard": sc_block,
-            "decision": decision}
+            "decision": decision, "chips": chips}
     path = EXPORT_DIR / "dashboard.json"
     path.write_text(_dump(dash), encoding="utf-8")
 

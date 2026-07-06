@@ -14,7 +14,7 @@ from zoneinfo import ZoneInfo
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 from research_view import config, db, decision, evidence, export, hotspots, monitor, report, research_digest, scorecard, universe  # noqa: E402
-from research_view.collect import announcements, heatmap, news, research  # noqa: E402
+from research_view.collect import announcements, chips, heatmap, news, research  # noqa: E402
 from research_view.funnel import run_funnel  # noqa: E402
 from research_view.structure import run_structure  # noqa: E402
 
@@ -46,6 +46,8 @@ def main() -> None:
     step("structure_b1", run_structure)
     step("stock_events", announcements.collect_events)
     step("heatmap", heatmap.compute)
+    # 筹码成本(个股详情展示专用;cyq_perf 17-18点更新,22:30档已就绪;在 heatmap 后=靠其 ts_code 映射)
+    step("chip_cost", chips.collect)
     step("research", lambda: research.collect_reports(30))
     step("research_digest", lambda: research_digest.persist(date))  # 评级变动榜+观点提炼
     # 每日报告(心脏 B3):需在上面各源采集后、导出前生成,dashboard 才拿得到当日报告

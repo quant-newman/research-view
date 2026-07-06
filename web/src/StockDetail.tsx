@@ -132,10 +132,12 @@ export function StockDetail({ sel, market, d, onClose }: { sel: StockSel; market
         </div>
 
         <div className="p-4 space-y-4">
-          {/* 行情/估值 */}
+          {/* 行情/估值(1日涨幅在标题行;A股加周/月窗口与5日主力——个股维度信息归详情弹层) */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[14px]">
             <Field k="市值" v={fmtMc(mv, isUS)} />
             <Field k="PE" v={num(hs.pe ?? bd.pe)} />
+            {!isUS && <Field k="1周涨幅" v={num(hs.ret_1w, "%")} cls={pctCls(hs.ret_1w)} />}
+            {!isUS && <Field k="1月涨幅" v={num(hs.ret_1m, "%")} cls={pctCls(hs.ret_1m)} />}
             <Field k="6M涨幅" v={num(hs.ret_6m ?? bd.ret_6m, "%")} cls={pctCls(hs.ret_6m ?? bd.ret_6m)} />
             <Field k={isUS ? "营收增速" : "营收同比"} v={num(hs.or_yoy ?? bd.rev_growth, "%")} cls={pctCls(hs.or_yoy ?? bd.rev_growth)} />
             {!isUS && <Field k="毛利率" v={num(hs.gross_margin, "%")} />}
@@ -144,9 +146,36 @@ export function StockDetail({ sel, market, d, onClose }: { sel: StockSel; market
                 v={`${d.moneyflow.stocks[code] > 0 ? "+" : ""}${d.moneyflow.stocks[code]}亿`}
                 cls={pctCls(d.moneyflow.stocks[code])} />
             )}
+            {!isUS && d.moneyflow?.stocks5?.[code] != null && (
+              <Field k="主力5日累计"
+                v={`${d.moneyflow.stocks5[code] > 0 ? "+" : ""}${d.moneyflow.stocks5[code]}亿`}
+                cls={pctCls(d.moneyflow.stocks5[code])} />
+            )}
             {isUS && bd.target_mean != null && <Field k="目标均价" v={num(bd.target_mean)} cls="text-accent" />}
             {isUS && bd.rec_key && <Field k="评级" v={recLabel[bd.rec_key] || bd.rec_key} cls="text-up" />}
           </div>
+
+          {/* 筹码/市场持仓成本(仅A股,东财式估算口径,盘后更新):现价偏离用6M走势末点(最新收盘) */}
+          {!isUS && (() => {
+            const chip = d.chips?.[code as string];
+            if (!chip || chip.avg == null) return null;
+            const last = trend && trend.length > 1 ? trend[trend.length - 1][1] : null;
+            const dev = last != null && chip.avg ? Math.round((last / chip.avg - 1) * 1000) / 10 : null;
+            return (
+              <Sec title="筹码 · 市场持仓成本(估算)">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[14px]">
+                  <Field k="平均成本" v={`${chip.avg}元`} cls="text-primary" />
+                  <Field k="现价较成本" v={dev == null ? "—" : `${dev > 0 ? "+" : ""}${dev}%`} cls={pctCls(dev)} />
+                  <Field k="获利盘" v={num(chip.win, "%")}
+                    cls={chip.win != null && chip.win >= 50 ? "text-up" : "text-muted"} />
+                  <Field k="90%筹码区间" v={chip.lo != null && chip.hi != null ? `${chip.lo}-${chip.hi}元` : "—"} />
+                </div>
+                <div className="text-dim text-[12px] mt-1.5">
+                  筹码分布为历史成交推算的估算口径 · 截至 {chip.date} 收盘 · 只呈现事实不构成建议
+                </div>
+              </Sec>
+            );
+          })()}
 
           {/* 6个月走势小图 */}
           {trend && trend.length > 1 && (
