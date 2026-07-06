@@ -122,6 +122,30 @@ def _prev_block(prev: dict | None) -> str:
             f"({prev['date']}) 主线:{prev['fact']}\ntop3:\n{lines}")
 
 
+def _ground_node_ids(cur, rpt: dict) -> dict:
+    """top3.node_ids 客观兜底:从 related_stocks 关联的近3天新闻 matched_node_ids 反推,
+    按命中频次取前2,映射成「链/节点」标签(与前端chips及历史streak词汇同格式)。
+    LLM 填写不稳(时空时自由发挥)——这个字段本可代码算,算得出就覆盖,算不出保留原值。"""
+    node_meta = _node_meta(cur)
+    for item in rpt.get("top3") or []:
+        codes = [c for c in (item.get("related_stocks") or [])
+                 if isinstance(c, str) and len(c) == 6 and c.isdigit()]
+        if not codes:
+            continue
+        try:
+            cur.execute("""SELECT nid, count(*) FROM raw_news rn,
+                    unnest(rn.matched_node_ids) nid
+                WHERE rn.relevant AND rn.matched_codes && %s::text[]
+                  AND rn.pub_time >= now() - interval '3 days'
+                GROUP BY nid ORDER BY count(*) DESC""", (codes,))
+            derived = [node_meta[nid] for nid, _ in cur.fetchall() if nid in node_meta][:2]
+            if derived:
+                item["node_ids"] = derived
+        except Exception:  # noqa: BLE001 兜底失败不阻塞报告本体
+            pass
+    return rpt
+
+
 def _attach_streaks(cur, date_utc8: str, rpt: dict) -> dict:
     """top3 各条按 node_ids 计算「已连续第N天进入top3」——代码算的客观数,不让LLM编。
     对照近10份盘后报告,从昨日往前数连续出现天数;今天算第 streak+1 天。"""
@@ -252,6 +276,7 @@ def generate_afterhours(date_utc8: str) -> dict:
   ]
 }}
 只用上面提供的数据。narrative 约500字(控制在480-620字,充实但别啰嗦);top3 选今天最值得注意的3个变化。
+top3.node_ids 只能从上方新闻行首方括号里的节点标签(如「半导体/存储」)原样摘取,最多2个;对不上就留空数组,不要自造名称。
 top3.delta 对照【昨日盘后报告】标注:昨日已提及同一主题="延续";昨日未提="新出现";与昨日方向相反(如昨日资金流入今日转流出)="反转"。无昨日报告时全部标"新出现"。昨日报告只用于对照,事实与数字必须来自上方数据块。主线若与昨日相同,措辞保持连贯,不要为了显得新而改口。
 研报评级与基金观点仅作背景与佐证(可在 evidence 里注明"[来源:XX机构评级]"),不得升格为主线判断——headline.user_judgment 仍留 "<待填>"。"""
     return llm.chat_json(SYSTEM, user, timeout=300)
@@ -419,7 +444,8 @@ def generate_premarket(date_utc8: str) -> dict:
   ]
 }}
 隔夜美股是客观涨跌%,可据此中性陈述对应A股链条的外盘参照,但绝不预测A股今天怎么走(那是判断,user_judgment 留白)。narrative 约500字(480-620字)。
-top3 选隔夜信息增量最大的3点(以变化幅度/信息密度为准,不是操作建议)。top3.delta 对照【昨日盘后报告】标注(延续=昨日已提/新出现=昨日未提/反转=方向相反);昨日报告只作对照,事实必须来自上方数据块。研报/基金观点仅作佐证,注明来源,不升格为主线判断。"""
+top3 选隔夜信息增量最大的3点(以变化幅度/信息密度为准,不是操作建议)。top3.delta 对照【昨日盘后报告】标注(延续=昨日已提/新出现=昨日未提/反转=方向相反);昨日报告只作对照,事实必须来自上方数据块。研报/基金观点仅作佐证,注明来源,不升格为主线判断。
+top3.node_ids 只能从上方新闻行首方括号里的节点标签(如「半导体/存储」)原样摘取,最多2个;对不上就留空数组,不要自造名称。"""
     return llm.chat_json(SYSTEM, user, timeout=300)
 
 
@@ -449,6 +475,7 @@ def _persist(date_utc8: str, session: str, rpt: dict) -> str:
     """把报告 + 我的持仓动态存 daily_report(同日同段覆盖)。返回 report_id。"""
     with db.rv_conn() as conn, conn.cursor() as cur:
         if session in ("afterhours", "premarket"):
+            rpt = _ground_node_ids(cur, rpt)  # node_ids=代码从关联新闻反推,不靠LLM自觉
             rpt = _attach_streaks(cur, date_utc8, rpt)  # 连续第N天=代码算,不让LLM编
         holdings_moves = _holdings_moves(cur)
         report_id = f"{date_utc8}:{session}"
