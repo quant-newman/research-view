@@ -23,8 +23,10 @@ self.addEventListener('notificationclick', e => {
     const list = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     if (list.length) {
       const c = list[0];
-      // iOS Safari/PWA 不支持 client.navigate,聚焦后发消息由页面自己跳(agu 实测可靠)
       try { await c.focus(); } catch (_) {}
+      // 支持 client.navigate 的平台(Android/桌面 Chrome)由 SW 直接导航,最可靠;
+      // iOS 不支持 → 回退 postMessage 由页面自己跳(页面侧须 onmessage 赋值开闸队列)
+      if (c.navigate) { try { await c.navigate(url); return; } catch (_) {} }
       c.postMessage({ type: 'notif-navigate', url });
       return;
     }
