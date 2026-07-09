@@ -17,7 +17,7 @@ let _trendsPromise: Promise<TrendMap> | null = null;
 function loadTrends(): Promise<TrendMap> {
   if (_trendsCache) return Promise.resolve(_trendsCache);
   if (!_trendsPromise) {
-    _trendsPromise = fetch("/data/trends.json")
+    _trendsPromise = fetch("/data/trends.json", { cache: "no-store" })  // 同 dashboard,防浏览器拿旧档(资金/走势随盘中更新)
       .then((r) => r.json())
       .then((j: TrendMap) => (_trendsCache = j))
       .catch(() => ({ a: {}, us: {} }) as TrendMap);
