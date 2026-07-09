@@ -24,6 +24,8 @@ services:
       - DEEPSEEK_BASE_URL=${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
       - FEISHU_WEBHOOK=${FEISHU_WEBHOOK:-}   # 告警走平台同一个值班机器人,未配置=静默跳过
       - FEISHU_SECRET=${FEISHU_SECRET:-}
+      - VAPID_SUB=${VAPID_SUB:-mailto:admin@example.com}   # Web Push 联系标识(.env 配真实邮箱)
     volumes:
       - ./webdata:/data:ro      # 与前端同源数据
-      - ./logs/chat:/state      # 每日用量计数落盘(熔断护栏,重启不清零)
+      - ./logs/chat:/state      # 每日用量计数+推送订阅落盘(重启不清零;宿主 push_alerts.py 共读订阅)
+      - ./vapid_private.pem:/app/vapid_private.pem:ro   # Web Push VAPID 私钥(gitignore,两侧共用)

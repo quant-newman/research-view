@@ -6,7 +6,12 @@ import { fmtMc, pctCls, sentColor } from "./ui";
 
 // 走势小图数据(6M日线)单列 trends.json,首次打开个股详情时懒加载一次,模块级缓存。
 type TrendPoint = [string, number];
-type TrendMap = { a?: Record<string, TrendPoint[]>; us?: Record<string, TrendPoint[]> };
+// 个股资金(同 trends.json 通道):当日盘中主力累计曲线 + 20日逐日主力净额
+type MfTrends = {
+  intraday?: { date: string; times: string[]; stocks: Record<string, (number | null)[]> } | null;
+  hist?: { dates: string[]; stocks: Record<string, number[]> } | null;
+};
+type TrendMap = { a?: Record<string, TrendPoint[]>; us?: Record<string, TrendPoint[]>; mf?: MfTrends };
 let _trendsCache: TrendMap | null = null;
 let _trendsPromise: Promise<TrendMap> | null = null;
 function loadTrends(): Promise<TrendMap> {
@@ -49,6 +54,48 @@ function TrendChart({ series }: { series: TrendPoint[] }) {
     return () => { ro.disconnect(); chart.dispose(); };
   }, [series]);
   return <div ref={ref} className="w-full h-40" />;
+}
+
+// 资金小图:累计净额折线(亿),红=净流入/绿=净流出(按末值极性),零轴虚线。
+// daily 提供时 tooltip 附当日净额(多日趋势=累计画法,当日值悬浮看)。
+function FlowMini({ labels, values, daily, fmtLabel }: {
+  labels: string[]; values: (number | null)[]; daily?: number[]; fmtLabel?: (s: string) => string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!ref.current) return;
+    const chart = echarts.init(ref.current, undefined, { renderer: "canvas" });
+    const last = [...values].reverse().find((v) => v != null) ?? 0;
+    const color = last >= 0 ? "#F6465D" : "#2EBD85";
+    chart.setOption({
+      grid: { left: 46, right: 12, top: 10, bottom: 20 },
+      tooltip: {
+        trigger: "axis",
+        formatter: (p: any) => {
+          const i = p[0].dataIndex;
+          const cum = values[i] == null ? "—" : `${(values[i] as number) > 0 ? "+" : ""}${values[i]}亿`;
+          const day = daily ? `<br/>当日 ${daily[i] > 0 ? "+" : ""}${daily[i]}亿` : "";
+          return `${labels[i]}<br/>累计 ${cum}${day}`;
+        },
+      },
+      xAxis: { type: "category", data: fmtLabel ? labels.map(fmtLabel) : labels, boundaryGap: false,
+        axisLabel: { color: "#5A6474", fontSize: 10, interval: Math.max(1, Math.floor(labels.length / 6)) },
+        axisLine: { lineStyle: { color: "#232B36" } }, axisTick: { show: false } },
+      yAxis: { type: "value", scale: true, axisLabel: { color: "#5A6474", fontSize: 10, formatter: "{value}亿" },
+        splitLine: { lineStyle: { color: "#1A2029" } } },
+      series: [{ type: "line", data: values, connectNulls: true, smooth: true, symbol: "none",
+        lineStyle: { color, width: 1.5 },
+        markLine: { silent: true, symbol: "none", label: { show: false },
+          lineStyle: { color: "#3A4254", type: "dashed", width: 1 }, data: [{ yAxis: 0 }] },
+        areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          { offset: 0, color: last >= 0 ? "rgba(246,70,93,0.20)" : "rgba(46,189,133,0.20)" },
+          { offset: 1, color: "rgba(0,0,0,0)" }]) } }],
+    });
+    const ro = new ResizeObserver(() => chart.resize());
+    ro.observe(ref.current);
+    return () => { ro.disconnect(); chart.dispose(); };
+  }, [labels, values, daily, fmtLabel]);
+  return <div ref={ref} className="w-full h-36" />;
 }
 
 const recLabel: Record<string, string> = { strong_buy: "强烈买入", buy: "买入", hold: "持有", underperform: "跑输", sell: "卖出" };
@@ -107,14 +154,16 @@ export function StockDetail({ sel, market, d, onClose }: { sel: StockSel; market
   const pct = bd.pct ?? hs.ret_1d;
   const mv = hs.total_mv ?? bd.market_cap;
 
-  // 6个月走势(懒加载 trends.json,按 code/ticker 查)
+  // 6个月走势 + 个股资金(懒加载 trends.json,按 code/ticker 查)
   const [trend, setTrend] = useState<TrendPoint[] | null>(null);
+  const [mfT, setMfT] = useState<MfTrends | null>(null);
   useEffect(() => {
     let alive = true;
     loadTrends().then((t) => {
       if (!alive) return;
       const s = (isUS ? t.us : t.a)?.[code as string];
       setTrend(s && s.length > 1 ? s : []);
+      setMfT(t.mf || null);
     });
     return () => { alive = false; };
   }, [code, isUS]);
@@ -154,6 +203,51 @@ export function StockDetail({ sel, market, d, onClose }: { sel: StockSel; market
             {isUS && bd.target_mean != null && <Field k="目标均价" v={num(bd.target_mean)} cls="text-accent" />}
             {isUS && bd.rec_key && <Field k="评级" v={recLabel[bd.rec_key] || bd.rec_key} cls="text-up" />}
           </div>
+
+          {/* 资金流(仅A股):当日盘中主力累计 + 20日累计趋势 + 当日异动。数据走 trends.json 懒加载 */}
+          {!isUS && (() => {
+            const intraRaw = mfT?.intraday?.stocks?.[code as string];
+            const intra = intraRaw && intraRaw.some((v) => v != null) ? intraRaw : null;
+            const dailyArr = mfT?.hist?.stocks?.[code as string];
+            let cum = 0;
+            const histCum = dailyArr ? dailyArr.map((v) => Math.round((cum += v) * 100) / 100) : null;
+            const myAlerts = (d.moneyflow?.alerts?.items || []).filter((a) => a.code === code);
+            if (!intra && !histCum && myAlerts.length === 0) return null;
+            return (
+              <Sec title="资金 · 主力净额(大单+超大单)">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {intra && mfT?.intraday && (
+                    <div>
+                      <div className="text-dim text-[12px] mb-0.5">当日盘中累计 · {mfT.intraday.date}(约5分钟一点)</div>
+                      <FlowMini labels={mfT.intraday.times} values={intra} />
+                    </div>
+                  )}
+                  {histCum && dailyArr && mfT?.hist && (
+                    <div>
+                      <div className="text-dim text-[12px] mb-0.5">近{mfT.hist.dates.length}个交易日累计(EOD 口径)</div>
+                      <FlowMini labels={mfT.hist.dates} values={histCum} daily={dailyArr}
+                        fmtLabel={(s) => s.slice(5).replace("-", "/")} />
+                    </div>
+                  )}
+                </div>
+                {myAlerts.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    {myAlerts.map((a, i) => (
+                      <div key={i} className="flex items-center gap-2 text-[13px]">
+                        <span className="bg-accent/15 text-accent px-1.5 py-0.5 rounded text-[12px]">资金异动</span>
+                        <span className="mono text-dim text-[12px]">{a.hhmm}</span>
+                        <span className={`mono ${pctCls(a.delta)}`}>
+                          15分钟主力{a.delta > 0 ? "净流入 +" : "净流出 "}{a.delta}亿
+                        </span>
+                        {a.ratio != null && <span className="text-dim text-[12px]">≈20日日均成交{Math.round(a.ratio * 1000) / 10}%</span>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="text-dim text-[12px] mt-1.5">主力口径结构性偏净流出,看相对强弱与方向变化 · 只呈现事实不构成建议</div>
+              </Sec>
+            );
+          })()}
 
           {/* 筹码/市场持仓成本(仅A股,东财式估算口径,盘后更新):现价偏离用6M走势末点(最新收盘) */}
           {!isUS && (() => {

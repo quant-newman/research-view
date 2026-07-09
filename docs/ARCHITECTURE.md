@@ -39,7 +39,7 @@
 | 成绩单 | b7_weekly | 周度命中率/分源归因/错误归纳/lessons(回灌发卡 prompt) |
 | 账本 | ledger | 证伪判断人工钉死,append-only |
 | 研究 | research_report / research_digest / fund_letter | 卖方研报+变动榜+机构观点 / 基金信函(B5) |
-| 资金 | moneyflow_rt_extra / mf_intraday_node | 盘中自采补充 + 15min 节点累计曲线 |
+| 资金 | moneyflow_rt_extra / mf_intraday_node / mf_intraday_stock / mf_alert | 盘中自采补充 + 节点/个股累计曲线(个股滚60天) + **个股资金异动**(15min窗口≥max(0.3亿,20日日均成交2%),同向60min冷却;展示/推送层不进B6/B8,同 chip_cost 先例) |
 | 热点/热力 | hotspot_daily / heatmap_node / heatmap_stock | 热度榜(brief 利好利空) / 四象限多窗口 |
 | 监控 | task_log / data_flag | 每步计时落账 + 数据质量旗标 |
 
@@ -71,18 +71,19 @@ marketdata(只读):bar_daily_raw / moneyflow / margin_detail / top_list / hot_ra
 | universe / funnel / structure | 科技域构建 / 规则漏斗+票名匹配(AMBIGUOUS_NAMES 防误命中) / B1 |
 | collect/news · announcements · heatmap · research | major_news(**台账节流**) / 个股事件 / 热力多窗口 / 研报 |
 | report / hotspots / research_digest | B3 三态报告+增量 / 热点榜+brief / 评级变动榜+观点 |
-| moneyflow / market | 节点资金聚合(EOD/rt/多日/曲线) / 大盘仪表(指数/宽度/成交/两融/主力+20日history) |
+| moneyflow / market | 节点资金聚合(EOD/rt/多日/曲线)+个股曲线(当日/20日,走trends.json)+异动检测(detect_alerts,纯代码) / 大盘仪表(指数/宽度/成交/两融/主力+20日history) |
 | **evidence / decision / scorecard** | B6 六源矩阵+研判卡 / B8 候选+决策卡 / B7 记分+归因+周报+lessons |
 | fund_letters / monitor / export | 信函入库 / health+task_run+台北信源状态 / dashboard.json 合成(**唯一出口**,_scrub 防 NaN) |
 
-scripts/:`run_pipeline.py`(盘后主管道 17 步,含 calibration_freeze/ref_snapshot 留痕步与 chip_cost 筹码采集) `run_light.py`(盘中轻量) + 6 个编排 sh(盘前/盘中/盘后/美股/信函/成绩单,**flock 全局串行锁+lib_alert 旗标**) + 台北侧采集 fetch_*(us_board/us_overnight/tech_wire/fund_letters/build_us) + 运维(backup_db/manage_ledger/manage_holdings/source_status/init_db)。
+scripts/:`run_pipeline.py`(盘后主管道 17 步,含 calibration_freeze/ref_snapshot 留痕步与 chip_cost 筹码采集) `run_light.py`(盘中轻量) + 6 个编排 sh(盘前/盘中/盘后/美股/信函/成绩单,**flock 全局串行锁+lib_alert 旗标**) + 台北侧采集 fetch_*(us_board/us_overnight/tech_wire/fund_letters/build_us) + 运维(backup_db/manage_ledger/manage_holdings/source_status/init_db) + `push_alerts.py`(台北侧,资金异动 Web Push:读拉回的 dashboard.json 向订阅设备推,已推状态按日滚动,日上限30条;订阅由 chat 容器 /api/push 托管,VAPID 私钥 vapid_private.pem 两侧共用不入库)。
 
 ## 6. 编排节奏(cron 全景,UTC+8,周一~五除注明)
 
 | 时点 | 任务 | 内容 |
 |---|---|---|
 | 08:30 | run_premarket | yfinance 隔夜→盘前报告(锚点)→dashboard |
-| 08:00-23:30 每15min | run_intraday(run_light) | 新闻(整半点,配额台账)/研报/热点/**盘中增量**/资金快照+自采 |
+| 08:00-23:30 每15min | run_intraday(run_light) | 新闻(整半点,配额台账)/研报/热点/**盘中增量**/资金快照+自采+异动检测;收尾调 push_alerts 推送 |
+| 交易时段每5min(:05等非整刻) | run_mf(run_light --mf-only) | 纯资金档(约2s,零LLM/零配额):自采→节点+个股快照→异动检测→导出;与15min档合成5min分辨率曲线;锁忙即跳过;收尾调 push_alerts 推送 |
 | 周末 09:00-23:00 每2h | run_intraday(run_light) | **周末低频档(DECISIONS #36)**:周末新闻发酵补采(同走配额台账)+热点/看板保鲜;资金步非交易日自动零开销 |
 | 22:30 | run_afterhours(run_pipeline) | 全量:采集→漏斗→B1→事件→热力→研报→**B3→热点→B6发卡→B8发卡→B7记分**→导出;顺带拉备份 |
 | 21:30 + 22:00-05:00 整点 | run_us | build_us 全量美股 blob(约12min,锁等900s);21:30档=夏令时开盘(冬令时为开盘前预热) |
@@ -94,7 +95,7 @@ scripts/:`run_pipeline.py`(盘后主管道 17 步,含 calibration_freeze/ref_sna
 
 ## 7. 前端(web/,React+TS+Vite+Tailwind+ECharts,Bloomberg 暗色,A股红涨绿跌)
 
-导航 9 页:**报告**(大盘仪表→主线hero→三件事→证伪→盘中节奏→综述;右栏:资金面/隔夜美股[含宏观锚参照线:美债10Y/美元/USDCNY]/账本/事件流) / **研判**(仅A股:**B6节点研判**+**B8个股决策[校准横幅]**;右栏**B7成绩单**——判断层独立成页,报告页回归事实层,2026-07-05 使用者要求拆出) / **热点**(排名+X舆情+全量新闻流下钻) / **资金**(当日曲线|多日趋势) / **热力**(四象限+时间窗+下钻) / **研究** / **信函** / **问答**(自然语言问看板数据,SSE 流式,DECISIONS #38) / **系统**(health+信源面板)。顶部 A股|美股切换;任意股票可点开详情弹层(6M走势);手机 md: 断点适配。
+导航 9 页:**报告**(大盘仪表→主线hero→三件事→证伪→盘中节奏→综述;右栏:资金面/隔夜美股[含宏观锚参照线:美债10Y/美元/USDCNY]/账本/事件流) / **研判**(仅A股:**B6节点研判**+**B8个股决策[校准横幅]**;右栏**B7成绩单**——判断层独立成页,报告页回归事实层,2026-07-05 使用者要求拆出) / **热点**(排名+X舆情+全量新闻流下钻) / **资金**(当日曲线|多日趋势;盘中个股异动条+**Web Push 订阅铃铛**) / **热力**(四象限+时间窗+下钻) / **研究** / **信函** / **问答**(自然语言问看板数据,SSE 流式,DECISIONS #38) / **系统**(health+信源面板)。顶部 A股|美股切换;任意股票可点开详情弹层(6M走势+资金曲线[当日盘中/20日累计,A股]);手机 md: 断点适配。**PWA**:manifest+sw.js(Web Push 通知,iOS 须加入主屏幕),通知点开深链 `/?stock=CODE` 直达个股详情;订阅接口 chat 容器 `/api/push/*`(vapid-key/subscribe/unsubscribe/test),发送在台北宿主 push_alerts.py。
 
 ## 8. 监控与可靠性
 

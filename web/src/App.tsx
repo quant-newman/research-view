@@ -52,6 +52,12 @@ export default function App() {
   ]).then(() => undefined), []);
   useEffect(() => { load(); }, [load]);
 
+  // 推送深链:?stock=CODE(资金异动通知点开直达个股详情)
+  useEffect(() => {
+    const c = new URLSearchParams(location.search).get("stock");
+    if (c) setStock({ code: c });
+  }, []);
+
   // 美股新闻(扁平)→ 复用 A股 的按节点分组结构(按板块分组);报告页与新闻页共用
   const usNewsNodes: NewsNode[] = useMemo(() => {
     const m: Record<string, NewsNode> = {};

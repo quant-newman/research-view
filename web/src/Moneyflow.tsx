@@ -7,6 +7,61 @@ import { MoreList, pctCls } from "./ui";
 // A股习惯:流入暖(红) / 流出冷(绿)
 const UP = "#F6465D", DOWN = "#2EBD85";
 
+// 推送订阅铃铛:盘中资金异动 Web Push 开关(订阅存 chat 容器 /api/push,发送在台北宿主)。
+// iOS Safari 直开没有 PushManager,必须「添加到主屏幕」后从主屏幕打开——点击时给出指引。
+function b64ToU8(s: string): Uint8Array<ArrayBuffer> {
+  const pad = "=".repeat((4 - (s.length % 4)) % 4);
+  const raw = atob((s + pad).replace(/-/g, "+").replace(/_/g, "/"));
+  const out = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+function PushBell() {
+  const [on, setOn] = useState<boolean | null>(null);  // null=未知/不支持
+  const [busy, setBusy] = useState(false);
+  const supported = "serviceWorker" in navigator && "PushManager" in window;
+  useEffect(() => {
+    if (!supported) return;
+    navigator.serviceWorker.getRegistration()
+      .then((reg) => reg?.pushManager.getSubscription())
+      .then((sub) => setOn(!!sub)).catch(() => setOn(false));
+  }, [supported]);
+  const toggle = async () => {
+    if (!supported) {
+      alert("此浏览器不支持推送。iPhone 请先「分享 → 添加到主屏幕」,再从主屏幕图标打开后订阅(需 HTTPS)。");
+      return;
+    }
+    setBusy(true);
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const cur = await reg.pushManager.getSubscription();
+      if (cur) {
+        await cur.unsubscribe();
+        await fetch("/api/push/unsubscribe", { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ endpoint: cur.endpoint }) });
+        setOn(false);
+      } else {
+        if ((await Notification.requestPermission()) !== "granted") { alert("通知权限被拒绝,请在浏览器设置里放行后重试。"); return; }
+        const { key } = await (await fetch("/api/push/vapid-key")).json();
+        const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(key) });
+        const r = await fetch("/api/push/subscribe", { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(sub.toJSON()) });
+        if (!r.ok) throw new Error(`subscribe ${r.status}`);
+        setOn(true);
+      }
+    } catch (e) {
+      alert(`推送订阅失败:${e}`);
+    } finally { setBusy(false); }
+  };
+  return (
+    <button onClick={toggle} disabled={busy}
+      className={`px-2 py-0.5 rounded border hairline text-[13px] ${busy ? "text-dim" : on ? "text-accent" : "text-muted hover:text-primary"}`}
+      title={on ? "已订阅盘中资金异动推送,点击退订" : "订阅盘中资金异动推送(15分钟主力净额异动,交易时段,日上限30条)"}>
+      {on ? "🔔 推送已开" : "🔕 开启推送"}
+    </button>
+  );
+}
+
 // 流入(暖)/流出(冷)各一组色阶,同向多条线也能区分。色只编码方向(极性),
 // 线的身份靠右端标注——各11阶已实测对暗底对比度全过(≥3:1),超出后循环可接受。
 const WARM = ["#F6465D", "#FA8C16", "#F0B90B", "#E85D75", "#D4380D", "#FF7A45", "#C41D7F", "#AD6800",
@@ -218,12 +273,33 @@ export function MoneyflowView({ mf, isUS, onReload }: {
             {busy ? "刷新中…" : "↻ 刷新"}
           </button>
         )}
+        <PushBell />
         {tab === "today" && <span className="text-dim">{label} · 核心池合计 <span className={`mono ${pctCls(mf.pool_main)}`}>{mf.pool_main > 0 ? "+" : ""}{mf.pool_main}亿</span></span>}
         {tab === "multi" && mf.multi && <span className="text-dim">EOD 截至 {mf.multi.asof}</span>}
         <span className="text-dim text-[12px] ml-auto hidden lg:inline">主力=大单+超大单净额 · 口径=全部产业链节点 · 只呈现事实不下判断</span>
       </div>
 
       {tab === "today" && (<>
+      {/* 盘中个股资金异动:15分钟主力净额变动 ≥ max(0.3亿, 20日日均成交额×2%),点击开个股详情 */}
+      {mf.alerts && mf.alerts.items.length > 0 && (
+        <div className="border hairline rounded bg-surface p-3">
+          <div className="text-[13px] text-muted mb-1.5">
+            盘中资金异动 · {mf.alerts.date}
+            <span className="text-dim ml-2 hidden sm:inline">15分钟主力净额变动超过该票日常体量(max(0.3亿, 20日日均成交2%)) · 同票同向1小时最多报一次</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {mf.alerts.items.slice(0, 40).map((a, i) => (
+              <button key={i} onClick={() => openStock({ code: a.code })}
+                className="flex items-center gap-1.5 border hairline rounded px-2 py-1 text-[13px] hover:bg-elevated">
+                <span className="mono text-dim text-[12px]">{a.hhmm}</span>
+                <span className="text-primary">{a.name}</span>
+                <span className={`mono ${pctCls(a.delta)}`}>{a.delta > 0 ? "+" : ""}{a.delta}亿</span>
+                {a.ratio != null && <span className="text-dim text-[12px]">≈日均{Math.round(a.ratio * 1000) / 10}%</span>}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       {/* 当日累计曲线(15min 采集节奏;部署当日为小时桶种子,次一交易日起自然积累) */}
       {intraday && intraday.times.length > 1 ? (
         <div className="border hairline rounded bg-surface p-3">

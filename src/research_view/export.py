@@ -394,14 +394,19 @@ def build_dashboard(date_utc8: str) -> Path:
         taipei_src = monitor.taipei_sources()
     except Exception:  # noqa: BLE001
         taipei_src = []
+    from . import moneyflow as _mf
+    mf_hist = None
     try:
         # A股资金面(节点主力净额聚合+个股字典):报告页面板/热点信号/个股详情/资金页用
-        from . import moneyflow as _mf
         mflow = _mf.latest()
         if mflow:
             mflow["intraday"] = _mf.intraday_series()  # 当日节点累计曲线(资金页多线图)
             mflow["multi"] = _mf.multi_day()  # 5/20日累计+连续天数+背离(资金页多日表)
-            mflow["stocks5"] = _mf.stocks_d5()  # 个股5日累计(个股详情弹层)
+            mf_hist = _mf.stocks_hist()  # 个股20日逐日主力(详情多日趋势,走 trends.json)
+            if mf_hist:
+                mflow["stocks5"] = {c: round(sum(v[-5:]), 2)
+                                    for c, v in mf_hist["stocks"].items()}  # 5日累计由 hist 派生
+            mflow["alerts"] = _mf.today_alerts()  # 盘中资金异动(资金页异动条/详情/推送)
     except Exception:  # noqa: BLE001 资金面失败不阻塞导出
         mflow = None
 
@@ -468,8 +473,14 @@ def build_dashboard(date_utc8: str) -> Path:
         print(f"  ! trends 降级(marketdata 不可用): {e}")
         a_trends = {}
     us_trends = (us or {}).get("trends") or {}  # 台北 build_us 产出,随 us blob 带过来
+    # 个股资金(详情弹层懒加载,同走势小图通道不撑大 dashboard):当日盘中累计 + 20日逐日
+    try:
+        mf_intra = _mf.stock_intraday_series()
+    except Exception:  # noqa: BLE001 快照表不可用降级为空
+        mf_intra = None
     trends = {"meta": {"date": date_utc8, "a": len(a_trends), "us": len(us_trends)},
-              "a": a_trends, "us": us_trends}
+              "a": a_trends, "us": us_trends,
+              "mf": {"intraday": mf_intra, "hist": mf_hist}}
     (EXPORT_DIR / "trends.json").write_text(_dump(trends), encoding="utf-8")
     print(f"  trends: A股 {len(a_trends)} 只 / 美股 {len(us_trends)} 只")
     return path

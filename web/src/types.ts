@@ -217,12 +217,18 @@ export interface MfMultiNode {
   node_id: string; chain: string; node: string;
   d5: number; d20: number; streak: number; ret_1w?: number | null; divergence: boolean;
 }
+// 盘中个股资金异动(15分钟窗口主力净额变动超过该票自身体量阈值,纯代码检测)
+export interface MfAlertItem {
+  hhmm: string; code: string; name: string; delta: number;
+  window_min?: number; ratio?: number | null; cum?: number | null;
+}
 export interface Moneyflow {
   kind: string; date: string; stamp?: string | null;
   nodes: MfNode[]; pool_main: number; stocks: Record<string, number>;
   stocks5?: Record<string, number>;  // 个股5日主力累计(亿),旧blob无此键
   intraday?: MfIntraday | null;
   multi?: { asof: string; market?: { d5: number; d20: number }; nodes: MfMultiNode[] } | null;
+  alerts?: { date: string; items: MfAlertItem[] } | null;
 }
 
 // 筹码成本(东财式估算口径,盘后更新;个股详情弹层)

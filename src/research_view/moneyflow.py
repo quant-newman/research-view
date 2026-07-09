@@ -216,7 +216,9 @@ def collect_rt_extra() -> dict:
 
 def snapshot_intraday() -> dict:
     """把当日 rt 聚合追加为曲线上的一个时点(run_light 每15min调,分辨率=采集节奏)。
-    同一 last_min 时点幂等跳过——午休/收盘后 stamp 不再前进,自然不重复落点。"""
+    同一 last_min 时点幂等跳过——午休/收盘后 stamp 不再前进,自然不重复落点。
+    节点行(mf_intraday_node,资金页曲线)与个股行(mf_intraday_stock,限核心池,
+    个股详情当日曲线+异动检测基线)同事务落点;个股表滚动保留60天。"""
     r = rt()
     if not r or not r.get("stamp"):
         return {"skip": "无盘中数据"}
@@ -230,8 +232,14 @@ def snapshot_intraday() -> dict:
         rows.append((r["date"], r["stamp"], "POOL", r["pool_main"]))
         cur.executemany("""INSERT INTO mf_intraday_node(trade_date,hhmm,node_id,main)
             VALUES(%s,%s,%s,%s) ON CONFLICT DO NOTHING""", rows)
+        cur.execute("SELECT code FROM stock")
+        core = {c for (c,) in cur.fetchall()}
+        srows = [(r["date"], r["stamp"], c, v) for c, v in r["stocks"].items() if c in core]
+        cur.executemany("""INSERT INTO mf_intraday_stock(trade_date,hhmm,code,main)
+            VALUES(%s,%s,%s,%s) ON CONFLICT DO NOTHING""", srows)
+        cur.execute("DELETE FROM mf_intraday_stock WHERE trade_date < current_date - 60")
         conn.commit()
-    return {"date": r["date"], "hhmm": r["stamp"], "nodes": len(rows) - 1}
+    return {"date": r["date"], "hhmm": r["stamp"], "nodes": len(rows) - 1, "stocks": len(srows)}
 
 
 def seed_today_from_hourly() -> dict:
@@ -260,6 +268,8 @@ def seed_today_from_hourly() -> dict:
         cur = conn.cursor()
         cur.execute("SELECT to_char(current_date,'YYYY-MM-DD')")
         today = cur.fetchone()[0]
+        cur.execute("SELECT code FROM stock")
+        core = {c for (c,) in cur.fetchall()}
         for a in anchors:
             if not per_anchor[a]:
                 continue
@@ -268,7 +278,10 @@ def seed_today_from_hourly() -> dict:
             rows2.append((today, a, "POOL", agg["pool_main"]))
             cur.executemany("""INSERT INTO mf_intraday_node(trade_date,hhmm,node_id,main)
                 VALUES(%s,%s,%s,%s) ON CONFLICT DO NOTHING""", rows2)
-            n += len(rows2)
+            srows = [(today, a, c, round(v, 2)) for c, v in agg["stocks"].items() if c in core]
+            cur.executemany("""INSERT INTO mf_intraday_stock(trade_date,hhmm,code,main)
+                VALUES(%s,%s,%s,%s) ON CONFLICT DO NOTHING""", srows)
+            n += len(rows2) + len(srows)
         conn.commit()
     return {"seeded": n}
 
@@ -368,25 +381,149 @@ def multi_day(windows: tuple[int, int] = (5, 20)) -> dict | None:
     return {"asof": str(dates[-1]), "market": market, "nodes": out}
 
 
-def stocks_d5() -> dict[str, float]:
-    """核心池个股近5交易日主力累计净额(亿),个股详情弹层展示用,键=6位代码。"""
+def stocks_hist(days: int = 20) -> dict | None:
+    """核心池个股近N交易日逐日主力净额(亿),键=6位代码。个股详情「多日资金趋势」
+    (累计画法在前端)用;5日累计(stocks5)由 export 从此结果求和派生,单一取数路径。"""
     with db.rv_conn() as conn, conn.cursor() as cur:
         cur.execute("SELECT ts_code, code FROM heatmap_stock WHERE ts_code IS NOT NULL")
         code_of = dict(cur.fetchall())
     if not code_of:
-        return {}
+        return None
     with db.marketdata_conn() as mc:
         cur = mc.cursor()
-        cur.execute("SELECT DISTINCT trade_date FROM md.moneyflow ORDER BY trade_date DESC LIMIT 5")
-        dates = [r[0] for r in cur.fetchall()]
+        cur.execute("SELECT DISTINCT trade_date FROM md.moneyflow ORDER BY trade_date DESC LIMIT %s",
+                    (days,))
+        dates = sorted(r[0] for r in cur.fetchall())
         if not dates:
-            return {}
-        cur.execute("""SELECT ts_code,
-                sum(coalesce(buy_lg_amount,0)-coalesce(sell_lg_amount,0)
-                    +coalesce(buy_elg_amount,0)-coalesce(sell_elg_amount,0))/1e4
-            FROM md.moneyflow WHERE trade_date >= %s AND ts_code = ANY(%s)
-            GROUP BY ts_code""", (min(dates), list(code_of)))
-        return {code_of[ts]: round(float(v), 2) for ts, v in cur.fetchall()}
+            return None
+        cur.execute("""SELECT trade_date, ts_code,
+                (coalesce(buy_lg_amount,0)-coalesce(sell_lg_amount,0)
+                 +coalesce(buy_elg_amount,0)-coalesce(sell_elg_amount,0))/1e4
+            FROM md.moneyflow WHERE trade_date >= %s AND ts_code = ANY(%s)""",
+            (dates[0], list(code_of)))
+        grid: dict[str, dict] = {}
+        for d, ts, v in cur.fetchall():
+            grid.setdefault(code_of[ts], {})[d] = float(v)
+    return {"dates": [str(d) for d in dates],
+            "stocks": {c: [round(m.get(d, 0.0), 2) for d in dates] for c, m in grid.items()}}
+
+
+def stock_intraday_series() -> dict | None:
+    """最近快照日的个股当日累计曲线(走 trends.json 懒加载通道,个股详情用)。"""
+    with db.rv_conn() as conn, conn.cursor() as cur:
+        cur.execute("SELECT max(trade_date) FROM mf_intraday_stock")
+        d = cur.fetchone()[0]
+        if d is None:
+            return None
+        cur.execute("SELECT hhmm, code, main FROM mf_intraday_stock WHERE trade_date=%s", (d,))
+        rows = cur.fetchall()
+    times = sorted({h for h, _, _ in rows})
+    idx = {h: i for i, h in enumerate(times)}
+    stocks: dict[str, list] = {}
+    for h, c, m in rows:
+        stocks.setdefault(c, [None] * len(times))[idx[h]] = float(m)
+    return {"date": str(d), "times": times, "stocks": stocks}
+
+
+# ---------- 个股资金异动(15分钟窗口;展示+推送层,不进 B6/B8 判断链) ----------
+
+ALERT_WINDOW_MIN = 15     # 目标窗口(实际取快照分辨率下最近的≥13分钟点)
+ALERT_FLOOR = 0.3         # 绝对下限(亿):小票按比例阈值可能只有几百万,全是噪音
+ALERT_PCT = 0.02          # 相对阈值=20日日均成交额×2%(大票水大,按自身体量定异动)
+ALERT_COOLDOWN_MIN = 60   # 同票同方向冷却,防持续大流入每15分钟刷屏
+
+
+def _min_of(hhmm: str) -> int:
+    h, m = hhmm.split(":")
+    return int(h) * 60 + int(m)
+
+
+def detect_alerts() -> dict:
+    """盘中个股资金异动检测(纯代码,run_light 各档 mf_snapshot 后调):
+    15分钟窗口主力净额变动 ≥ max(0.3亿, 20日日均成交额×2%) → 落 mf_alert。
+    同票同方向60分钟冷却;PK(日,时点,票)幂等;午休/收盘 stamp 不前进自然零新增,
+    跨午休窗口失真(>25分钟)不判。"""
+    with db.rv_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT hhmm, code, main FROM mf_intraday_stock WHERE trade_date=current_date")
+        rows = cur.fetchall()
+        if not rows:
+            return {"skip": "无当日个股快照"}
+        cur.execute("SELECT code, name, ts_code FROM stock")
+        meta = {c: (n, ts) for c, n, ts in cur.fetchall()}
+        cur.execute("SELECT code, hhmm, delta FROM mf_alert WHERE trade_date=current_date")
+        prior = [(c, h, float(dl)) for c, h, dl in cur.fetchall()]
+    series: dict[str, list[tuple[str, float]]] = {}
+    latest = ""
+    for h, c, m in rows:
+        series.setdefault(c, []).append((h, float(m)))
+        latest = max(latest, h)
+    cands: dict[str, tuple[float, int, float]] = {}  # code -> (Δ, 实际窗口分钟, 当日累计)
+    for code, pts in series.items():
+        pts.sort()
+        h_cur, v_cur = pts[-1]
+        if h_cur != latest:
+            continue  # 缺采/停牌,数据没跟到最新时点不判
+        base = next(((h, v) for h, v in reversed(pts[:-1])
+                     if _min_of(h_cur) - _min_of(h) >= ALERT_WINDOW_MIN - 2), None)
+        if base is None:
+            continue
+        win = _min_of(h_cur) - _min_of(base[0])
+        if win > ALERT_WINDOW_MIN + 10:
+            continue
+        cands[code] = (v_cur - base[1], win, v_cur)
+    if not cands:
+        return {"hhmm": latest, "alerts": 0}
+    # 阈值基准:20日日均成交额(bar_daily_raw.amount 千元 → 亿 = /1e5)
+    ts_of = {c: meta[c][2] for c in cands if c in meta and meta[c][2]}
+    avg_amt: dict[str, float] = {}
+    with db.marketdata_conn() as mc:
+        mcur = mc.cursor()
+        mcur.execute("""SELECT DISTINCT cal_date FROM md.trade_calendar
+            WHERE is_open AND cal_date <= current_date ORDER BY cal_date DESC LIMIT 20""")
+        days = [r[0] for r in mcur.fetchall()]
+        if days:
+            mcur.execute("""SELECT ts_code, avg(amount)/1e5 FROM md.bar_daily_raw
+                WHERE trade_date >= %s AND ts_code = ANY(%s) GROUP BY ts_code""",
+                (min(days), list(ts_of.values())))
+            avg_amt = {ts: float(v) for ts, v in mcur.fetchall()}
+    fired = []
+    for code, (delta, win, cum) in cands.items():
+        avg = avg_amt.get(ts_of.get(code, ""), 0.0)
+        if abs(delta) < max(ALERT_FLOOR, avg * ALERT_PCT):
+            continue
+        if any(c == code and (dl > 0) == (delta > 0)
+               and _min_of(latest) - _min_of(h) < ALERT_COOLDOWN_MIN for c, h, dl in prior):
+            continue
+        fired.append((latest, code, meta[code][0], round(delta, 2), win,
+                      round(avg, 1) if avg else None,
+                      round(delta / avg, 4) if avg else None, round(cum, 2)))
+    n = 0
+    if fired:
+        with db.rv_conn() as conn:
+            cur = conn.cursor()
+            for f in fired:
+                cur.execute("""INSERT INTO mf_alert
+                        (trade_date, hhmm, code, name, delta, window_min, avg_amount, ratio, cum)
+                    VALUES (current_date,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING""", f)
+                n += cur.rowcount
+            conn.commit()
+    return {"hhmm": latest, "alerts": n}
+
+
+def today_alerts() -> dict | None:
+    """最近一个有记录日的异动清单(dashboard.moneyflow.alerts;推送脚本按 date 只推当日)。"""
+    with db.rv_conn() as conn, conn.cursor() as cur:
+        cur.execute("SELECT max(trade_date) FROM mf_alert")
+        d = cur.fetchone()[0]
+        if d is None:
+            return None
+        cur.execute("""SELECT hhmm, code, name, delta, window_min, ratio, cum FROM mf_alert
+            WHERE trade_date=%s ORDER BY hhmm DESC, abs(delta) DESC""", (d,))
+        items = [{"hhmm": r[0], "code": r[1], "name": r[2], "delta": float(r[3]),
+                  "window_min": r[4], "ratio": float(r[5]) if r[5] is not None else None,
+                  "cum": float(r[6]) if r[6] is not None else None} for r in cur.fetchall()]
+    return {"date": str(d), "items": items}
 
 
 # ---------- 报告用文本行 ----------

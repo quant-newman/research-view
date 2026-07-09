@@ -41,6 +41,7 @@ def main() -> None:
         print(f"[Light] {date} UTC+8 纯资金档")
         step("moneyflow_rt_extra", moneyflow.collect_rt_extra)
         step("mf_snapshot", moneyflow.snapshot_intraday)
+        step("mf_alerts", moneyflow.detect_alerts)  # 个股资金异动(纯代码,详见 moneyflow.py)
         step("export_dashboard", lambda: str(export.build_dashboard(date)))
         return
     print(f"[Light] {date} UTC+8 盘中刷新")
@@ -60,7 +61,8 @@ def main() -> None:
     # 盘中资金流补采:DC 监控池(agu产业表)未覆盖的核心池票走东财 push2delay 自采
     # (非交易日/DC未开盘零开销);报告/热点/export 通过 moneyflow.latest() 自动用上
     step("moneyflow_rt_extra", moneyflow.collect_rt_extra)
-    step("mf_snapshot", moneyflow.snapshot_intraday)  # 盘中累计曲线追点(资金页)
+    step("mf_snapshot", moneyflow.snapshot_intraday)  # 盘中累计曲线追点(资金页+个股详情)
+    step("mf_alerts", moneyflow.detect_alerts)  # 个股资金异动(纯代码,15min窗口阈值见 moneyflow.py)
     step("research", lambda: research.collect_reports(3))
     step("research_digest", lambda: research_digest.persist(date))
     # 盘中增量条目(演进式):有实质变化(新闻≥3或资金位移≥2亿)才追加时间线一条,

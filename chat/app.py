@@ -15,6 +15,7 @@ import alert
 import data
 import guard
 import llm
+import push as pushmod
 
 app = FastAPI(title="research-view-chat", docs_url=None, redoc_url=None)
 
@@ -56,6 +57,34 @@ def _client_ip(req: Request) -> str:
 def health():
     meta = data.dashboard().get("meta", {})
     return {"ok": True, "data_date": meta.get("date"), "generated_at": meta.get("generated_at")}
+
+
+# ---------- Web Push 订阅(PWA;异动推送发送在台北宿主 scripts/push_alerts.py) ----------
+
+@app.get("/api/push/vapid-key")
+def push_vapid_key():
+    return {"key": pushmod.vapid_public_key()}
+
+
+@app.post("/api/push/subscribe")
+async def push_subscribe(req: Request):
+    try:
+        n = pushmod.subscribe(await req.json(), req.headers.get("user-agent", ""))
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    return {"ok": True, "subscriptions": n}
+
+
+@app.post("/api/push/unsubscribe")
+async def push_unsubscribe(req: Request):
+    body = await req.json()
+    n = pushmod.unsubscribe((body.get("endpoint") or "").strip())
+    return {"ok": True, "subscriptions": n}
+
+
+@app.post("/api/push/test")
+def push_test():
+    return pushmod.send_to_all("✅ 推送已接通", "这是一条测试通知,点开回到看板", "/", "test")
 
 
 @app.post("/api/chat")

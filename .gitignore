@@ -16,3 +16,5 @@ logs/
 *.tw_session
 *.twikit_session
 backups/
+vapid_private.pem
+web/public/data/
