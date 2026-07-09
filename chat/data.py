@@ -110,9 +110,20 @@ def _trend_stats(code: str, series: list) -> dict:
     return out
 
 
+def _news_groups(d: dict) -> list:
+    """新闻块已拆出 dashboard 单列 news.json(2026-07-09 手机首屏提速);旧 blob 键内回退。"""
+    g = d.get("news_by_node")
+    if g is not None:
+        return g
+    try:
+        return _load("news.json").get("news_by_node", [])
+    except Exception:  # noqa: BLE001 news.json 未同步到位时诚实空,不阻塞其他切片
+        return []
+
+
 def _slice_news(d: dict, node_ids: set[str], codes: set[str]) -> list:
     """新闻:按节点/个股过滤;没给过滤条件则每节点只留2条一句话做全景。"""
-    groups = d.get("news_by_node", [])
+    groups = _news_groups(d)
     if node_ids or codes:
         out = []
         for g in groups:

@@ -46,6 +46,6 @@ $SSH "cd $REMOTE && ./.venv/bin/python -c \"import sys;sys.path.insert(0,'src');
 
 echo "[premarket] 4/4 阿里云重建 dashboard + 拉回 webdata/ ..."
 $SSH "cd $REMOTE && ./.venv/bin/python -c \"import sys;sys.path.insert(0,'src');from research_view import export;print(export.build_dashboard('$DATE'))\""
-rsync -az "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/"{dashboard,trends}.json webdata/
+rsync -az "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/"{dashboard,trends,news}.json webdata/
 alert_clear premarket
 echo "[premarket] 完成。前端 8092 已读取盘前报告。"

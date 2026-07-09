@@ -15,5 +15,5 @@ $SSH "cd /opt/research_view && ./.venv/bin/python -c \"import sys;sys.path.inser
 echo "[sync] 拉回 webdata/ ..."
 export RSYNC_RSH="ssh $SSH_BASE"
 mkdir -p webdata
-rsync -az "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:/opt/research_view/exports/dashboard.json" webdata/ 2>&1 | grep -v "Warning: Permanently" || true
+rsync -az "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:/opt/research_view/exports/"{dashboard,trends,news}.json webdata/ 2>&1 | grep -v "Warning: Permanently" || true
 echo "[sync] 完成。容器已自动读取新数据(8092)。"

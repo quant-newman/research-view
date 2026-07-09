@@ -40,13 +40,20 @@ export default function App() {
   // 手动刷新可复用(盘中 dashboard.json 5-15min 重建,no-store 防浏览器缓存拿旧档)
   const load = useCallback(() => Promise.all([
     // 核心键缺失时补默认值:后端某天少发一个键不该让整页白屏
-    fetch("/data/dashboard.json", { cache: "no-store" }).then((r) => r.json()).then((raw) => setD({
-      ...raw,
-      meta: raw?.meta || { date: "", generated_at: "", tz: "UTC+8" },
-      temperature: raw?.temperature ?? null,
-      news_by_node: raw?.news_by_node || [],
-      stock_events: raw?.stock_events || [],
-    } as Dashboard)).catch((e) => setErr(String(e))),
+    fetch("/data/dashboard.json", { cache: "no-store" }).then((r) => r.json()).then((raw) => {
+      setD({
+        ...raw,
+        meta: raw?.meta || { date: "", generated_at: "", tz: "UTC+8" },
+        temperature: raw?.temperature ?? null,
+        news_by_node: raw?.news_by_node || [],
+        stock_events: raw?.stock_events || [],
+      } as Dashboard);
+      // 新闻块单列 news.json(占原 dashboard 2/3 体积,拆出后首屏不等它):
+      // 主体先渲染,新闻到位后合并——新闻页/事件流/详情/停更检测消费方无感。
+      return fetch("/data/news.json", { cache: "no-store" }).then((r) => r.json())
+        .then((n) => setD((prev) => prev ? { ...prev, news_by_node: n?.news_by_node || [] } : prev))
+        .catch(() => undefined);  // news.json 缺位=旧blob(dashboard 内嵌)或未同步,保持现值
+    }).catch((e) => setErr(String(e))),
     // 管道失败旗标(run_*.sh 失败时写入,成功清除)→ 红横幅
     fetch("/data/alert.json", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then(setAlert).catch(() => setAlert(null)),
   ]).then(() => undefined), []);

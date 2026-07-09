@@ -29,7 +29,7 @@ print('  dashboard:', export.build_dashboard('$DATE'))
 \""
 
 echo "[scorecard] 拉回 dashboard.json → webdata/ ..."
-rsync -az "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/"{dashboard,trends}.json webdata/
+rsync -az "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/"{dashboard,trends,news}.json webdata/
 
 alert_clear scorecard
 # 飞书周报出炉通知(DECISIONS #32)

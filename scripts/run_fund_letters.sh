@@ -34,6 +34,6 @@ $SSH "cd $REMOTE && ./.venv/bin/python -c \"import sys;sys.path.insert(0,'src');
 
 echo "[letters] 3/3 重建 dashboard + 拉回 ..."
 $SSH "cd $REMOTE && ./.venv/bin/python -c \"import sys;sys.path.insert(0,'src');from research_view import export;print(export.build_dashboard('$DATE'))\""
-rsync -az "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/dashboard.json" webdata/
+rsync -az "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/"{dashboard,news}.json webdata/
 alert_clear letters
 echo "[letters] 完成。信函页已更新。"

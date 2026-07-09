@@ -101,7 +101,9 @@ def build_export(date_utc8: str) -> Path:
         cur.execute("SELECT code FROM watchlist")
         watches = {r[0] for r in cur.fetchall()}
 
-        # 相关新闻(有效相关),按节点分组;泛科技(无节点)按申万行业分组
+        # 相关新闻(有效相关),按节点分组;泛科技(无节点)按申万行业分组。
+        # 展示窗=最近2天(今+昨,使用者定):库内 raw_news 全量保留,只是导出少——
+        # 手机跨境链路下新闻曾占 dashboard 66% 体积;报告/热点/B6 各自查库不受此窗影响。
         cur.execute("""
             SELECT rn.news_id, rn.src, rn.title, rn.one_line, rn.sentiment,
                    rn.event_type, rn.url, rn.matched_codes, rn.matched_node_ids,
@@ -109,7 +111,7 @@ def build_export(date_utc8: str) -> Path:
             FROM raw_news rn
             WHERE rn.relevant AND (rn.is_chain_relevant IS NOT false
                   OR array_length(rn.matched_codes,1) > 0 OR array_length(rn.matched_tech_codes,1) > 0)
-              AND rn.pub_time >= current_date - 14
+              AND rn.pub_time >= current_date - 1
             ORDER BY rn.pub_time DESC""")
         news = cur.fetchall()
 
@@ -449,14 +451,20 @@ def build_dashboard(date_utc8: str) -> Path:
         print(f"  ! market 仪表降级: {e}")
         market_gauge = None
 
+    # 新闻块单列 news.json(前端首屏渲染后台补拉再合并;chat 侧 data.py 同名回退):
+    # 新闻曾占 dashboard 66% 体积,手机跨境链路首屏被拖慢(2026-07-09 使用者定拆出)。
     dash = {"meta": ev["meta"], "report": report, "temperature": ev["temperature"],
-            "news_by_node": ev["news_by_node"], "stock_events": ev["stock_events"],
+            "stock_events": ev["stock_events"],
             "heatmap": heatmap, "health": health, "research": research, "ledger": ledger,
             "us": us, "hotspot": hotspot, "sources": {"taipei": taipei_src}, "moneyflow": mflow,
             "market": market_gauge, "judgment": judgment, "scorecard": sc_block,
             "decision": decision, "chips": chips}
     path = EXPORT_DIR / "dashboard.json"
     path.write_text(_dump(dash), encoding="utf-8")
+    (EXPORT_DIR / "news.json").write_text(
+        _dump({"meta": {"date": date_utc8, "generated_at": ev["meta"]["generated_at"],
+                        "n_groups": len(ev["news_by_node"])},
+               "news_by_node": ev["news_by_node"]}), encoding="utf-8")
 
     # 走势小图数据(6M日线):单列 trends.json 懒加载,不撑大 dashboard.json。
     # 只取当日 dashboard 里"可点"的 A股(新闻/事件/热力/研报出现过的),自限规模。
