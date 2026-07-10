@@ -496,7 +496,7 @@ def detect_alerts() -> dict:
     if not cands:
         return {"hhmm": latest, "alerts": 0}
     # 阈值基准:20日日均成交额(bar_daily_raw.amount 千元 → 亿 = /1e5)
-    ts_of = {c: meta[c][2] for c in cands if c in meta and meta[c][2]}
+    ts_of = {c: meta[c][1] for c in cands if c in meta and meta[c][1]}
     avg_amt: dict[str, float] = {}
     with db.marketdata_conn() as mc:
         mcur = mc.cursor()
