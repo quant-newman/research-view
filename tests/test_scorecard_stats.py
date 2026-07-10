@@ -9,8 +9,8 @@ from decimal import Decimal
 
 from research_view.evidence import parse_prob
 from research_view.scorecard import (_PROMPT_LABELS, _stats, brier_by_version,
-                                     brier_stats, calibration_block, override_slices,
-                                     version_stats)
+                                     brier_stats, calibration_block, headline_stats,
+                                     override_slices, version_stats)
 
 
 def test_wilson():
@@ -87,6 +87,49 @@ def test_brier():
     assert bv["unversioned"]["n_flat"] == 1
 
 
+def test_brier_uncond():
+    # vNext 主指标(VNEXT_MEASUREMENT a):无条件口径——平计入样本,outcome 对=1/错=0/平=0
+    # 人工复算:((0.8-1)²+(0.7-0)²+(0.6-0)²)/3 = (0.04+0.49+0.36)/3 = 0.296667→0.2967
+    rows = [(Decimal("0.8"), "对"), (0.7, "错"), (0.6, "平")]
+    u = brier_stats(rows, unconditional=True)
+    assert u["n"] == 3 and u["brier"] == 0.2967
+    assert u["n_flat"] == 1 and u["flat_rate"] == round(1 / 3, 3)  # 分母=含平样本数
+    # 平进桶且 outcome=0:0.6 落 [0.6,0.7) 桶,hit_rate=0(未兑现)
+    b = {(x["lo"], x["hi"]): x for x in u["bins"]}
+    assert b[(0.6, 0.7)]["n"] == 1 and b[(0.6, 0.7)]["hit_rate"] == 0.0
+    # 默认参数=现行条件口径,行为零变化(同批 rows:平剔除,(0.04+0.49)/2=0.265)
+    c = brier_stats(rows)
+    assert c["n"] == 2 and c["brier"] == 0.265 and c["flat_rate"] == round(1 / 3, 3)
+    # 两序列并列:条件 flat_rate 分母=n+n_flat,无条件分母=n(平已在 n 内)
+    allflat = brier_stats([(0.8, "平")], unconditional=True)
+    assert allflat["n"] == 1 and allflat["brier"] == 0.64 and allflat["flat_rate"] == 1.0
+    # calibration_block 透传:分层与版本组同口径切换
+    cb = calibration_block([("8528ca795ca4c6b8", "偏多", 0.7, "平")], unconditional=True)
+    assert cb["direction"]["n"] == 1 and cb["direction"]["brier"] == 0.49
+    assert cb["by_version"]["8528ca795ca4c6b8"]["n"] == 1
+    assert calibration_block([("8528ca795ca4c6b8", "偏多", 0.7, "平")])["direction"]["n"] == 0
+    # NULL prob 跳过与空态同现行
+    assert brier_stats([(None, "对")], unconditional=True)["n"] == 0
+    assert brier_stats([], unconditional=True)["brier"] is None
+
+
+def test_headline():
+    # vNext headline 三件套(VNEXT_MEASUREMENT b):方向卡命中率(Wilson)+覆盖率+中性率
+    rows = [("偏多", "对"), ("偏多", "平"), ("偏空", "错"), ("中性", "对")]
+    h = headline_stats(rows)
+    assert h["directional"]["n"] == 3 and h["directional"]["right"] == 1
+    assert h["directional"]["hit_rate"] == 50.0          # 1/(1+1),平不进分母
+    assert h["directional"]["hit_lo"] is not None        # Wilson 随 _stats 自动继承
+    assert h["coverage"] == round(2 / 3 * 100, 1)        # (对+错)/方向卡数
+    assert h["neutral_rate"] == 25.0                     # 1/4
+    # 全中性/空态:方向层诚实空,不除零
+    allneutral = headline_stats([("中性", "对")])
+    assert allneutral["directional"]["n"] == 0 and allneutral["coverage"] is None
+    assert allneutral["neutral_rate"] == 100.0
+    empty = headline_stats([])
+    assert empty["coverage"] is None and empty["neutral_rate"] is None
+
+
 def test_parse_prob():
     # 开区间(同 sql/028 CHECK):0/1/越界/垃圾 → None 不阻塞发卡
     assert parse_prob(0.55) == 0.55
@@ -97,5 +140,5 @@ def test_parse_prob():
 
 if __name__ == "__main__":
     test_wilson(); test_override_buckets(); test_version_group()
-    test_brier(); test_parse_prob()
+    test_brier(); test_brier_uncond(); test_headline(); test_parse_prob()
     print("OK")

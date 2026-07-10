@@ -313,17 +313,21 @@ def version_stats(rows) -> dict:
 _BIN_EDGES = (0.0, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0)  # SPEC第4条:固定边界,落档日起写死,禁分位桶/事后改桶
 
 
-def brier_stats(rows) -> dict:
-    """rows: [(subjective_prob, verdict)] → Brier 均分 + 校准曲线数据点(BRIER_SPEC 六条口径)。
-    样本域=verdict∈{对,错}(SPEC第1条);平剔除但必报 n_flat/flat_rate(未判定率)——防±1pp阈
-    成为事后调节样本的旋钮;读曲线须配合 flat_rate(剔平后实际兑现率≈无条件率/(1-flat_rate),
-    模型自报的是无条件概率,见 SPEC 附注)。outcome 对=1/错=0(SPEC第2条,完全继承主记分判定)。
-    NULL prob 卡跳过(存量旧卡)。无样本返回 n=0 诚实空态。"""
+def brier_stats(rows, unconditional: bool = False) -> dict:
+    """rows: [(subjective_prob, verdict)] → Brier 均分 + 校准曲线数据点。
+    unconditional=False(现行辅指标,BRIER_SPEC 六条口径):样本域=verdict∈{对,错}(SPEC第1条);
+    平剔除但必报 n_flat/flat_rate(未判定率)——防±1pp阈成为事后调节样本的旋钮;读曲线须配合
+    flat_rate 按 1/(1−flat_rate) 去偏(SPEC 附注)。
+    unconditional=True(vNext 主指标,VNEXT_MEASUREMENT a):样本域含平,outcome 对=1/错=0/平=0
+    ——与发卡 prompt 的无条件 prob 定义("带内不算兑现")语义同构;flat_rate 此时=平占样本比。
+    outcome 判定完全继承主记分(SPEC第2条)。NULL prob 卡跳过(存量旧卡)。无样本返回 n=0 诚实空态。"""
     withp = [(float(p), v) for p, v in rows if p is not None]
-    pts = [(p, 1.0 if v == "对" else 0.0) for p, v in withp if v in ("对", "错")]
+    ok = ("对", "错", "平") if unconditional else ("对", "错")
+    pts = [(p, 1.0 if v == "对" else 0.0) for p, v in withp if v in ok]
     n_flat = sum(1 for _p, v in withp if v == "平")
+    denom = len(pts) if unconditional else len(pts) + n_flat
     out = {"n": len(pts), "n_flat": n_flat,
-           "flat_rate": round(n_flat / (len(pts) + n_flat), 3) if (pts or n_flat) else None,
+           "flat_rate": round(n_flat / denom, 3) if denom else None,
            "brier": None, "bins": []}
     if not pts:
         return out
@@ -337,18 +341,18 @@ def brier_stats(rows) -> dict:
     return out
 
 
-def calibration_block(rows) -> dict:
+def calibration_block(rows, unconditional: bool = False) -> dict:
     """rows: [(prompt_hash, direction, subjective_prob, verdict)] → SPEC第3条卡型分层:
     direction(偏多/偏空)与 neutral(中性)基准兑现率结构不同(±1pp阈 vs ±2pp带),禁止混桶下结论;
     node/stock 分层由调用方分表天然隔离(calibration/stock_calibration)。
     by_version 按 prompt 版本分组(#28 同纪律),只出 n/n_flat/brier 标量(跨卡型聚合,仅作漂移检测,
-    不当校准曲线读)。"""
-    return {"direction": brier_stats([(p, v) for _h, d, p, v in rows if d != "中性"]),
-            "neutral": brier_stats([(p, v) for _h, d, p, v in rows if d == "中性"]),
-            "by_version": brier_by_version([(h, p, v) for h, _d, p, v in rows])}
+    不当校准曲线读)。unconditional 透传 brier_stats(vNext 主指标口径,并列序列不改本键)。"""
+    return {"direction": brier_stats([(p, v) for _h, d, p, v in rows if d != "中性"], unconditional),
+            "neutral": brier_stats([(p, v) for _h, d, p, v in rows if d == "中性"], unconditional),
+            "by_version": brier_by_version([(h, p, v) for h, _d, p, v in rows], unconditional)}
 
 
-def brier_by_version(rows) -> dict:
+def brier_by_version(rows, unconditional: bool = False) -> dict:
     """rows: [(prompt_hash, subjective_prob, verdict)] → 按 prompt 版本分组 Brier
     (#28 同纪律:换模板换哈希,校准样本不混算;只出标量,桶看 calibration_block 分层)。"""
     grp: dict[str, list] = {}
@@ -356,8 +360,22 @@ def brier_by_version(rows) -> dict:
         if p is not None:
             grp.setdefault(h or "unversioned", []).append((p, v))
     return {h: {"label": _PROMPT_LABELS.get(h, h),
-                **{k: brier_stats(rs)[k] for k in ("n", "n_flat", "brier")}}
+                **{k: brier_stats(rs, unconditional)[k] for k in ("n", "n_flat", "brier")}}
             for h, rs in grp.items()}
+
+
+def headline_stats(rows) -> dict:
+    """rows: [(direction, verdict)] → headline 三件套(VNEXT_MEASUREMENT b):
+    directional=方向卡(偏多/偏空)命中率带 Wilson(_stats 同款,点估计禁裸报)/
+    coverage=方向卡去平率 %(对+错)/n——开口说话时说得多干脆/
+    neutral_rate=中性卡占全部到期卡比例 %——多久弃权一次。
+    混合累计命中率(cum,方向±1pp阈与中性±2pp带混桶,系统性虚高)降次要行,字段不删仅展示降位。"""
+    dirv = [(v,) for d, v in rows if d in _DIR_SIGN]
+    st = _stats(dirv)
+    decided = st["right"] + st["wrong"]
+    return {"directional": st,
+            "coverage": round(decided / st["n"] * 100, 1) if st["n"] else None,
+            "neutral_rate": round((len(rows) - st["n"]) / len(rows) * 100, 1) if rows else None}
 
 
 # ---------- 周度收口(周日 cron:汇总 + DeepSeek 错误归纳 + lessons 回灌) ----------
@@ -424,10 +442,16 @@ def weekly(date_utc8: str) -> dict:
         by_src = source_attrib(cur.fetchall())
         cur.execute("""SELECT jc.direction, cs.verdict FROM card_score cs
             JOIN judgment_card jc USING(card_id)""")
+        dirv = cur.fetchall()
         by_dir_rows: dict[str, list] = {}
-        for d, v in cur.fetchall():
+        for d, v in dirv:
             by_dir_rows.setdefault(d, []).append((v,))
         by_dir = {d: _stats(rows) for d, rows in by_dir_rows.items()}
+        # headline 三件套(VNEXT_MEASUREMENT b):方向卡命中率(Wilson)+覆盖率+中性率
+        headline = headline_stats(dirv)
+        cur.execute("""SELECT dc.direction, ds.verdict FROM decision_score ds
+            JOIN decision_card dc USING(card_id)""")
+        stock_headline = headline_stats(cur.fetchall())
         wk = _week_rows(cur, date_utc8)
         week = _stats([(r[-1],) for r in wk])
         swk = _week_stock_rows(cur, date_utc8)
@@ -456,11 +480,17 @@ def weekly(date_utc8: str) -> dict:
         cur.execute("""SELECT jc.prompt_hash, jc.direction, jc.subjective_prob, cs.verdict
             FROM card_score cs JOIN judgment_card jc USING(card_id)
             WHERE jc.subjective_prob IS NOT NULL""")
-        calibration = calibration_block(cur.fetchall())
+        cal_rows = cur.fetchall()
+        calibration = calibration_block(cal_rows)
+        # vNext 主指标(VNEXT_MEASUREMENT a):无条件 Brier 并列序列——全量重算派生,
+        # 不改写既有 calibration 键(旧记录=旧口径留痕,append 新键不动旧键)
+        calibration_uncond = calibration_block(cal_rows, unconditional=True)
         cur.execute("""SELECT dc.prompt_hash, dc.direction, dc.subjective_prob, ds.verdict
             FROM decision_score ds JOIN decision_card dc USING(card_id)
             WHERE dc.subjective_prob IS NOT NULL""")
-        stock_calibration = calibration_block(cur.fetchall())
+        scal_rows = cur.fetchall()
+        stock_calibration = calibration_block(scal_rows)
+        stock_calibration_uncond = calibration_block(scal_rows, unconditional=True)
         blocks = [_wrong_block(f"【节点】{chain}/{node}", nid, d, cf, th, ev, mx, ex, nr, pr)
                   for nid, chain, node, d, cf, th, ev, mx, ex, nr, pr, v in wk if v == "错"]
         blocks += [_wrong_block(f"【个股】{name}({code})", code, d, cf, th, ev, mx, ex, sr, pr)
@@ -472,7 +502,10 @@ def weekly(date_utc8: str) -> dict:
              "baseline": baseline, "stock_baseline": stock_baseline,
              "override": override, "stock_override": stock_override,
              "by_version": by_version, "stock_by_version": stock_by_version,
-             "calibration": calibration, "stock_calibration": stock_calibration}
+             "calibration": calibration, "stock_calibration": stock_calibration,
+             "headline": headline, "stock_headline": stock_headline,
+             "calibration_uncond": calibration_uncond,
+             "stock_calibration_uncond": stock_calibration_uncond}
     with db.rv_conn() as conn, conn.cursor() as cur:
         cur.execute("""INSERT INTO b7_weekly(week_end, stats, review, lessons)
             VALUES(to_date(%s,'YYYYMMDD'), %s, %s, %s)
