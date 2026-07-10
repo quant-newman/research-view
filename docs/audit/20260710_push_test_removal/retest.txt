@@ -1,0 +1,13 @@
+=== 复测 2026-07-10 13:15:16 UTC+8, 目标 127.0.0.1:8092(容器直连,同 HTTPS 反代后端) ===
+--- 1) POST /api/push/test(应 404,端点已删)
+HTTP 404
+--- 2) GET /api/push/vapid-key(应 200,订阅链不受影响)
+{"key":"BOBadCNmtW-xOS-G2TPPnl-6W1AvAcblUB61XpStwhqCjC_8FuKWC_5LfgI64SwCsARURNkoXZz7RVrKbsqEVpc"}
+HTTP 200
+
+--- 3) POST /api/push/subscribe 空体(应 400 校验拒,处理器存活)
+HTTP 400
+--- 4) 限流复测:连打 12 次 vapid-key(pushlim 10r/m burst5,应前~6个200后429)
+200 200 200 429 429 429 429 429 429 429 429 429 
+--- 5) 对照:HTTPS 域名侧 POST /api/push/test(应 404)
+HTTP 404

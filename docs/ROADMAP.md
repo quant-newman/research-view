@@ -26,6 +26,7 @@
 | 2026-07-09 | **个股资金统计+异动 Web Push(DECISIONS #42,使用缺口来源)**:mf_intraday_stock 个股盘中快照(核心池滚60天)+个股详情资金曲线(当日/20日,trends.json 懒加载);mf_alert 异动=15min 主力净额变动≥max(0.3亿,20日日均成交2%)+同向60min冷却,资金页异动条;推送链=chat 容器 /api/push 订阅(VAPID)+台北 push_alerts.py 随资金档发送(日上限30条)+PWA(sw.js,通知深链直达个股详情);**展示/推送层不进 B6/B8(同 #22),纯代码零 LLM** |
 | 2026-07-10 | **详情页实时化+服务级看门狗+异动链路修复**:个股详情↻刷新按钮(强拉 trends+dashboard,破模块级缓存)+顶栏实时价格(东财批量快照312票随5分钟资金档进 trends.json quote 字段,现价+实时涨跌幅+时点,失败降级回退日线涨幅);**服务级看门狗 watch_services.sh**(web/chat 容器 HTTP 探活+宿主 nginx,挂了自动拉起→复探→飞书,cron 每5min 全天,停 chat 演练通过,与 lib_alert/数据看门狗互补管"假活");**mf_alerts 越界修复**(meta 二元组误取[2],异动检测上线次日即全天熄火,修后11条积压异动放行,推送真机收到) |
 | 2026-07-10 | **export静默失败兜底(外部审查发现收窄后落地)**:run_pipeline/run_light 的 step() 吞错设计下 export 失败仍 exit 0——health 红角标/飞书摘要读旧文件、数据看门狗 20h 阈值当晚不命中,最长可静默 ~39h(其余关键步骤 B3/B6/B8 已有 health红/飞书摘要/看门狗空检查三层,不属此洞);lib_alert 新增 alert_check_fresh:rsync 拉回后核对 generated_at,超30min 置共享 export 旗标(飞书去重推一次,恢复自动清),挂 afterhours/intraday/mf 三编排(premarket/us 直调 build_dashboard 本就走 trap ERR),检测延迟收敛到 ≤45min |
+| 2026-07-10 | **紧急安全修复:删 /api/push/test 群发测试端点+/api/push 专属限流(DECISIONS #44,07-11 追加单第1项获批提前)**:端点公网零鉴权可对全部订阅者群发(文案硬编码非注入),删端点+其唯一调用 send_to_all() 死代码同删;nginx pushlim 每 IP 10次/分;curl 复测 404/200/400/429 全符;**不改变任何判断/评分/提示词语义,非冻结例外**;取证 docs/audit/20260710_push_test_removal/。同日:vNext测量预注册密封(docs/VNEXT_MEASUREMENT.md)+3a/3b分支备好(vnext-measurement-20260710,不合并)+提案C验收第2项回填✅+复权双口径核查(脚本归档,正式跑等07-10日线) |
 
 ## 当前阶段:校准期(影子运行)+ 双轨节奏(DECISIONS #22)
 

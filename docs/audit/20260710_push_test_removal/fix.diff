@@ -1,0 +1,97 @@
+diff --git a/chat/app.py b/chat/app.py
+index 9ad9af6..3afa059 100644
+--- a/chat/app.py
++++ b/chat/app.py
+@@ -82,11 +82,6 @@ async def push_unsubscribe(req: Request):
+     return {"ok": True, "subscriptions": n}
+ 
+ 
+-@app.post("/api/push/test")
+-def push_test():
+-    return pushmod.send_to_all("✅ 推送已接通", "这是一条测试通知,点开回到看板", "/", "test")
+-
+-
+ @app.post("/api/chat")
+ async def chat(req: Request):
+     body = await req.json()
+diff --git a/chat/push.py b/chat/push.py
+index 500082f..b2edfaf 100644
+--- a/chat/push.py
++++ b/chat/push.py
+@@ -1,6 +1,7 @@
+-"""Web Push(PWA 站内推送),照 agu 先例:VAPID 签名 + pywebpush 发送。
++"""Web Push(PWA 站内推送),照 agu 先例:VAPID 签名。
+ 订阅存 /state/push_subs.json——与台北宿主 scripts/push_alerts.py 共用同一文件
+-(容器管订阅增删+测试通知,宿主脚本读订阅发盘中资金异动)。失效订阅(404/410)就地清理。
++(容器只管订阅增删;推送发送一律在宿主脚本,容器无群发能力——公网端点零鉴权,
++群发测试端点 2026-07-10 已删除,测试通知走宿主 pywebpush 直发)。
+ """
+ from __future__ import annotations
+ 
+@@ -11,12 +12,9 @@ from datetime import datetime, timedelta, timezone
+ from functools import lru_cache
+ from pathlib import Path
+ 
+-from pywebpush import WebPushException, webpush
+-
+ TZ8 = timezone(timedelta(hours=8))
+ SUBS = Path(os.environ.get("STATE_DIR", "/state")) / "push_subs.json"
+ VAPID_PEM = os.environ.get("VAPID_PRIVATE_KEY_PATH", "/app/vapid_private.pem")
+-VAPID_SUB = os.environ.get("VAPID_SUB", "mailto:admin@example.com")
+ 
+ _lock = threading.Lock()
+ 
+@@ -67,28 +65,3 @@ def unsubscribe(endpoint: str) -> int:
+         return len(subs)
+ 
+ 
+-def send_to_all(title: str, body: str, url: str = "/", tag: str | None = None) -> dict:
+-    """向所有订阅设备推送(容器内仅测试通知用;异动推送在台北宿主 push_alerts.py)。"""
+-    with _lock:
+-        subs = _load()
+-    payload = json.dumps({"title": title, "body": body, "url": url, "tag": tag}, ensure_ascii=False)
+-    ok, dead = 0, []
+-    for ep, s in subs.items():
+-        try:
+-            webpush(subscription_info={"endpoint": ep, "keys": {"p256dh": s["p256dh"], "auth": s["auth"]}},
+-                    data=payload, vapid_private_key=VAPID_PEM, vapid_claims={"sub": VAPID_SUB},
+-                    ttl=43200, headers={"Urgency": "high"}, timeout=10)
+-            ok += 1
+-        except WebPushException as e:
+-            status = e.response.status_code if e.response is not None else None
+-            if status in (404, 410):
+-                dead.append(ep)
+-        except Exception:  # noqa: BLE001 单设备失败不阻塞其余
+-            pass
+-    if dead:
+-        with _lock:
+-            subs = _load()
+-            for ep in dead:
+-                subs.pop(ep, None)
+-            _save(subs)
+-    return {"subscriptions": len(subs) - len(dead), "sent": ok}
+diff --git a/web/nginx.conf b/web/nginx.conf
+index aca341c..142b1a0 100644
+--- a/web/nginx.conf
++++ b/web/nginx.conf
+@@ -8,6 +8,8 @@ limit_req_zone $binary_remote_addr zone=perip:10m rate=10r/s;
+ limit_conn_zone $binary_remote_addr zone=peraddr:10m;
+ # chat 问答单独更紧的限速(每次都是 LLM 调用花钱):每 IP 12次/分;后端 guard.py 另有每日熔断
+ limit_req_zone $binary_remote_addr zone=chatip:10m rate=12r/m;
++# push 订阅端点单独更紧的限速(subscribe 是写盘操作,正常一台设备只订阅一次):每 IP 10次/分
++limit_req_zone $binary_remote_addr zone=pushlim:10m rate=10r/m;
+ 
+ map $http_user_agent $bad_ua {
+     default 0;
+@@ -74,8 +76,10 @@ server {
+         proxy_send_timeout 300s;
+     }
+ 
+-    # Web Push 订阅/测试(chat 容器托管;异动推送发送在台北宿主脚本)
++    # Web Push 订阅(chat 容器托管;异动推送发送在台北宿主脚本。
++    # 群发测试端点 /api/push/test 2026-07-10 已删除——公网零鉴权可对全部订阅者刷屏)
+     location /api/push {
++        limit_req zone=pushlim burst=5 nodelay;
+         proxy_pass http://chat:8000;
+         proxy_http_version 1.1;
+         proxy_set_header X-Real-IP $remote_addr;

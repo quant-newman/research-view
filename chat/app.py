@@ -82,11 +82,6 @@ async def push_unsubscribe(req: Request):
     return {"ok": True, "subscriptions": n}
 
 
-@app.post("/api/push/test")
-def push_test():
-    return pushmod.send_to_all("✅ 推送已接通", "这是一条测试通知,点开回到看板", "/", "test")
-
-
 @app.post("/api/chat")
 async def chat(req: Request):
     body = await req.json()
