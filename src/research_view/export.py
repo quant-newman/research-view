@@ -486,8 +486,15 @@ def build_dashboard(date_utc8: str) -> Path:
         mf_intra = _mf.stock_intraday_series()
     except Exception:  # noqa: BLE001 快照表不可用降级为空
         mf_intra = None
+    # 实时行情快照(详情顶栏现价+实时涨跌幅,随5分钟档更新;失败降级回退日线涨幅)
+    try:
+        quote_a = _mf.quotes(clickable)
+    except Exception as e:  # noqa: BLE001
+        print(f"  ! quote 降级(东财快照不可用): {e}")
+        quote_a = {}
     trends = {"meta": {"date": date_utc8, "a": len(a_trends), "us": len(us_trends)},
               "a": a_trends, "us": us_trends,
+              "quote": {"a": quote_a, "at": datetime.now(ZoneInfo(config.TZ)).strftime("%H:%M")},
               "mf": {"intraday": mf_intra, "hist": mf_hist}}
     (EXPORT_DIR / "trends.json").write_text(_dump(trends), encoding="utf-8")
     print(f"  trends: A股 {len(a_trends)} 只 / 美股 {len(us_trends)} 只")

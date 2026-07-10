@@ -114,7 +114,7 @@ export default function App() {
   return (
     <StockCtx.Provider value={setStock}>
     <div className="min-h-screen flex">
-      {stock && <StockDetail sel={stock} market={market} d={d} onClose={() => setStock(null)} />}
+      {stock && <StockDetail sel={stock} market={market} d={d} onClose={() => setStock(null)} onReload={load} />}
       {/* 左侧窄导航(桌面);手机换底部 tab 栏 */}
       <nav className="w-16 shrink-0 border-r hairline bg-surface hidden md:flex flex-col items-center py-4 gap-4 text-[12px] text-dim">
         <div className="text-accent font-bold text-[15px]">RV</div>

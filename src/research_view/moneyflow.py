@@ -212,6 +212,27 @@ def collect_rt_extra() -> dict:
     return out
 
 
+def quotes(codes: set[str]) -> dict:
+    """东财批量行情快照:{code: [最新价, 涨跌幅%]}。个股详情顶栏现价,走 trends.json
+    随5分钟档刷新。6开头=沪(1.)其余=深/北(0.),同 _fetch_klines 口径;单次 GET,
+    ~300票 URL 3KB 内;停牌/无数据('-'非数值)跳过。"""
+    if not codes:
+        return {}
+    secids = ",".join(("1." if c.startswith("6") else "0.") + c for c in sorted(codes))
+    url = ("https://push2delay.eastmoney.com/api/qt/ulist.np/get"
+           f"?secids={secids}&fields=f2,f3,f12&fltt=2&invt=2&np=1&pz={len(codes)}")
+    socket.getaddrinfo = _ipv4_only
+    try:
+        raw = urllib.request.urlopen(urllib.request.Request(url, headers=_UA), timeout=12).read()
+    finally:
+        socket.getaddrinfo = _orig_getaddrinfo
+    diff = (json.loads(raw).get("data") or {}).get("diff") or []
+    if isinstance(diff, dict):  # 东财部分参数组合下 diff 回 dict
+        diff = list(diff.values())
+    return {d["f12"]: [d["f2"], d["f3"]] for d in diff
+            if isinstance(d.get("f2"), (int, float)) and isinstance(d.get("f3"), (int, float))}
+
+
 # ---------- 盘中累计曲线(资金页,sql/018) ----------
 
 def snapshot_intraday() -> dict:

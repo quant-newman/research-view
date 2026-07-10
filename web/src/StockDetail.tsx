@@ -11,10 +11,14 @@ type MfTrends = {
   intraday?: { date: string; times: string[]; stocks: Record<string, (number | null)[]> } | null;
   hist?: { dates: string[]; stocks: Record<string, number[]> } | null;
 };
-type TrendMap = { a?: Record<string, TrendPoint[]>; us?: Record<string, TrendPoint[]>; mf?: MfTrends };
+type TrendMap = {
+  a?: Record<string, TrendPoint[]>; us?: Record<string, TrendPoint[]>; mf?: MfTrends;
+  quote?: { a?: Record<string, [number, number]>; at?: string };  // A股实时快照 [现价,涨跌幅%],随5分钟档
+};
 let _trendsCache: TrendMap | null = null;
 let _trendsPromise: Promise<TrendMap> | null = null;
-function loadTrends(): Promise<TrendMap> {
+function loadTrends(force = false): Promise<TrendMap> {
+  if (force) { _trendsCache = null; _trendsPromise = null; }
   if (_trendsCache) return Promise.resolve(_trendsCache);
   if (!_trendsPromise) {
     _trendsPromise = fetch("/data/trends.json", { cache: "no-store" })  // 同 dashboard,防浏览器拿旧档(资金/走势随盘中更新)
@@ -115,7 +119,9 @@ function Sec({ title, n, children }: { title: string; n?: number; children: Reac
   );
 }
 
-export function StockDetail({ sel, market, d, onClose }: { sel: StockSel; market: "A" | "US"; d: Dashboard; onClose: () => void }) {
+export function StockDetail({ sel, market, d, onClose, onReload }: {
+  sel: StockSel; market: "A" | "US"; d: Dashboard; onClose: () => void; onReload?: () => Promise<void>;
+}) {
   const isUS = market === "US";
   // 解析 code / name
   const hStocks = (isUS ? d.us?.heatmap?.stocks : d.heatmap?.stocks) || [];
@@ -154,19 +160,29 @@ export function StockDetail({ sel, market, d, onClose }: { sel: StockSel; market
   const pct = bd.pct ?? hs.ret_1d;
   const mv = hs.total_mv ?? bd.market_cap;
 
-  // 6个月走势 + 个股资金(懒加载 trends.json,按 code/ticker 查)
+  // 6个月走势 + 个股资金 + 实时快照(懒加载 trends.json,按 code/ticker 查)
   const [trend, setTrend] = useState<TrendPoint[] | null>(null);
   const [mfT, setMfT] = useState<MfTrends | null>(null);
+  const [quote, setQuote] = useState<[number, number] | null>(null);  // [现价,涨跌幅%](仅A股)
+  const [quoteAt, setQuoteAt] = useState<string | undefined>();
+  const [busy, setBusy] = useState(false);
+  const applyTrends = (t: TrendMap) => {
+    const s = (isUS ? t.us : t.a)?.[code as string];
+    setTrend(s && s.length > 1 ? s : []);
+    setMfT(t.mf || null);
+    setQuote((!isUS && t.quote?.a?.[code as string]) || null);
+    setQuoteAt(t.quote?.at);
+  };
   useEffect(() => {
     let alive = true;
-    loadTrends().then((t) => {
-      if (!alive) return;
-      const s = (isUS ? t.us : t.a)?.[code as string];
-      setTrend(s && s.length > 1 ? s : []);
-      setMfT(t.mf || null);
-    });
+    loadTrends().then((t) => { if (alive) applyTrends(t); });
     return () => { alive = false; };
   }, [code, isUS]);
+  // 手动刷新:trends.json 强制重拉(破模块级缓存)+ 看板数据重拉(主力净额/异动来自 dashboard)
+  const refresh = () => {
+    setBusy(true);
+    Promise.all([loadTrends(true).then(applyTrends), onReload?.()]).finally(() => setBusy(false));
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 p-0 sm:p-4 overflow-auto" onClick={onClose}>
@@ -176,8 +192,16 @@ export function StockDetail({ sel, market, d, onClose }: { sel: StockSel; market
           <span className="text-primary font-semibold text-[17px]">{name}</span>
           <span className="mono text-dim text-[13px]">{code}</span>
           {isUS && <span className="text-info text-[12px]">美股</span>}
-          {pct != null && <span className={`mono ${pctCls(pct)}`}>{pct > 0 ? "+" : ""}{pct}%</span>}
-          <button onClick={onClose} className="ml-auto text-muted hover:text-primary text-[14px]">✕</button>
+          {quote && <span className="mono text-primary text-[15px]">{quote[0].toFixed(2)}</span>}
+          {(() => { const p = quote ? quote[1] : pct;  // 有实时快照用实时涨跌幅,否则回退日线
+            return p != null && <span className={`mono ${pctCls(p)}`}>{p > 0 ? "+" : ""}{p}%</span>; })()}
+          {quote && quoteAt && <span className="text-dim text-[11px]">{quoteAt}</span>}
+          <button disabled={busy} onClick={refresh}
+            className={`ml-auto px-2 py-0.5 rounded border hairline text-[13px] ${busy ? "text-dim" : "text-muted hover:text-primary"}`}
+            title="重新拉取该票资金曲线与看板数据(盘中资金曲线每5分钟更新)">
+            {busy ? "刷新中…" : "↻ 刷新"}
+          </button>
+          <button onClick={onClose} className="text-muted hover:text-primary text-[14px]">✕</button>
         </div>
 
         <div className="p-4 space-y-4">
