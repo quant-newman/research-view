@@ -1,0 +1,860 @@
+{
+ "generated_at": "2026-07-10T16:40:11.710727+08:00",
+ "mode": "OFFICIAL",
+ "windows": [
+  {
+   "d0": "2026-07-03",
+   "horizon": 5,
+   "d1": "2026-07-10",
+   "membership": "snapshot",
+   "pool_size": 179,
+   "n_priced_raw": 177,
+   "n_priced_adj": 177,
+   "dropped_no_af": [],
+   "pool_ret_raw": -2.6283,
+   "pool_ret_adj": -2.609
+  }
+ ],
+ "node_cards": [
+  {
+   "card_id": 4,
+   "trade_date": "2026-07-03",
+   "node_id": "optical::光纤光缆",
+   "direction": "偏空",
+   "n_members_raw": 5,
+   "n_members_adj": 5,
+   "excess_raw": -8.8928,
+   "excess_adj": -8.9122,
+   "verdict_raw": "对",
+   "verdict_adj": "对",
+   "dev": 0.0194,
+   "flip": false
+  },
+  {
+   "card_id": 8,
+   "trade_date": "2026-07-03",
+   "node_id": "robotics::丝杠/传动",
+   "direction": "偏多",
+   "n_members_raw": 4,
+   "n_members_adj": 4,
+   "excess_raw": -11.0774,
+   "excess_adj": -10.9021,
+   "verdict_raw": "错",
+   "verdict_adj": "错",
+   "dev": 0.1754,
+   "flip": false
+  },
+  {
+   "card_id": 5,
+   "trade_date": "2026-07-03",
+   "node_id": "robotics::伺服/电机",
+   "direction": "偏多",
+   "n_members_raw": 4,
+   "n_members_adj": 4,
+   "excess_raw": -7.7928,
+   "excess_adj": -7.8122,
+   "verdict_raw": "错",
+   "verdict_adj": "错",
+   "dev": 0.0194,
+   "flip": false
+  },
+  {
+   "card_id": 1,
+   "trade_date": "2026-07-03",
+   "node_id": "robotics::减速器",
+   "direction": "偏多",
+   "n_members_raw": 3,
+   "n_members_adj": 3,
+   "excess_raw": -9.2513,
+   "excess_adj": -9.0236,
+   "verdict_raw": "错",
+   "verdict_adj": "错",
+   "dev": 0.2277,
+   "flip": false
+  },
+  {
+   "card_id": 6,
+   "trade_date": "2026-07-03",
+   "node_id": "robotics::执行器/结构件",
+   "direction": "偏多",
+   "n_members_raw": 3,
+   "n_members_adj": 3,
+   "excess_raw": -7.3335,
+   "excess_adj": -7.2301,
+   "verdict_raw": "错",
+   "verdict_adj": "错",
+   "dev": 0.1034,
+   "flip": false
+  },
+  {
+   "card_id": 7,
+   "trade_date": "2026-07-03",
+   "node_id": "semiconductor::先进封测",
+   "direction": "偏空",
+   "n_members_raw": 5,
+   "n_members_adj": 5,
+   "excess_raw": 13.7109,
+   "excess_adj": 13.6915,
+   "verdict_raw": "错",
+   "verdict_adj": "错",
+   "dev": 0.0194,
+   "flip": false
+  },
+  {
+   "card_id": 2,
+   "trade_date": "2026-07-03",
+   "node_id": "semiconductor::电子特气-大宗/氦气",
+   "direction": "偏多",
+   "n_members_raw": 2,
+   "n_members_adj": 2,
+   "excess_raw": -7.452,
+   "excess_adj": -7.4714,
+   "verdict_raw": "错",
+   "verdict_adj": "错",
+   "dev": 0.0194,
+   "flip": false
+  },
+  {
+   "card_id": 3,
+   "trade_date": "2026-07-03",
+   "node_id": "semiconductor::电子特气-气械一体",
+   "direction": "中性",
+   "n_members_raw": 1,
+   "n_members_adj": 1,
+   "excess_raw": -9.4889,
+   "excess_adj": -9.5083,
+   "verdict_raw": "错",
+   "verdict_adj": "错",
+   "dev": 0.0194,
+   "flip": false
+  }
+ ],
+ "stock_cards": [
+  {
+   "card_id": 10,
+   "trade_date": "2026-07-03",
+   "code": "002050",
+   "ts_code": "002050.SZ",
+   "direction": "偏多",
+   "excess_raw": -9.1904,
+   "excess_adj": -9.2098,
+   "verdict_raw": "错",
+   "verdict_adj": "错",
+   "dev": 0.0194,
+   "flip": false
+  },
+  {
+   "card_id": 8,
+   "trade_date": "2026-07-03",
+   "code": "300115",
+   "ts_code": "300115.SZ",
+   "direction": "偏多",
+   "excess_raw": -7.3174,
+   "excess_adj": -6.9683,
+   "verdict_raw": "错",
+   "verdict_adj": "错",
+   "dev": 0.3491,
+   "flip": false
+  },
+  {
+   "card_id": 2,
+   "trade_date": "2026-07-03",
+   "code": "300580",
+   "ts_code": "300580.SZ",
+   "direction": "偏多",
+   "excess_raw": -9.082,
+   "excess_adj": -9.1014,
+   "verdict_raw": "错",
+   "verdict_adj": "错",
+   "dev": 0.0194,
+   "flip": false
+  },
+  {
+   "card_id": 7,
+   "trade_date": "2026-07-03",
+   "code": "002185",
+   "ts_code": "002185.SZ",
+   "direction": "偏空",
+   "excess_raw": 32.3567,
+   "excess_adj": 32.3373,
+   "verdict_raw": "错",
+   "verdict_adj": "错",
+   "dev": 0.0194,
+   "flip": false
+  },
+  {
+   "card_id": 9,
+   "trade_date": "2026-07-03",
+   "code": "002896",
+   "ts_code": "002896.SZ",
+   "direction": "偏多",
+   "excess_raw": -8.6424,
+   "excess_adj": -8.5164,
+   "verdict_raw": "错",
+   "verdict_adj": "错",
+   "dev": 0.1259,
+   "flip": false
+  },
+  {
+   "card_id": 1,
+   "trade_date": "2026-07-03",
+   "code": "688017",
+   "ts_code": "688017.SH",
+   "direction": "偏多",
+   "excess_raw": -14.3798,
+   "excess_adj": -14.3582,
+   "verdict_raw": "错",
+   "verdict_adj": "错",
+   "dev": 0.0217,
+   "flip": false
+  },
+  {
+   "card_id": 6,
+   "trade_date": "2026-07-03",
+   "code": "688548",
+   "ts_code": "688548.SH",
+   "direction": "偏多",
+   "excess_raw": -3.5073,
+   "excess_adj": -3.5267,
+   "verdict_raw": "错",
+   "verdict_adj": "错",
+   "dev": 0.0194,
+   "flip": false
+  },
+  {
+   "card_id": 3,
+   "trade_date": "2026-07-03",
+   "code": "002491",
+   "ts_code": "002491.SZ",
+   "direction": "偏空",
+   "excess_raw": -10.6814,
+   "excess_adj": -10.7008,
+   "verdict_raw": "对",
+   "verdict_adj": "对",
+   "dev": 0.0194,
+   "flip": false
+  },
+  {
+   "card_id": 4,
+   "trade_date": "2026-07-03",
+   "code": "002472",
+   "ts_code": "002472.SZ",
+   "direction": "偏多",
+   "excess_raw": -4.7318,
+   "excess_adj": -4.1962,
+   "verdict_raw": "错",
+   "verdict_adj": "错",
+   "dev": 0.5356,
+   "flip": false
+  },
+  {
+   "card_id": 5,
+   "trade_date": "2026-07-03",
+   "code": "002979",
+   "ts_code": "002979.SZ",
+   "direction": "偏多",
+   "excess_raw": -2.4615,
+   "excess_adj": -2.4809,
+   "verdict_raw": "错",
+   "verdict_adj": "错",
+   "dev": 0.0194,
+   "flip": false
+  },
+  {
+   "card_id": 11,
+   "trade_date": "2026-07-03",
+   "code": "000021",
+   "ts_code": "000021.SZ",
+   "direction": "偏空",
+   "excess_raw": 6.2055,
+   "excess_adj": 6.1861,
+   "verdict_raw": "错",
+   "verdict_adj": "错",
+   "dev": 0.0194,
+   "flip": false
+  },
+  {
+   "card_id": 12,
+   "trade_date": "2026-07-03",
+   "code": "688106",
+   "ts_code": "688106.SH",
+   "direction": "中性",
+   "excess_raw": -11.3967,
+   "excess_adj": -11.416,
+   "verdict_raw": "错",
+   "verdict_adj": "错",
+   "dev": 0.0194,
+   "flip": false
+  }
+ ],
+ "pending": [
+  {
+   "kind": "node",
+   "card_id": 22,
+   "trade_date": "2026-07-06",
+   "reason": "window_incomplete",
+   "d1": "2026-07-13"
+  },
+  {
+   "kind": "node",
+   "card_id": 24,
+   "trade_date": "2026-07-06",
+   "reason": "window_incomplete",
+   "d1": "2026-07-13"
+  },
+  {
+   "kind": "node",
+   "card_id": 23,
+   "trade_date": "2026-07-06",
+   "reason": "window_incomplete",
+   "d1": "2026-07-13"
+  },
+  {
+   "kind": "node",
+   "card_id": 21,
+   "trade_date": "2026-07-06",
+   "reason": "window_incomplete",
+   "d1": "2026-07-13"
+  },
+  {
+   "kind": "node",
+   "card_id": 19,
+   "trade_date": "2026-07-06",
+   "reason": "window_incomplete",
+   "d1": "2026-07-13"
+  },
+  {
+   "kind": "node",
+   "card_id": 25,
+   "trade_date": "2026-07-06",
+   "reason": "window_incomplete",
+   "d1": "2026-07-13"
+  },
+  {
+   "kind": "node",
+   "card_id": 26,
+   "trade_date": "2026-07-06",
+   "reason": "window_incomplete",
+   "d1": "2026-07-13"
+  },
+  {
+   "kind": "node",
+   "card_id": 20,
+   "trade_date": "2026-07-06",
+   "reason": "window_incomplete",
+   "d1": "2026-07-13"
+  },
+  {
+   "kind": "stock",
+   "card_id": 22,
+   "trade_date": "2026-07-06",
+   "reason": "window_incomplete",
+   "d1": "2026-07-13"
+  },
+  {
+   "kind": "stock",
+   "card_id": 16,
+   "trade_date": "2026-07-06",
+   "reason": "window_incomplete",
+   "d1": "2026-07-13"
+  },
+  {
+   "kind": "stock",
+   "card_id": 23,
+   "trade_date": "2026-07-06",
+   "reason": "window_incomplete",
+   "d1": "2026-07-13"
+  },
+  {
+   "kind": "stock",
+   "card_id": 18,
+   "trade_date": "2026-07-06",
+   "reason": "window_incomplete",
+   "d1": "2026-07-13"
+  },
+  {
+   "kind": "stock",
+   "card_id": 26,
+   "trade_date": "2026-07-06",
+   "reason": "window_incomplete",
+   "d1": "2026-07-13"
+  },
+  {
+   "kind": "stock",
+   "card_id": 15,
+   "trade_date": "2026-07-06",
+   "reason": "window_incomplete",
+   "d1": "2026-07-13"
+  },
+  {
+   "kind": "stock",
+   "card_id": 21,
+   "trade_date": "2026-07-06",
+   "reason": "window_incomplete",
+   "d1": "2026-07-13"
+  },
+  {
+   "kind": "stock",
+   "card_id": 19,
+   "trade_date": "2026-07-06",
+   "reason": "window_incomplete",
+   "d1": "2026-07-13"
+  },
+  {
+   "kind": "stock",
+   "card_id": 24,
+   "trade_date": "2026-07-06",
+   "reason": "window_incomplete",
+   "d1": "2026-07-13"
+  },
+  {
+   "kind": "stock",
+   "card_id": 25,
+   "trade_date": "2026-07-06",
+   "reason": "window_incomplete",
+   "d1": "2026-07-13"
+  },
+  {
+   "kind": "stock",
+   "card_id": 20,
+   "trade_date": "2026-07-06",
+   "reason": "window_incomplete",
+   "d1": "2026-07-13"
+  },
+  {
+   "kind": "stock",
+   "card_id": 17,
+   "trade_date": "2026-07-06",
+   "reason": "window_incomplete",
+   "d1": "2026-07-13"
+  },
+  {
+   "kind": "node",
+   "card_id": 29,
+   "trade_date": "2026-07-07",
+   "reason": "window_incomplete",
+   "d1": "2026-07-14"
+  },
+  {
+   "kind": "node",
+   "card_id": 33,
+   "trade_date": "2026-07-07",
+   "reason": "window_incomplete",
+   "d1": "2026-07-14"
+  },
+  {
+   "kind": "node",
+   "card_id": 31,
+   "trade_date": "2026-07-07",
+   "reason": "window_incomplete",
+   "d1": "2026-07-14"
+  },
+  {
+   "kind": "node",
+   "card_id": 27,
+   "trade_date": "2026-07-07",
+   "reason": "window_incomplete",
+   "d1": "2026-07-14"
+  },
+  {
+   "kind": "node",
+   "card_id": 30,
+   "trade_date": "2026-07-07",
+   "reason": "window_incomplete",
+   "d1": "2026-07-14"
+  },
+  {
+   "kind": "node",
+   "card_id": 28,
+   "trade_date": "2026-07-07",
+   "reason": "window_incomplete",
+   "d1": "2026-07-14"
+  },
+  {
+   "kind": "node",
+   "card_id": 32,
+   "trade_date": "2026-07-07",
+   "reason": "window_incomplete",
+   "d1": "2026-07-14"
+  },
+  {
+   "kind": "node",
+   "card_id": 34,
+   "trade_date": "2026-07-07",
+   "reason": "window_incomplete",
+   "d1": "2026-07-14"
+  },
+  {
+   "kind": "stock",
+   "card_id": 37,
+   "trade_date": "2026-07-07",
+   "reason": "window_incomplete",
+   "d1": "2026-07-14"
+  },
+  {
+   "kind": "stock",
+   "card_id": 32,
+   "trade_date": "2026-07-07",
+   "reason": "window_incomplete",
+   "d1": "2026-07-14"
+  },
+  {
+   "kind": "stock",
+   "card_id": 30,
+   "trade_date": "2026-07-07",
+   "reason": "window_incomplete",
+   "d1": "2026-07-14"
+  },
+  {
+   "kind": "stock",
+   "card_id": 36,
+   "trade_date": "2026-07-07",
+   "reason": "window_incomplete",
+   "d1": "2026-07-14"
+  },
+  {
+   "kind": "stock",
+   "card_id": 38,
+   "trade_date": "2026-07-07",
+   "reason": "window_incomplete",
+   "d1": "2026-07-14"
+  },
+  {
+   "kind": "stock",
+   "card_id": 29,
+   "trade_date": "2026-07-07",
+   "reason": "window_incomplete",
+   "d1": "2026-07-14"
+  },
+  {
+   "kind": "stock",
+   "card_id": 27,
+   "trade_date": "2026-07-07",
+   "reason": "window_incomplete",
+   "d1": "2026-07-14"
+  },
+  {
+   "kind": "stock",
+   "card_id": 34,
+   "trade_date": "2026-07-07",
+   "reason": "window_incomplete",
+   "d1": "2026-07-14"
+  },
+  {
+   "kind": "stock",
+   "card_id": 33,
+   "trade_date": "2026-07-07",
+   "reason": "window_incomplete",
+   "d1": "2026-07-14"
+  },
+  {
+   "kind": "stock",
+   "card_id": 31,
+   "trade_date": "2026-07-07",
+   "reason": "window_incomplete",
+   "d1": "2026-07-14"
+  },
+  {
+   "kind": "stock",
+   "card_id": 28,
+   "trade_date": "2026-07-07",
+   "reason": "window_incomplete",
+   "d1": "2026-07-14"
+  },
+  {
+   "kind": "stock",
+   "card_id": 35,
+   "trade_date": "2026-07-07",
+   "reason": "window_incomplete",
+   "d1": "2026-07-14"
+  },
+  {
+   "kind": "node",
+   "card_id": 35,
+   "trade_date": "2026-07-08",
+   "reason": "window_incomplete",
+   "d1": "2026-07-15"
+  },
+  {
+   "kind": "node",
+   "card_id": 39,
+   "trade_date": "2026-07-08",
+   "reason": "window_incomplete",
+   "d1": "2026-07-15"
+  },
+  {
+   "kind": "node",
+   "card_id": 40,
+   "trade_date": "2026-07-08",
+   "reason": "window_incomplete",
+   "d1": "2026-07-15"
+  },
+  {
+   "kind": "node",
+   "card_id": 41,
+   "trade_date": "2026-07-08",
+   "reason": "window_incomplete",
+   "d1": "2026-07-15"
+  },
+  {
+   "kind": "node",
+   "card_id": 36,
+   "trade_date": "2026-07-08",
+   "reason": "window_incomplete",
+   "d1": "2026-07-15"
+  },
+  {
+   "kind": "node",
+   "card_id": 42,
+   "trade_date": "2026-07-08",
+   "reason": "window_incomplete",
+   "d1": "2026-07-15"
+  },
+  {
+   "kind": "node",
+   "card_id": 37,
+   "trade_date": "2026-07-08",
+   "reason": "window_incomplete",
+   "d1": "2026-07-15"
+  },
+  {
+   "kind": "node",
+   "card_id": 38,
+   "trade_date": "2026-07-08",
+   "reason": "window_incomplete",
+   "d1": "2026-07-15"
+  },
+  {
+   "kind": "stock",
+   "card_id": 45,
+   "trade_date": "2026-07-08",
+   "reason": "window_incomplete",
+   "d1": "2026-07-15"
+  },
+  {
+   "kind": "stock",
+   "card_id": 39,
+   "trade_date": "2026-07-08",
+   "reason": "window_incomplete",
+   "d1": "2026-07-15"
+  },
+  {
+   "kind": "stock",
+   "card_id": 47,
+   "trade_date": "2026-07-08",
+   "reason": "window_incomplete",
+   "d1": "2026-07-15"
+  },
+  {
+   "kind": "stock",
+   "card_id": 46,
+   "trade_date": "2026-07-08",
+   "reason": "window_incomplete",
+   "d1": "2026-07-15"
+  },
+  {
+   "kind": "stock",
+   "card_id": 40,
+   "trade_date": "2026-07-08",
+   "reason": "window_incomplete",
+   "d1": "2026-07-15"
+  },
+  {
+   "kind": "stock",
+   "card_id": 48,
+   "trade_date": "2026-07-08",
+   "reason": "window_incomplete",
+   "d1": "2026-07-15"
+  },
+  {
+   "kind": "stock",
+   "card_id": 50,
+   "trade_date": "2026-07-08",
+   "reason": "window_incomplete",
+   "d1": "2026-07-15"
+  },
+  {
+   "kind": "stock",
+   "card_id": 42,
+   "trade_date": "2026-07-08",
+   "reason": "window_incomplete",
+   "d1": "2026-07-15"
+  },
+  {
+   "kind": "stock",
+   "card_id": 41,
+   "trade_date": "2026-07-08",
+   "reason": "window_incomplete",
+   "d1": "2026-07-15"
+  },
+  {
+   "kind": "stock",
+   "card_id": 44,
+   "trade_date": "2026-07-08",
+   "reason": "window_incomplete",
+   "d1": "2026-07-15"
+  },
+  {
+   "kind": "stock",
+   "card_id": 49,
+   "trade_date": "2026-07-08",
+   "reason": "window_incomplete",
+   "d1": "2026-07-15"
+  },
+  {
+   "kind": "stock",
+   "card_id": 43,
+   "trade_date": "2026-07-08",
+   "reason": "window_incomplete",
+   "d1": "2026-07-15"
+  },
+  {
+   "kind": "node",
+   "card_id": 43,
+   "trade_date": "2026-07-09",
+   "reason": "window_incomplete",
+   "d1": "2026-07-16"
+  },
+  {
+   "kind": "node",
+   "card_id": 49,
+   "trade_date": "2026-07-09",
+   "reason": "window_incomplete",
+   "d1": "2026-07-16"
+  },
+  {
+   "kind": "node",
+   "card_id": 48,
+   "trade_date": "2026-07-09",
+   "reason": "window_incomplete",
+   "d1": "2026-07-16"
+  },
+  {
+   "kind": "node",
+   "card_id": 50,
+   "trade_date": "2026-07-09",
+   "reason": "window_incomplete",
+   "d1": "2026-07-16"
+  },
+  {
+   "kind": "node",
+   "card_id": 45,
+   "trade_date": "2026-07-09",
+   "reason": "window_incomplete",
+   "d1": "2026-07-16"
+  },
+  {
+   "kind": "node",
+   "card_id": 44,
+   "trade_date": "2026-07-09",
+   "reason": "window_incomplete",
+   "d1": "2026-07-16"
+  },
+  {
+   "kind": "node",
+   "card_id": 47,
+   "trade_date": "2026-07-09",
+   "reason": "window_incomplete",
+   "d1": "2026-07-16"
+  },
+  {
+   "kind": "node",
+   "card_id": 46,
+   "trade_date": "2026-07-09",
+   "reason": "window_incomplete",
+   "d1": "2026-07-16"
+  },
+  {
+   "kind": "stock",
+   "card_id": 58,
+   "trade_date": "2026-07-09",
+   "reason": "window_incomplete",
+   "d1": "2026-07-16"
+  },
+  {
+   "kind": "stock",
+   "card_id": 59,
+   "trade_date": "2026-07-09",
+   "reason": "window_incomplete",
+   "d1": "2026-07-16"
+  },
+  {
+   "kind": "stock",
+   "card_id": 56,
+   "trade_date": "2026-07-09",
+   "reason": "window_incomplete",
+   "d1": "2026-07-16"
+  },
+  {
+   "kind": "stock",
+   "card_id": 51,
+   "trade_date": "2026-07-09",
+   "reason": "window_incomplete",
+   "d1": "2026-07-16"
+  },
+  {
+   "kind": "stock",
+   "card_id": 62,
+   "trade_date": "2026-07-09",
+   "reason": "window_incomplete",
+   "d1": "2026-07-16"
+  },
+  {
+   "kind": "stock",
+   "card_id": 60,
+   "trade_date": "2026-07-09",
+   "reason": "window_incomplete",
+   "d1": "2026-07-16"
+  },
+  {
+   "kind": "stock",
+   "card_id": 57,
+   "trade_date": "2026-07-09",
+   "reason": "window_incomplete",
+   "d1": "2026-07-16"
+  },
+  {
+   "kind": "stock",
+   "card_id": 55,
+   "trade_date": "2026-07-09",
+   "reason": "window_incomplete",
+   "d1": "2026-07-16"
+  },
+  {
+   "kind": "stock",
+   "card_id": 61,
+   "trade_date": "2026-07-09",
+   "reason": "window_incomplete",
+   "d1": "2026-07-16"
+  },
+  {
+   "kind": "stock",
+   "card_id": 53,
+   "trade_date": "2026-07-09",
+   "reason": "window_incomplete",
+   "d1": "2026-07-16"
+  },
+  {
+   "kind": "stock",
+   "card_id": 54,
+   "trade_date": "2026-07-09",
+   "reason": "window_incomplete",
+   "d1": "2026-07-16"
+  },
+  {
+   "kind": "stock",
+   "card_id": 52,
+   "trade_date": "2026-07-09",
+   "reason": "window_incomplete",
+   "d1": "2026-07-16"
+  }
+ ],
+ "latest_bar": "2026-07-10",
+ "summary": {
+  "n_node": 8,
+  "n_stock": 12,
+  "n_pending": 80,
+  "flips": [],
+  "max_dev": 0.5356
+ }
+}
