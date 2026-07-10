@@ -26,6 +26,7 @@ REMOTE=/opt/research_view
 
 $SSH "cd $REMOTE && ./.venv/bin/python scripts/run_light.py $DATE"
 rsync -az "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/"{dashboard,trends,news}.json webdata/
+alert_check_fresh 30  # export 在 run_light 内失败不影响退出码,以拉回文件新鲜度兜底
 alert_clear intraday
 # 盘中资金异动 Web Push(读刚拉回的 dashboard.json;无订阅/无新异动秒退,失败不阻塞编排)
 .venv-taipei/bin/python scripts/push_alerts.py || true

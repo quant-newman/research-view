@@ -34,3 +34,21 @@ alert_clear() {
   rm -f "$ALERT_DIR/${1}.json"
   _alert_merge
 }
+
+# 导出新鲜度校验(rsync 拉回 dashboard 后调):run_pipeline/run_light 里 step() 吞错,
+# export 步骤失败时 Python 仍 exit 0,拉回的是旧文件——health 红角标/飞书盘后摘要读的
+# 都是旧 health,看门狗 20h 阈值当晚也不命中,可静默一天以上。这里核对 generated_at
+# 距今分钟数兜底。共享 export 旗标:任一编排拉回新鲜文件即恢复;msg 固定,飞书同错不重推。
+# 用法: alert_check_fresh <max_age_min>
+alert_check_fresh() {
+  local age
+  age=$(python3 -c 'import json
+from datetime import datetime, timezone
+g = datetime.fromisoformat(json.load(open("webdata/dashboard.json"))["meta"]["generated_at"])
+print(int((datetime.now(timezone.utc) - g).total_seconds() / 60))' 2>/dev/null) || age=9999
+  if [ "${age:-9999}" -gt "$1" ]; then
+    alert_set export 导出 "dashboard.json 未刷新(export 步骤疑似失败:管线降级续跑不报错,查阿里云 task_log/health)"
+  else
+    alert_clear export
+  fi
+}
