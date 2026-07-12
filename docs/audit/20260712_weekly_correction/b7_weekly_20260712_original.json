@@ -1,0 +1,440 @@
+{
+    "stats": {
+        "cum": {
+            "n": 8,
+            "flat": 0,
+            "right": 1,
+            "wrong": 7,
+            "hit_hi": 47.1,
+            "hit_lo": 2.2,
+            "hit_rate": 12.5
+        },
+        "week": {
+            "n": 4,
+            "flat": 0,
+            "right": 1,
+            "wrong": 3,
+            "hit_hi": 69.9,
+            "hit_lo": 4.6,
+            "hit_rate": 25.0
+        },
+        "baseline": {
+            "mech": {
+                "n": 8,
+                "flat": 0,
+                "right": 1,
+                "wrong": 7,
+                "hit_hi": 47.1,
+                "hit_lo": 2.2,
+                "hit_rate": 12.5
+            },
+            "always_long": {
+                "n": 8,
+                "flat": 0,
+                "right": 1,
+                "wrong": 7,
+                "hit_hi": 47.1,
+                "hit_lo": 2.2,
+                "hit_rate": 12.5
+            }
+        },
+        "override": {
+            "agree": {
+                "llm": {
+                    "n": 7,
+                    "flat": 0,
+                    "right": 1,
+                    "wrong": 6,
+                    "hit_hi": 51.3,
+                    "hit_lo": 2.6,
+                    "hit_rate": 14.3
+                },
+                "mech": {
+                    "n": 7,
+                    "flat": 0,
+                    "right": 1,
+                    "wrong": 6,
+                    "hit_hi": 51.3,
+                    "hit_lo": 2.6,
+                    "hit_rate": 14.3
+                }
+            },
+            "llm_only": {
+                "llm": {
+                    "n": 0,
+                    "flat": 0,
+                    "right": 0,
+                    "wrong": 0,
+                    "hit_hi": null,
+                    "hit_lo": null,
+                    "hit_rate": null
+                },
+                "mech": {
+                    "n": 0,
+                    "flat": 0,
+                    "right": 0,
+                    "wrong": 0,
+                    "hit_hi": null,
+                    "hit_lo": null,
+                    "hit_rate": null
+                }
+            },
+            "override": {
+                "llm": {
+                    "n": 0,
+                    "flat": 0,
+                    "right": 0,
+                    "wrong": 0,
+                    "hit_hi": null,
+                    "hit_lo": null,
+                    "hit_rate": null
+                },
+                "mech": {
+                    "n": 0,
+                    "flat": 0,
+                    "right": 0,
+                    "wrong": 0,
+                    "hit_hi": null,
+                    "hit_lo": null,
+                    "hit_rate": null
+                }
+            },
+            "suppress": {
+                "llm": {
+                    "n": 1,
+                    "flat": 0,
+                    "right": 0,
+                    "wrong": 1,
+                    "hit_hi": 79.3,
+                    "hit_lo": 0.0,
+                    "hit_rate": 0.0
+                },
+                "mech": {
+                    "n": 1,
+                    "flat": 0,
+                    "right": 0,
+                    "wrong": 1,
+                    "hit_hi": 79.3,
+                    "hit_lo": 0.0,
+                    "hit_rate": 0.0
+                }
+            }
+        },
+        "by_source": {
+            "mf": {
+                "n": 4,
+                "right": 1
+            },
+            "lhb": {
+                "n": 2,
+                "right": 0
+            },
+            "news": {
+                "n": 0,
+                "right": 0
+            },
+            "price": {
+                "n": 6,
+                "right": 1
+            },
+            "letter": {
+                "n": 1,
+                "right": 0
+            }
+        },
+        "stock_cum": {
+            "n": 12,
+            "flat": 0,
+            "right": 1,
+            "wrong": 11,
+            "hit_hi": 35.4,
+            "hit_lo": 1.5,
+            "hit_rate": 8.3
+        },
+        "by_version": {
+            "unversioned": {
+                "n": 8,
+                "flat": 0,
+                "label": "07-04 加列前存量卡(参照层v1口径)",
+                "right": 1,
+                "wrong": 7,
+                "hit_hi": 47.1,
+                "hit_lo": 2.2,
+                "hit_rate": 12.5
+            }
+        },
+        "stock_week": {
+            "n": 12,
+            "flat": 0,
+            "right": 1,
+            "wrong": 11,
+            "hit_hi": 35.4,
+            "hit_lo": 1.5,
+            "hit_rate": 8.3
+        },
+        "calibration": {
+            "neutral": {
+                "n": 0,
+                "bins": [
+                ],
+                "brier": null,
+                "n_flat": 0,
+                "flat_rate": null
+            },
+            "direction": {
+                "n": 0,
+                "bins": [
+                ],
+                "brier": null,
+                "n_flat": 0,
+                "flat_rate": null
+            },
+            "by_version": {
+            }
+        },
+        "by_direction": {
+            "中性": {
+                "n": 1,
+                "flat": 0,
+                "right": 0,
+                "wrong": 1,
+                "hit_hi": 79.3,
+                "hit_lo": 0.0,
+                "hit_rate": 0.0
+            },
+            "偏多": {
+                "n": 5,
+                "flat": 0,
+                "right": 0,
+                "wrong": 5,
+                "hit_hi": 43.4,
+                "hit_lo": 0.0,
+                "hit_rate": 0.0
+            },
+            "偏空": {
+                "n": 2,
+                "flat": 0,
+                "right": 1,
+                "wrong": 1,
+                "hit_hi": 90.5,
+                "hit_lo": 9.5,
+                "hit_rate": 50.0
+            }
+        },
+        "stock_baseline": {
+            "mech": {
+                "n": 12,
+                "flat": 0,
+                "right": 2,
+                "wrong": 10,
+                "hit_hi": 44.8,
+                "hit_lo": 4.7,
+                "hit_rate": 16.7
+            },
+            "always_long": {
+                "n": 12,
+                "flat": 0,
+                "right": 2,
+                "wrong": 10,
+                "hit_hi": 44.8,
+                "hit_lo": 4.7,
+                "hit_rate": 16.7
+            }
+        },
+        "stock_override": {
+            "agree": {
+                "llm": {
+                    "n": 8,
+                    "flat": 0,
+                    "right": 0,
+                    "wrong": 8,
+                    "hit_hi": 32.4,
+                    "hit_lo": 0.0,
+                    "hit_rate": 0.0
+                },
+                "mech": {
+                    "n": 8,
+                    "flat": 0,
+                    "right": 0,
+                    "wrong": 8,
+                    "hit_hi": 32.4,
+                    "hit_lo": 0.0,
+                    "hit_rate": 0.0
+                }
+            },
+            "llm_only": {
+                "llm": {
+                    "n": 0,
+                    "flat": 0,
+                    "right": 0,
+                    "wrong": 0,
+                    "hit_hi": null,
+                    "hit_lo": null,
+                    "hit_rate": null
+                },
+                "mech": {
+                    "n": 0,
+                    "flat": 0,
+                    "right": 0,
+                    "wrong": 0,
+                    "hit_hi": null,
+                    "hit_lo": null,
+                    "hit_rate": null
+                }
+            },
+            "override": {
+                "llm": {
+                    "n": 3,
+                    "flat": 0,
+                    "right": 1,
+                    "wrong": 2,
+                    "hit_hi": 79.2,
+                    "hit_lo": 6.1,
+                    "hit_rate": 33.3
+                },
+                "mech": {
+                    "n": 3,
+                    "flat": 0,
+                    "right": 2,
+                    "wrong": 1,
+                    "hit_hi": 93.9,
+                    "hit_lo": 20.8,
+                    "hit_rate": 66.7
+                }
+            },
+            "suppress": {
+                "llm": {
+                    "n": 1,
+                    "flat": 0,
+                    "right": 0,
+                    "wrong": 1,
+                    "hit_hi": 79.3,
+                    "hit_lo": 0.0,
+                    "hit_rate": 0.0
+                },
+                "mech": {
+                    "n": 1,
+                    "flat": 0,
+                    "right": 0,
+                    "wrong": 1,
+                    "hit_hi": 79.3,
+                    "hit_lo": 0.0,
+                    "hit_rate": 0.0
+                }
+            }
+        },
+        "stock_by_version": {
+            "unversioned": {
+                "n": 12,
+                "flat": 0,
+                "label": "07-04 加列前存量卡(参照层v1口径)",
+                "right": 1,
+                "wrong": 11,
+                "hit_hi": 35.4,
+                "hit_lo": 1.5,
+                "hit_rate": 8.3
+            }
+        },
+        "stock_calibration": {
+            "neutral": {
+                "n": 0,
+                "bins": [
+                ],
+                "brier": null,
+                "n_flat": 0,
+                "flat_rate": null
+            },
+            "direction": {
+                "n": 0,
+                "bins": [
+                ],
+                "brier": null,
+                "n_flat": 0,
+                "flat_rate": null
+            },
+            "by_version": {
+            }
+        }
+    },
+    "review": [
+        {
+            "why": "资金持续流出与周涨幅+37.7%严重背离，仍判中性，忽视高位回调风险。",
+            "target": "半导体/电子特气-气械一体",
+            "error_type": "逻辑错"
+        },
+        {
+            "why": "忽略今日暴跌-10.9%的强烈反转信号，仅凭利好和资金流入维持看多。",
+            "target": "半导体/电子特气-大宗/氦气",
+            "error_type": "逻辑错"
+        },
+        {
+            "why": "判断偏空的依据（资金流出、板块走弱）充分，后续无预见的超跌反弹逆转方向。",
+            "target": "半导体/先进封测",
+            "error_type": "纯运气"
+        },
+        {
+            "why": "涨停潮+龙虎榜净买后一致预期过热，未警惕情绪顶点后的获利盘集中抛售。",
+            "target": "绿的谐波(688017)",
+            "error_type": "逻辑错"
+        },
+        {
+            "why": "日跌幅达-16.2%已强显示空方主导，却因龙虎榜净买矛盾而放弃偏空判断。",
+            "target": "金宏气体(688106)",
+            "error_type": "逻辑错"
+        },
+        {
+            "why": "资金大幅流入、人气高企后追涨，忽视短线过热和高位股常见的快速回调。",
+            "target": "三花智控(002050)",
+            "error_type": "逻辑错"
+        },
+        {
+            "why": "涨停且资金流入，但无独立催化，纯跟风板块，一致性过高时风险骤增。",
+            "target": "贝斯特(300580)",
+            "error_type": "逻辑错"
+        },
+        {
+            "why": "涨停后持续做多，未考虑减速器概念高位分化，资金虽流入但持续性存疑。",
+            "target": "中大力德(002896)",
+            "error_type": "逻辑错"
+        },
+        {
+            "why": "跟随做多高位热点股，研报长期逻辑不能抵御短期情绪逆转和资金退潮。",
+            "target": "长盈精密(300115)",
+            "error_type": "逻辑错"
+        },
+        {
+            "why": "龙虎榜净买和涨停强化多头信息，但板块高潮后极易出现剧烈回撤。",
+            "target": "双环传动(002472)",
+            "error_type": "逻辑错"
+        },
+        {
+            "why": "业绩预告利好落地后股价下跌，忽视“买预期、卖事实”的见光死规律。",
+            "target": "广钢气体(688548)",
+            "error_type": "逻辑错"
+        },
+        {
+            "why": "业绩超预期驱动涨停后仍看多，未警惕短期兑现压力，忽略高位风险。",
+            "target": "雷赛智能(002979)",
+            "error_type": "逻辑错"
+        },
+        {
+            "why": "5日主力净流出47亿下看空合理，后续无预兆的反弹属不可预知事件。",
+            "target": "深科技(000021)",
+            "error_type": "纯运气"
+        },
+        {
+            "why": "连续资金流出与行情走弱下偏空，大涨由未知因素驱动，非当前信息可判。",
+            "target": "华天科技(002185)",
+            "error_type": "纯运气"
+        }
+    ],
+    "lessons": [
+        "高位暴涨后资金与行情背离时立即降置信，无论新闻多好。",
+        "利好落地股价反跌，应视为出逃信号，不做多头。",
+        "涨停潮后一致性极高时，次日防分歧，宁可错过不追。",
+        "龙虎榜净买需与日内分时结合，暴跌中的净买常是陷阱。",
+        "纯商品概念跟随板块时，无独立催化则降低置信度。"
+    ],
+    "week_end": "2026-07-12",
+    "generated_at": "2026-07-12 20:00:43.255359+08"
+}
