@@ -85,3 +85,44 @@
 论据 = 07-12 首份周报:card_score 流水 8 行俱在,weekly 的 INNER JOIN 切片
 只取到 4 行,聚合与流水背离而无任何告警;应入样行数核对(不 JOIN 维表的
 窗口计数)当场可见 8≠4。取证 docs/audit/20260712_weekly_correction/。
+
+---
+
+## 2026-07-13 第 9 项(Brier 复算锚)两层扩容 + 选卡规则锁定(白天准备令终稿;密封正文零触碰,哨兵自动化实现批次仍归 07-19 排序会)
+
+原"抽一张手算"为第一层要求,本次补齐第二层全样本均值核对,两层同时留档;
+本节同时是今晚(07-13 首个 prob 卡到期日)人工执行口径与日后自动化实现基准。
+
+### 两层核对
+
+(a) **单卡贡献**:严格按下方锁定的选卡规则取一张 verdict∈{对,错} 的 prob 卡,
+手算 (subjective_prob − outcome)²(outcome 对=1/错=0,与 brier_stats() 定义
+一致[scorecard.py:323]);手算结果先 round 到 4 位再与系统值比对,不得用
+全精度手算值对系统 round(...,4) 输出(否则必现假性不一致)。
+
+(b) **全样本重算**:选定字段全部入样卡人工重算 squared_error 均值,与系统
+calibration_block() 输出的对应 brier 值逐位核对。calibration_block() 只活在
+weekly() 内部调用[scorecard.py:459,463],weekly() 冻结期禁跑——取值方式:
+照抄 scorecard.py:456-458 两段 SQL(均 WHERE subjective_prob IS NOT NULL)
+在只读连接现查,取回的行手工传入 calibration_block() 纯函数(REPL 或一次性
+脚本,不落生产代码改动,不触碰 weekly() 本体),调用过程本身入留档。
+该 SQL 不限 trade_date、只过滤 prob 非空——留档照抄原域,禁自行加
+trade_date 过滤"对齐"(破坏与系统值可比性);trade_date 限定属到期批对账,
+与本层分开。位数以代码现有 round 为准:brier=4 位,flat_rate/p_mean/
+hit_rate=3 位[scorecard.py:322-337],不自行统一位数。
+
+**禁止行为**:单卡 squared_error 直接比多卡累计 brier 均值——打回项。
+**留档须含**:卡号、样本域、SQL 或等价查询、单卡贡献值、两个对比值(均已 round 到位)。
+
+### 选卡规则(2026-07-13 14:48:02 +0800 锁定,先于当晚任何结果;出结果后不得以任何理由更改)
+
+- 主核字段 = node × direction,即 calibration_block() 返回结构中的 "direction"
+  键(card_score/judgment_card,取 direction≠中性 行[scorecard.py:346]);
+  个股侧为 stock_calibration.direction(decision_score/decision_card
+  [scorecard.py:463,475])。
+- 单卡选择:该字段下 verdict∈{对,错}、card_id 最小者。
+- 回退:主核字段 n=0 才回退个股侧,并记录回退原因;两侧均 n=0(如全部为
+  "平")则记诚实空态,(a)(b) 顺延至首个有样本日执行,不得当场另订选卡规则。
+
+> 准备令终稿全文、锁定时间戳与七项只读预检取证:
+> docs/audit/20260713_brier_first_maturity/。
