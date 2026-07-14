@@ -1,0 +1,38 @@
+# notify_feishu.py 告警显示时间戳时区修复(通知载体运维修复,非判断链冻结例外)
+
+- 日期:2026-07-14(UTC+8)
+- 执行依据:使用者 07-14 指令第 2 条(路径A,独立窄提交并部署)
+- 定性:**通知载体运维修复,非判断链冻结例外**——不改变 prompt、权重、候选、发卡、记分、样本或任何判断链语义;先例=DECISIONS #44(push/test 删除)、07-10 mf_alerts 修复。
+
+## 问题
+
+编排节点(台北)宿主系统时区为 Etc/UTC,`notify_feishu.py` alert 模式用裸 `time.strftime('%F %T')` 取宿主本地时间,却在消息里标注"UTC+8"——把 UTC 时间错标成 UTC+8,读数差 8 小时。
+**首撞:07-13 告警显示 06:16,实为 14:16 UTC+8。**
+数据节点(阿里云)宿主时区=Asia/Shanghai,旧代码在该侧显示恰好正确(掩蔽了缺陷);修复后表达式与宿主时区无关,两侧行为一致。
+
+## 修复(3 行,scripts/notify_feishu.py:114-116)
+
+```python
+# 服务器系统时区为 UTC,strftime 不带 tz 会把 UTC 时间标成 UTC+8(07-13 首撞:06:16 实为 14:16)
+stamp = time.strftime("%F %T", time.gmtime(time.time() + 8 * 3600))
+ok = send(f"🔴 任务失败: {job}\n{msg}\n{stamp} UTC+8 · 看板 StatusBar 有红横幅")
+```
+
+固定 +8 偏移与 zoneinfo("Asia/Shanghai") 行为恒等(中国无夏令时),不引新依赖,不依赖宿主时区。
+
+## 变更边界(核对过全文件)
+
+- alert 行是全文件**唯一**显示时间戳处;summary()/weekly() 只输出 dashboard 数据日期,不打时间。
+- 飞书签名 Unix epoch(`int(time.time())`,:45)不改——签名与显示无关。
+- 告警触发、去重(lib_alert.sh 侧)、正文其他内容、退出码行为均不改。
+- 独立窄提交,不与 a 稿、b 稿或其他改动混提。
+
+## 取证
+
+1. `01_utc_host_verification.txt`:宿主=Etc/UTC 坐实;修复前裸调输出 09:57:57(错标),修复后表达式 17:57:57,与 `TZ=Asia/Shanghai date` 参照逐秒一致。
+2. `02_live_send.txt`:线上实发(alert 真实代码路径,job 名明示"验证非真实失败"),发送时刻 2026-07-14 18:03:23 UTC+8,exit=0,使用者飞书收到时间戳与实际时刻一致(相差 8 小时即未生效——未出现)。
+3. 部署 SHA=本取证目录首次入库的 commit(与修复同一窄提交);数据节点部署走 PROCESS.md Runbook(rsync+DEPLOY_STATE),部署输出见 `03_deploy.txt`。
+
+## 不采用"保留错时戳至 07-19"的理由
+
+Brier 首批读数与周报对账期间,告警事件时序考据不得被已知错标污染(告警载体自身的可信度问题,见 docs 告警载体教训);修复属运维层,冻结边界之外。

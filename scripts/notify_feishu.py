@@ -111,7 +111,9 @@ def main() -> None:
     if mode == "alert":
         job = sys.argv[2] if len(sys.argv) > 2 else "?"
         msg = sys.argv[3] if len(sys.argv) > 3 else ""
-        ok = send(f"🔴 任务失败: {job}\n{msg}\n{time.strftime('%F %T')} UTC+8 · 看板 StatusBar 有红横幅")
+        # 服务器系统时区为 UTC,strftime 不带 tz 会把 UTC 时间标成 UTC+8(07-13 首撞:06:16 实为 14:16)
+        stamp = time.strftime("%F %T", time.gmtime(time.time() + 8 * 3600))
+        ok = send(f"🔴 任务失败: {job}\n{msg}\n{stamp} UTC+8 · 看板 StatusBar 有红横幅")
     elif mode == "summary":
         ok = send(summary())
     elif mode == "weekly":

@@ -1,0 +1,14 @@
+== 宿主时区证明 ==
+Timezone=Etc/UTC
+Tue Jul 14 09:57:57 UTC 2026
+2026-07-14 09:57:57 UTC
+2026-07-14 17:57:57 UTC+8(参照)
+
+== 修复后 stamp 计算(与生产 notify_feishu.py:115 同表达式) ==
+stamp(修复后表达式)     = 2026-07-14 17:57:57 UTC+8
+strftime裸调(修复前行为) = 2026-07-14 09:57:57 <- 在UTC宿主上会被错标成UTC+8
+
+== 与 TZ=Asia/Shanghai date 比对 ==
+python stamp = 2026-07-14 17:57:57
+date  参照   = 2026-07-14 17:57:57
+一致(容许1秒) = True
