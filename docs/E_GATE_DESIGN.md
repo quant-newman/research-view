@@ -55,13 +55,18 @@
 
 | 卡型 | 必填 |
 |---|---|
-| B6 偏多/偏空 | evidence≥2(≥1 条 kind=fact)+ scenarios≥1 + falsify(具体,horizon 内可验证) |
-| **B6 中性** | thesis 明确说明为何中性及当前矛盾 + evidence≥2(≥1 fact,全部过结构校验)+ scenarios≥1 + **至少一个非空 falsify**:具体、horizon 内可验证,说明什么情况证明"中性/未走出方向"错误。**不强制个股价位文法**(节点卡无 decision_card.close 同类锚),但禁止"市场变化""趋势转强"等不可验证空话 |
+| B6 偏多/偏空 | evidence≥2(≥1 条 kind=fact)+ scenarios≥1,**且其中至少一条 scenario.falsify 非空**、具体、horizon 内可验证 |
+| **B6 中性** | thesis 明确说明为何中性及当前矛盾 + evidence≥2(≥1 fact,全部过结构校验)+ scenarios≥1,**且其中至少一条 scenario.falsify 非空**:具体、horizon 内可验证,说明什么情况证明"中性/未走出方向"错误。**不强套 B8 基于 decision_card.close 的价位结构文法**(节点卡无同类锚),但禁止"市场变化""趋势转强"等不可验证空话 |
 | B8 偏多 | entry(带 §6 价位结构)+ exit(含止损价位锚)+ falsify + evidence≥2(≥1 fact) |
 | B8 偏空 | 回避解除条件(exit 位)+ falsify + evidence≥2(≥1 fact) |
 | **B8 中性** | thesis 说明放弃理由 + **falsify 必填**(什么信号说明本次放弃是错的,horizon 内可验证)+ evidence≥2(≥1 fact) |
 
 - 裁决依据:中性是**会被 ±2pp 口径正式记分的放弃判断**,不是无判断空态,必须同样可证伪。
+- **schema 落点约束(2026-07-14 使用者裁定)**:**B6 不新增 judgment_card 顶层 falsify 列**——
+  B6 各方向(含中性)的 falsify 均落在 scenarios 数组元素内(现行 schema 即此形状:
+  sql/021:14 `scenarios jsonb [{cond,expect,falsify}]`,无顶层列);
+  **B8 的 falsify 仍使用 decision_card 顶层 falsify 字段**(sql/023:19)。
+  本闸对 B6 校验的是 scenarios 元素内字段,不引入任何 judgment_card 加列。
 - **真空通过禁令**:任何卡型不得出现"全数校验通过但 evidence 数组为空"。
 - **subjective_prob**:所有新纪元卡必须合法落在 (0,1);非法**不得静默落 NULL 后入卡**,
   拒卡记因(reason=invalid_subjective_prob)——防从 Brier 样本静默消失。
@@ -159,7 +164,7 @@ v2 增补(缺口与裁决对应,同为必失败):
 8. 真空通过:evidence=[] → 拒卡(任何卡型);
 9. fact 数字冒写:LLM 在 fact 条目自写数字 ≠ 快照载荷 → 载荷以代码渲染为准(自写值不进权威字段);
 10. inference 带新数字/带直接 fact_id → 拒卡;
-11. B6/B8 中性卡缺 falsify → 拒卡;
+11. B6 中性卡 scenarios 所有元素 falsify 均空 / B8 中性卡顶层 falsify 空 → 拒卡;
 12. cluster 关键字段缺失 → 不输出独立计数,只披露三计数+cluster_status;
 13. 对账等式:构造 n_candidate=5(入3/拒1/漏1)+orphan1 → 等式成立且 orphan 不入分母。
 
@@ -201,3 +206,7 @@ v2 增补(缺口与裁决对应,同为必失败):
   ③run 级身份与单 run 对账等式(n_orphan_output 单列/duplicate_output 全作废计一次);
   ④【人拍】5 处全部裁决落点见 §12;⑤B6 中性 falsify 同升必填、prob 非法拒卡、
   direction 非法拒卡;⑥展示机械化确认为预期代价非回归。仍为草案,暂不锁定。
+- 2026-07-14 补一项 schema 落点约束(使用者裁定):B6 不新增 judgment_card 顶层 falsify 列,
+  falsify 落 scenarios 数组元素内(必填=scenarios≥1 且至少一条 scenario.falsify 非空、具体、
+  horizon 内可验证);B6 中性同规则、不强套 B8 基于 decision_card.close 的价位结构文法;
+  B8 falsify 仍用 decision_card 顶层字段。§4 两行、schema 落点注记、§9 用例 11 同步修订。
