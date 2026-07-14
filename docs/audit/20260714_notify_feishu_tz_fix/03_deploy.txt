@@ -1,0 +1,14 @@
+== 部署 15ae6f1 → 数据节点 /opt/research_view 2026-07-14 18:06:17 UTC+8 ==
+Total transferred file size: 325,203 bytes
+rsync exit=0
+
+== DEPLOY_STATE 留痕 ==
+commit: 15ae6f1
+at: 2026-07-14 18:06:19 UTC+8
+dirty: 1 条未提交
+
+== 数据节点侧修复到位核验 ==
+115:        stamp = time.strftime("%F %T", time.gmtime(time.time() + 8 * 3600))
+
+== 说明(dirty:1 的构成) ==
+DEPLOY_STATE 所记 dirty:1 = 本取证文件(03_deploy.txt)自身——tee 正在写入、时点上尚未提交,属部署取证的鸡生蛋文件,非代码改动。部署内容已核验=15ae6f1(数据节点 :115 gmtime 行到位)。本文件随 docs-only 补档提交入库后复刷 DEPLOY_STATE(dirty 应归 0),以数据节点 DEPLOY_STATE.md 现值为准。
