@@ -242,3 +242,37 @@ v2 增补(缺口与裁决对应,同为必失败):
   failed_call 走 insert-only generation_run_event,终态与计数由事件派生,
   禁"调用结束后才补一行"(中途失败 run 不得静默消失);四表全部禁改删截;
   §9 同步增 14-16 号测试。自此正文封存,只追加勘误。
+
+## 勘误 B-E1(2026-07-14;封存正文零触碰,只追加)
+
+锁定稿正文有两处锁定前旧措辞残留,以本勘误为准,不修改、不删除、不重排既有正文:
+
+### 1. 输入快照的最终权威落点
+
+§2 原文"generation_run 保存当次 id→规范化事实载荷的输入快照"已被锁定前的
+最终四表设计替代。最终权威口径:
+
+- generation_run 仅保存 immutable run header;
+- 每个候选的有序 candidate_key 及其输入快照(或不可歧义快照锚)保存于 generation_candidate;
+- §2 所称"id→规范化事实载荷输入快照"的实际落点,以 §5 generation_candidate 的定义为准;
+- generation_run 不直接承载候选事实载荷快照。
+
+### 2. 实施表数量及最终结构
+
+§8 原文"闸+新 prompt+两表+新列同批部署"中的"两表"已经过时。最终实施面为
+**四张新增 insert-only 表**:
+
+- generation_run;
+- generation_candidate;
+- generation_run_event;
+- rejected_card。
+
+另在两张接受卡表 judgment_card、decision_card 增加:
+
+- generation_run_id;
+- gate_rule_version。
+
+四张新增表全部禁止 UPDATE/DELETE/TRUNCATE;接受卡存量行不回填。
+
+§12 #3 中的"双表"仅记录第一轮裁决的历史状态,不代表锁定稿的最终 schema。
+最终结构及实施口径,以 §5、锁定记录和本勘误 B-E1 为准。
