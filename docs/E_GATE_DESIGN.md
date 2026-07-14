@@ -1,6 +1,7 @@
 # e 件设计稿(b 稿·草案 v2):判断链入库结构校验
 
-> 状态:**草案 v2(2026-07-14),已按使用者同日复核裁决修订;仍为草案,暂不锁定**。
+> 状态:**v2 已锁定(2026-07-14)**——六组核对通过 + 三处补充(§6 适用域/candidate 全集持久化/
+> run 生命周期事件化)落档后,经使用者裁定锁定。**自锁定起正文只追加勘误(erratum),不改原文。**
 > 实施属 **prompt 变更纪元件**:硬闸期不改在线 prompt、不实施任何 schema/代码变更、不运行真实数据;
 > 实施批次归 07-19 排序会,与 3a/3b 分支合并、资金标准化、禁换算铁律(decision/evidence 两链补)**同纪元窗口**。
 > v1 的【人拍】5 处已全部裁决(见 §12 落点表);v1→v2 修订清单见修改记录。
@@ -76,12 +77,23 @@
 
 **run 级身份(仅按 trade_date 无法处理重跑,也无法证明候选/入库/拒卡同源):**
 
-- **generation_run 表**(insert-only):run_id、card_kind(B6|B8)、trade_date、candidate_count、
-  prompt_hash、gate_rule_version、model 及可取得的响应元数据(完整响应如需保留在此存一次)、
-  状态、created_at。
+- **generation_run 表(immutable run header,insert-only)**:run_id、card_kind(B6|B8)、trade_date、
+  candidate_count、prompt_hash、gate_rule_version、model、created_at。
+  **调用前写入**——候选集在 LLM 调用前由代码算出,header 全部字段调用前已知;
+  header 不承载可变状态,响应元数据不入 header(归 completed 事件载荷)。
+- **generation_candidate 子表(insert-only,与 header 同事务写)**:run_id、seq(有序)、candidate_key、
+  该候选的输入快照(或不可歧义快照锚)。**该 run 的有序 candidate_key 全集及对应候选输入快照
+  以本表为准**——llm_missing(=候选集−输出集)、orphan(=输出集−候选集)、duplicate 判定
+  与单 run 对账均凭本表可审计复原;candidate_count 只是冗余核对值,权威=本表行集。
+  (§2 所述"id→规范化事实载荷输入快照"的落点即本表。)
+- **generation_run_event 表(insert-only)**:run_id、event(started/completed/failed_validation/
+  failed_call/…)、payload(completed 事件载荷含响应元数据与完整响应,存一次)、response_hash、
+  created_at。**run 终态与各项计数由事件派生**,不存于任何可变列。
+  **禁止"调用结束后才补一行"的写法**——header 先行+事件流水,中途失败的 run
+  (LLM 超时/进程被杀)必然留下 header+started 而无终态事件,**不得静默消失**。
 - **rejected_card 表**(insert-only):run_id、candidate_key、reject_reasons jsonb、
   raw_candidate_json(**只存对应候选项,不把完整响应重复写多次**)、response_hash、created_at。
-- 两表**禁止 UPDATE/DELETE/TRUNCATE**(与卡表 append-only 触发器同构)。
+- 四表**全部禁止 UPDATE/DELETE/TRUNCATE**(与卡表 append-only 触发器同构)。
 - 接受卡(judgment_card/decision_card)新增 generation_run_id、gate_rule_version 两列
   (INSERT 时写,存量 NULL,append-only 不回填)。表名可在实现稿调整,**能力不可删**。
 - candidate_key:B6=node_id,B8=code;**同一 run 内按 candidate_key 唯一**。
@@ -113,7 +125,11 @@
 
 - **delta_pct=-5.0 明确表示 -5%**,禁止 0.95/百分数倍数混用(与 percent-vs-multiple 铁律同源);
 - 计算用 **Decimal**,按 A股价格 tick=0.01 与预注册舍入规则(实现稿定死,round-half-up【实现稿列明】);
-- entry/exit/falsify 凡出现价位均**复用同一结构与同一校验函数**(单点实现);
+- **适用域(消除与 §4 冲突,2026-07-14 裁定)**:close_pct_v1 **仅适用于 B8 顶层
+  entry/exit/falsify 三字段**;B6 各方向的 scenario.falsify 因无 decision_card.close 锚
+  **不强套本价位文法**,只要求非空、具体、horizon 内可验证(§4);
+  **未来若要给 B6 加价位校验,须另行预注册节点级锚**,不得复用本节文法默认扩域;
+- B8 三字段凡出现价位均**复用同一结构与同一校验函数**(单点实现);
 - narrative 文本与结构字段分离,展示归 narrative,校验只认结构字段;
 - anchor=close 取 decision_card.close(既有列);
 - 复核失败拒卡 reason=price_formula_mismatch——**(488, -5%, 460.0) 必须触发**(应 463.60)。
@@ -166,7 +182,14 @@ v2 增补(缺口与裁决对应,同为必失败):
 10. inference 带新数字/带直接 fact_id → 拒卡;
 11. B6 中性卡 scenarios 所有元素 falsify 均空 / B8 中性卡顶层 falsify 空 → 拒卡;
 12. cluster 关键字段缺失 → 不输出独立计数,只披露三计数+cluster_status;
-13. 对账等式:构造 n_candidate=5(入3/拒1/漏1)+orphan1 → 等式成立且 orphan 不入分母。
+13. 对账等式:构造 n_candidate=5(入3/拒1/漏1)+orphan1 → 等式成立且 orphan 不入分母;
+14. **run 生命周期**:模拟 LLM 调用中途失败(超时/异常)→ 库内必须已有 header+started 事件、
+    无终态事件,run 可见不消失;并断言 header/candidate 子表写入先于调用发起
+    (杀死"调用结束后才补一行"写法);
+15. **candidate 子表权威性**:llm_missing/orphan/duplicate 三类判定仅凭 generation_candidate
+    有序全集+LLM 输出即可复原;candidate_count 与子表行数不一致 → 报错;
+16. **B6 falsify 适用域**:B6 scenario.falsify 含价位样自由文本 → **不触发** close_pct_v1
+    结构校验(不因缺结构字段被拒),仍须过非空/具体/可验证校验。
 
 ## 10. 展示影响与边界(裁决③确认)
 
@@ -210,3 +233,12 @@ v2 增补(缺口与裁决对应,同为必失败):
   falsify 落 scenarios 数组元素内(必填=scenarios≥1 且至少一条 scenario.falsify 非空、具体、
   horizon 内可验证);B6 中性同规则、不强套 B8 基于 decision_card.close 的价位结构文法;
   B8 falsify 仍用 decision_card 顶层字段。§4 两行、schema 落点注记、§9 用例 11 同步修订。
+- 2026-07-14 六组核对通过后三处补充(使用者裁定)并**锁定 v2**:
+  ①§6 加适用域条款消除与 §4 冲突(close_pct_v1 仅限 B8 顶层三字段,B6 scenario.falsify
+  不强套,未来 B6 价位校验须另行预注册节点级锚);
+  ②§5 增 generation_candidate 子表(insert-only,与 header 同事务):有序 candidate_key 全集+
+  候选输入快照为对账权威,candidate_count 降为冗余核对值;
+  ③§5 run 生命周期事件化:immutable header 调用前写入,started/completed/failed_validation/
+  failed_call 走 insert-only generation_run_event,终态与计数由事件派生,
+  禁"调用结束后才补一行"(中途失败 run 不得静默消失);四表全部禁改删截;
+  §9 同步增 14-16 号测试。自此正文封存,只追加勘误。
