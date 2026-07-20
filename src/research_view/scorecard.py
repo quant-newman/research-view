@@ -12,6 +12,7 @@ lessons 由 evidence.generate() 回灌下周研判 prompt,形成校准回路。
 from __future__ import annotations
 
 import json
+from collections import Counter
 
 from . import db, llm
 
@@ -363,9 +364,13 @@ def brier_by_version(rows) -> dict:
 # ---------- 周度收口(周日 cron:汇总 + DeepSeek 错误归纳 + lessons 回灌) ----------
 
 def _week_rows(cur, week_end: str):
-    cur.execute("""SELECT jc.node_id, n.chain, n.node, jc.direction, jc.confidence, jc.thesis,
+    # f-1 护栏:node 是可变维表(参照层重组会删旧 node_id),历史记分行禁止 INNER JOIN 它
+    # ——07-12 事故即 4 张旧机器人卡被静默过滤。LEFT JOIN + fallback 标签,行数只由事实表定。
+    cur.execute("""SELECT cs.card_id, jc.node_id, COALESCE(n.chain, '历史节点') AS chain,
+               COALESCE(n.node, jc.node_id) AS node, jc.direction, jc.confidence, jc.thesis,
                jc.evidence, jc.matrix, cs.excess, cs.node_ret, cs.pool_ret, cs.verdict
-        FROM card_score cs JOIN judgment_card jc USING(card_id) JOIN node n ON n.node_id=jc.node_id
+        FROM card_score cs JOIN judgment_card jc USING(card_id)
+        LEFT JOIN node n ON n.node_id=jc.node_id
         WHERE cs.end_date > to_date(%s,'YYYYMMDD') - 7 AND cs.end_date <= to_date(%s,'YYYYMMDD')
         ORDER BY cs.excess""", (week_end, week_end))
     return cur.fetchall()
@@ -403,12 +408,36 @@ def _review_wrong(week_end: str, blocks: list[str]) -> dict:
 
 
 def _week_stock_rows(cur, week_end: str):
-    cur.execute("""SELECT dc.code, dc.name, dc.direction, dc.confidence, dc.thesis,
+    cur.execute("""SELECT ds.card_id, dc.code, dc.name, dc.direction, dc.confidence, dc.thesis,
                dc.evidence, dc.matrix, ds.excess, ds.stock_ret, ds.pool_ret, ds.verdict
         FROM decision_score ds JOIN decision_card dc USING(card_id)
         WHERE ds.end_date > to_date(%s,'YYYYMMDD') - 7 AND ds.end_date <= to_date(%s,'YYYYMMDD')
         ORDER BY ds.excess""", (week_end, week_end))
     return cur.fetchall()
+
+
+class WeekReconcileError(RuntimeError):
+    """f-1 哨兵:周窗事实流水(score 表)与报告样本 card_id 多重集合不闭合。"""
+
+
+def _reconcile_week_ids(cur, week_end: str, side: str, score_table: str, actual_ids) -> None:
+    """B6/B8 分侧对账:expected 独立取自 score 表同窗口,actual 取报告样本实际行。
+    多重集合(Counter)必须完全一致——数量相等但一丢一重也判失败;不闭合抛错,
+    由 weekly() fail-hard:不烧 LLM、不写 b7_weekly、不出残缺周报。"""
+    assert score_table in ("card_score", "decision_score")
+    cur.execute(f"""SELECT card_id FROM {score_table}
+        WHERE end_date > to_date(%s,'YYYYMMDD') - 7 AND end_date <= to_date(%s,'YYYYMMDD')""",
+                (week_end, week_end))
+    expected = Counter(r[0] for r in cur.fetchall())
+    actual = Counter(actual_ids)
+    if expected == actual:
+        return
+    raise WeekReconcileError(
+        f"{side} 周窗对账不闭合 week_end={week_end}: "
+        f"expected_n={sum(expected.values())} actual_n={sum(actual.values())} "
+        f"missing_card_ids={sorted((expected - actual).elements())} "
+        f"extra_card_ids={sorted((actual - expected).elements())} "
+        f"duplicate_card_ids={sorted(c for c, k in actual.items() if k > 1)}")
 
 
 def weekly(date_utc8: str) -> dict:
@@ -429,8 +458,11 @@ def weekly(date_utc8: str) -> dict:
             by_dir_rows.setdefault(d, []).append((v,))
         by_dir = {d: _stats(rows) for d, rows in by_dir_rows.items()}
         wk = _week_rows(cur, date_utc8)
-        week = _stats([(r[-1],) for r in wk])
         swk = _week_stock_rows(cur, date_utc8)
+        # f-1 哨兵:必须在 _review_wrong/LLM 与 b7_weekly 写入之前,不闭合整单失败
+        _reconcile_week_ids(cur, date_utc8, "B6", "card_score", [r[0] for r in wk])
+        _reconcile_week_ids(cur, date_utc8, "B8", "decision_score", [r[0] for r in swk])
+        week = _stats([(r[-1],) for r in wk])
         stock_week = _stats([(r[-1],) for r in swk])
         # 0b 三列对照:LLM方向 vs 机械基线(sign共振/对齐) vs 恒多基线
         cur.execute("SELECT excess, mech_verdict FROM card_score")
@@ -462,9 +494,9 @@ def weekly(date_utc8: str) -> dict:
             WHERE dc.subjective_prob IS NOT NULL""")
         stock_calibration = calibration_block(cur.fetchall())
         blocks = [_wrong_block(f"【节点】{chain}/{node}", nid, d, cf, th, ev, mx, ex, nr, pr)
-                  for nid, chain, node, d, cf, th, ev, mx, ex, nr, pr, v in wk if v == "错"]
+                  for _cid, nid, chain, node, d, cf, th, ev, mx, ex, nr, pr, v in wk if v == "错"]
         blocks += [_wrong_block(f"【个股】{name}({code})", code, d, cf, th, ev, mx, ex, sr, pr)
-                   for code, name, d, cf, th, ev, mx, ex, sr, pr, v in swk if v == "错"]
+                   for _cid, code, name, d, cf, th, ev, mx, ex, sr, pr, v in swk if v == "错"]
         wrong = blocks
     rv = _review_wrong(date_utc8, wrong)
     stats = {"cum": cum, "week": week, "by_direction": by_dir, "by_source": by_src,
@@ -515,10 +547,11 @@ def dashboard_block() -> dict | None:
         for wk, v in cur.fetchall():
             cw.setdefault(wk, []).append((v,))
         curve = [{"week": wk, **_stats(r)} for wk, r in sorted(cw.items())]
-        cur.execute("""SELECT cs.card_id, n.chain, n.node, jc.direction, jc.confidence,
-                cs.excess, cs.verdict, cs.trade_date, cs.end_date
+        # f-1 护栏:同 _week_rows,历史卡不因 node 维表重组而从 recent 消失
+        cur.execute("""SELECT cs.card_id, COALESCE(n.chain, '历史节点'), COALESCE(n.node, jc.node_id),
+                jc.direction, jc.confidence, cs.excess, cs.verdict, cs.trade_date, cs.end_date
             FROM card_score cs JOIN judgment_card jc USING(card_id)
-            JOIN node n ON n.node_id = jc.node_id
+            LEFT JOIN node n ON n.node_id = jc.node_id
             ORDER BY cs.end_date DESC, abs(cs.excess) DESC LIMIT 12""")
         recent = [{"card_id": r[0], "chain": r[1], "node": r[2], "direction": r[3],
                    "confidence": r[4], "excess": float(r[5]), "verdict": r[6],
