@@ -7,7 +7,8 @@
 
 - **不可重算(真金,备份优先级最高)**:judgment_card / decision_card / b7_weekly / ledger /
   daily_report / report_increment / raw_news(LLM结构化) / research_report(打标) / fund_letter /
-  hotspot_daily / mf_intraday_node(盘中曲线,东财只给当日) / ref_membership_snap / task_log
+  hotspot_daily / mf_intraday_node(盘中曲线,东财只给当日) / ref_membership_snap / task_log /
+  weekly_reflection(使用者亲笔周复盘,唯一不可再生)
 - **可重算(丢了能重建)**:card_score / decision_score(行情的函数) / heatmap_*(每日 TRUNCATE,无历史,
   设计如此) / exports/*.json / trends.json
 - **外部维护(md schema,dc 负责)**:bar_daily_raw / moneyflow / top_list / adj_factor 等,Tushare 可重拉
@@ -21,6 +22,7 @@
 | card_score / decision_score | 到期(第5开市日,trade_calendar 必须 DISTINCT)记分;未复权 close→close 节点(成分等权)vs 全池等权超额pp;方向卡\|超额\|≥1pp 定对错,带内=平;中性卡≤2pp=对;**成分按发卡日 ref_membership_snap 锚定(2026-07-04 起,更早回退当前表)**;mech_verdict=机械基线(sign共振/对齐,同规则)——0b 三列对照:LLM vs 机械 vs 恒多(恒多从 excess 分布统计,无列) | 首批 2026-07-10 到期 |
 | b7_weekly | 周日收口;stats 含 baseline/stock_baseline(0b)+calibration/stock_calibration(BRIER_SPEC 口径:样本域对/错+平剔除必报未判定率、固定边界桶、direction/neutral 分层、按prompt版本分组,#40/#41) | 2026-07-05 首跑(预期空单) |
 | ref_membership_snap | 参照层每日成分快照(盘后 pipeline ref_snapshot 步,幂等);含仅映射票(ts_code NULL) | 2026-07-04 |
+| weekly_reflection | 使用者手动整篇 Markdown 周复盘(**非** b7_weekly 自动周报,零 LLM,不进判断/记分链);append-only+版本链(根v1/修订=父+1/禁分叉/禁跨周/同周单根,触发器焊死);content_sha256=原文 UTF-8 字节 SHA;双时点 authored_at_utc8(须带时区)/recorded_at_utc8;visibility 默认 private,public 才出 reflections.json(只出当前叶子);唯一写入=数据节点 CLI manage_weekly_reflection.py(preview→confirm-sha)(sql/030,#46) | 2026-07-21(建表;首篇待使用者提供) |
 
 ## 信息层(rv 库)
 

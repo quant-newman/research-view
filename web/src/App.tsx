@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import type { Dashboard, NewsNode } from "./types";
 import HeatmapView from "./Heatmap";
 import SystemView from "./System";
@@ -15,6 +15,9 @@ import { StatusBar, type Market } from "./StatusBar";
 import { ReportPageView } from "./Report";
 import { JudgmentPageView } from "./Judgment";
 import { ChatView } from "./Chat";
+// 复盘页动态加载:react-markdown 只在进入复盘页时拉取,不进首屏主 chunk
+const ReflectionsView = lazy(() =>
+  import("./Reflections").then((m) => ({ default: m.ReflectionsView })));
 
 const NAV = [
   { key: "report", label: "报告" },
@@ -24,6 +27,7 @@ const NAV = [
   { key: "heatmap", label: "热力" },
   { key: "research", label: "研究" },
   { key: "letters", label: "信函" },
+  { key: "reflect", label: "复盘" },
   { key: "chat", label: "问答" },
   { key: "system", label: "系统" },
 ];
@@ -109,7 +113,7 @@ export default function App() {
   if (!d) return <div className="p-6 text-muted">加载中…</div>;
 
   const isUS = market === "US";
-  const enabled = new Set(["report", "judgment", "hotspot", "flow", "heatmap", "research", "letters", "chat", "system"]);
+  const enabled = new Set(["report", "judgment", "hotspot", "flow", "heatmap", "research", "letters", "reflect", "chat", "system"]);
 
   return (
     <StockCtx.Provider value={setStock}>
@@ -198,6 +202,11 @@ export default function App() {
         )}
         {view === "letters" && (
           <div className="flex-1 p-3 md:p-5 overflow-auto"><LettersView r={d.research} /></div>
+        )}
+        {view === "reflect" && (
+          <Suspense fallback={<div className="flex-1 p-6 text-muted">加载中…</div>}>
+            <ReflectionsView />
+          </Suspense>
         )}
         {view === "chat" && <ChatView />}
         {view === "system" && (

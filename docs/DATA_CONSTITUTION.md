@@ -42,7 +42,7 @@ append-only 触发器在恢复库实测拒改。
 | 梯队 | 数据 | 本平台对应 | 为什么 |
 |---|---|---|---|
 | 1 | 执行数据(真实成交/滑点/盘口) | **不适用**——本平台不执行交易(判断放大器形态,DECISIONS #24),不新增采集义务 | 全行业皇冠,但属交易执行侧平台 |
-| 2 | 判断记录(事前记、带证伪条件) | judgment_card / decision_card / ledger / b7_weekly(review+lessons) / daily_report 叙事 / fund_letter | 唯一记录"当时怎么想的、后来对不对";**严格不可回填**(DECISIONS #34) |
+| 2 | 判断记录(事前记、带证伪条件) | judgment_card / decision_card / ledger / b7_weekly(review+lessons) / daily_report 叙事 / fund_letter / weekly_reflection(使用者亲笔周复盘,#46) | 唯一记录"当时怎么想的、后来对不对";**严格不可回填**(DECISIONS #34) |
 | 3 | 自建口径信号历史 + **公共但不可回填的观测层(修订新增)** | hotspot_daily / mf_intraday_node(dc 只留4天,全史仅我们有) / ref_membership_snap / report_increment / raw_news(wire 部分 feed 不可回拉) / exports 观测层 blob / md.hot_rank(无历史API) | 口径独特×历史长度=价值;**公共数据凡无历史接口、仅观测时可得者,按本梯队待遇** |
 | 4 | 公共事实(行情/财务/公告) | marketdata 只读(dc 属地,非本平台备份责任);research_report(接口可重拉) | 可重拉,丢了能补,是入场费不是壁垒 |
 
@@ -57,7 +57,7 @@ append-only 触发器在恢复库实测拒改。
 
 | 资产 | 存储 | 备份覆盖 |
 |---|---|---|
-| judgment_card / decision_card / ledger / b7_weekly / daily_report / fund_letter / stock_event | PG(触发器焊死) | pg_dump 两地14天+月档 ✓ |
+| judgment_card / decision_card / ledger / b7_weekly / daily_report / fund_letter / stock_event / weekly_reflection(2026-07-21 新增,梯队2;首份含表备份须 pg_restore --list 核对 TOC) | PG(触发器焊死) | pg_dump 两地14天+月档 ✓ |
 | hotspot_daily / report_increment / mf_intraday_node / ref_membership_snap / raw_news / research_report / task_log / data_flag | PG | pg_dump 同上 ✓ |
 | card_score / decision_score(可重算,规则版本留痕) | PG | pg_dump 同上 ✓(重算规则=代码在 git) |
 | exports/ 观测层日 blob(us/events/信函/source_status/backtest 诊断) | 文件(数据节点为超集) | exports_*.tar.gz 同链 ✓(2026-07-05 起) |

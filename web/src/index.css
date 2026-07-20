@@ -27,3 +27,17 @@ body {
 @keyframes flash { 0% { background: #1C2430; } 100% { background: transparent; } }
 .flash { animation: flash 0.8s ease-out; }
 @media (prefers-reduced-motion: reduce) { .flash { animation: none; } }
+
+/* 复盘页 Markdown 正文(.md-body 作用域,不影响其他页面) */
+.md-body h1, .md-body h2, .md-body h3 { color: #E4E9F0; font-weight: 600; margin: 0.9em 0 0.4em; }
+.md-body h1 { font-size: 18px; } .md-body h2 { font-size: 16px; } .md-body h3 { font-size: 14px; }
+.md-body p { margin: 0.5em 0; }
+.md-body ul, .md-body ol { margin: 0.5em 0; padding-left: 1.4em; }
+.md-body ul { list-style: disc; } .md-body ol { list-style: decimal; }
+.md-body blockquote { border-left: 3px solid #232B36; padding-left: 0.8em; margin: 0.6em 0; color: #9AA5B1; }
+.md-body code { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12px; background: #1C2430; padding: 0.1em 0.35em; border-radius: 3px; }
+.md-body pre { background: #1C2430; padding: 0.7em; border-radius: 4px; overflow-x: auto; margin: 0.6em 0; }
+.md-body pre code { background: transparent; padding: 0; }
+.md-body table { border-collapse: collapse; margin: 0.6em 0; display: block; overflow-x: auto; }
+.md-body th, .md-body td { border: 1px solid #232B36; padding: 0.3em 0.6em; }
+.md-body hr { border-color: #232B36; margin: 1em 0; }

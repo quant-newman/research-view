@@ -498,4 +498,46 @@ def build_dashboard(date_utc8: str) -> Path:
               "mf": {"intraday": mf_intra, "hist": mf_hist}}
     (EXPORT_DIR / "trends.json").write_text(_dump(trends), encoding="utf-8")
     print(f"  trends: A股 {len(a_trends)} 只 / 美股 {len(us_trends)} 只")
+
+    # 使用者周度复盘(公开面):独立 reflections.json 懒加载,不塞 dashboard 本体。
+    # 失败不阻塞 dashboard,但缺文件会断 rsync 同步链 → 兜底保证文件存在(合法空结构)。
+    try:
+        build_reflections()
+    except Exception as e:  # noqa: BLE001
+        print(f"  ! reflections 降级: {e}")
+        rp = EXPORT_DIR / "reflections.json"
+        if not rp.exists():
+            rp.write_text(_dump({"meta": {"n": 0, "generated_at": ""}, "reflections": []}),
+                          encoding="utf-8")
+    return path
+
+
+def build_reflections() -> Path:
+    """独立生成 exports/reflections.json(使用者周度复盘公开面,07-21 第二批)。
+
+    只导出「当前叶子版本 且 visibility='public'」:某周新版转 private 后,该周旧版
+    即使曾公开也整体消失(private 内容含标题/文件名零旁路泄漏)。零公开记录时输出
+    合法空结构(不缺文件不输出 null)。不输出本地路径/DSN/用户名等运行环境信息。"""
+    rows = []
+    with db.rv_conn() as conn, conn.cursor() as cur:
+        cur.execute("""SELECT r.reflection_id, r.week_end, r.title, r.content_md,
+                              r.content_sha256, r.source_filename,
+                              r.authored_at_utc8, r.recorded_at_utc8, r.version_no
+                       FROM weekly_reflection r
+                       WHERE r.visibility = 'public'
+                         AND NOT EXISTS (SELECT 1 FROM weekly_reflection c
+                                         WHERE c.supersedes_id = r.reflection_id)
+                       ORDER BY r.week_end DESC, r.reflection_id DESC""")
+        for rid, week_end, title, md, sha, fname, authored, recorded, ver in cur.fetchall():
+            rows.append({"reflection_id": rid, "week_end": str(week_end), "title": title,
+                         "content_md": md, "content_sha256": sha,
+                         "source_filename": fname,
+                         "authored_at": authored.isoformat(),
+                         "recorded_at": recorded.isoformat(), "version_no": ver})
+    EXPORT_DIR.mkdir(exist_ok=True)
+    path = EXPORT_DIR / "reflections.json"
+    generated = datetime.now(ZoneInfo(config.TZ)).strftime("%F %T")
+    path.write_text(_dump({"meta": {"n": len(rows), "generated_at": generated},
+                           "reflections": rows}), encoding="utf-8")
+    print(f"  reflections: 公开 {len(rows)} 篇 → {path.name}")
     return path

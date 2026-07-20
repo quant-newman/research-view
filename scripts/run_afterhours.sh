@@ -27,7 +27,7 @@ echo "[afterhours $(TZ=Asia/Shanghai date '+%F %T') UTC+8] 阿里云跑完整 pi
 $SSH "cd $REMOTE && ./.venv/bin/python scripts/run_pipeline.py $DATE"
 
 echo "[afterhours] 拉回 dashboard.json → webdata/ ..."
-rsync -az "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/"{dashboard,trends,news}.json webdata/
+rsync -az "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/"{dashboard,trends,news,reflections}.json webdata/
 alert_check_fresh 30  # export 在 run_pipeline 内失败不影响退出码,以拉回文件新鲜度兜底
 
 echo "[afterhours] 拉回最新数据库备份(异地留存,两地各保14天)..."

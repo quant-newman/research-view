@@ -33,6 +33,6 @@ rsync -az "exports/us_${DATE}.json" exports/source_status.json "$ALIYUN_DC_USER@
 
 echo "[us] 3/3 重建 dashboard + 拉回 ..."
 $SSH "cd $REMOTE && ./.venv/bin/python -c \"import sys;sys.path.insert(0,'src');from research_view import export;print(export.build_dashboard('$DATE'))\""
-rsync -az "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/"{dashboard,trends,news}.json webdata/
+rsync -az "$ALIYUN_DC_USER@$ALIYUN_DC_HOST:$REMOTE/exports/"{dashboard,trends,news,reflections}.json webdata/
 alert_clear us
 echo "[us] 完成。前端顶部切“美股”即见。"
