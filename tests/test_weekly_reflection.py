@@ -14,6 +14,7 @@
 import hashlib
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 import time
@@ -400,6 +401,97 @@ def test_cli_revise_explicit_visibility_and_no_cross_week(cli, tmp_path):
     with pytest.raises(SystemExit):        # 父版本不存在
         mod.cmd_revise(_args(file=str(f2), supersedes=999, authored_at=AUTH,
                              confirm_sha=sha2, private=True))
+
+
+# ---------- 导出 fail-closed + 原子替换(07-21 审查阻塞项1回归) ----------
+
+@contextmanager
+def _broken_rv_conn():
+    raise RuntimeError("模拟导出查询失败")
+    yield  # pragma: no cover
+
+
+def test_export_fail_closed_no_stale_public(export_env, monkeypatch):
+    """旧 public 导出已存在 + 新 private 叶子已入库 + 导出异常:
+    旧公开标题/正文/SHA 必须从正式 JSON 消失,落地=合法空结构,无半截临时文件。"""
+    dsn, tmp_path = export_env
+    with _connect(dsn) as conn:  # 库内状态:public 根已被 private v2 顶掉(当前叶子=private)
+        pub, _ = _ins(conn, "2026-07-12", vis="public", content="旧公开正文UNIQ0721",
+                      title="旧公开标题UNIQ0721")
+        _ins(conn, "2026-07-12", vis="private", sup=pub, content="转私正文")
+        conn.commit()
+    old_sha = SHA("旧公开正文UNIQ0721".encode())
+    (tmp_path / "reflections.json").write_text(json.dumps(
+        {"meta": {"n": 1, "generated_at": "x"},
+         "reflections": [{"reflection_id": pub, "week_end": "2026-07-12",
+                          "title": "旧公开标题UNIQ0721", "content_md": "旧公开正文UNIQ0721",
+                          "content_sha256": old_sha, "source_filename": "a.md",
+                          "authored_at": "x", "recorded_at": "x", "version_no": 1}]},
+        ensure_ascii=False), encoding="utf-8")
+    monkeypatch.setattr(rv_db, "rv_conn", _broken_rv_conn)  # 导出查询异常
+    with pytest.raises(RuntimeError, match="模拟导出查询失败"):
+        rv_export.build_reflections()  # fail-closed 后仍必须向上抛错
+    txt = (tmp_path / "reflections.json").read_text(encoding="utf-8")
+    j = json.loads(txt)  # 安全空结构=合法 JSON
+    assert j["reflections"] == [] and j["meta"]["n"] == 0
+    assert "UNIQ0721" not in txt and old_sha not in txt  # 旧公开内容零残留
+    assert not list(tmp_path.glob(".reflections.json.tmp*"))  # 临时文件成败都清理
+
+
+def test_export_atomic_tmp_cleanup_on_success(export_env):
+    dsn, tmp_path = export_env
+    with _connect(dsn) as conn:
+        _ins(conn, "2026-07-19", vis="public", content=MD_CN, title="正常路径")
+        conn.commit()
+    p = rv_export.build_reflections()
+    assert json.loads(p.read_text(encoding="utf-8"))["meta"]["n"] == 1
+    assert not list(tmp_path.glob(".reflections.json.tmp*"))  # 走临时文件+原子替换,零残留
+
+
+def test_export_empty_fallback_unwritable_raises(export_env, monkeypatch):
+    """安全空文件也无法落地:异常必须继续向上抛(整条流水非零),不得报成功。"""
+    _, tmp_path = export_env
+    ro = tmp_path / "ro"
+    ro.mkdir()
+    ro.chmod(0o500)  # 目录不可写:正式与临时文件都写不进
+    try:
+        monkeypatch.setattr(rv_export, "EXPORT_DIR", ro)
+        monkeypatch.setattr(rv_db, "rv_conn", _broken_rv_conn)
+        with pytest.raises(Exception):
+            rv_export.build_reflections()
+        assert not (ro / "reflections.json").exists()
+    finally:
+        ro.chmod(0o700)
+
+
+# ---------- sync_dashboard.sh 失败传播(07-21 审查阻塞项2回归) ----------
+
+def test_sync_dashboard_rsync_failure_propagates(tmp_path):
+    src = (ROOT / "scripts" / "sync_dashboard.sh").read_text(encoding="utf-8")
+    # 静态:吞错模式已从**代码行**删除(注释里保留"原模式为何被删"的审查留痕,只检非注释行)
+    code = "\n".join(l for l in src.splitlines() if not l.lstrip().startswith("#"))
+    assert "|| true" not in code and "grep -v" not in code
+    assert "set -euo pipefail" in code and "LogLevel=ERROR" in code
+    # 沙箱实跑(stub ssh/rsync,不出网不连生产):rsync 非零→脚本非零;rsync 零→脚本零
+    sandbox = tmp_path / "sb"
+    (sandbox / "scripts").mkdir(parents=True)
+    (sandbox / "scripts" / "sync_dashboard.sh").write_text(src, encoding="utf-8")
+    (sandbox / ".env").write_text("ALIYUN_DC_USER=stubu\nALIYUN_DC_HOST=stubh\n",
+                                  encoding="utf-8")
+    stubbin = tmp_path / "stubbin"
+    stubbin.mkdir()
+    (stubbin / "ssh").write_text("#!/bin/bash\nexit 0\n", encoding="utf-8")
+    (stubbin / "ssh").chmod(0o755)
+    env = dict(os.environ, PATH=f"{stubbin}:{os.environ['PATH']}", HOME=str(tmp_path))
+    for code, expect_fail in ((23, True), (0, False)):
+        (stubbin / "rsync").write_text(f"#!/bin/bash\nexit {code}\n", encoding="utf-8")
+        (stubbin / "rsync").chmod(0o755)
+        r = subprocess.run(["bash", str(sandbox / "scripts" / "sync_dashboard.sh"), "20260721"],
+                           env=env, capture_output=True, text=True)
+        if expect_fail:
+            assert r.returncode != 0, "rsync 失败必须传播为脚本失败,禁静默吞掉"
+        else:
+            assert r.returncode == 0, r.stderr
 
 
 # ---------- shell 静态验证(六.16) ----------

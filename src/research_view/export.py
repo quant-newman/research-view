@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
@@ -500,15 +501,30 @@ def build_dashboard(date_utc8: str) -> Path:
     print(f"  trends: A股 {len(a_trends)} 只 / 美股 {len(us_trends)} 只")
 
     # 使用者周度复盘(公开面):独立 reflections.json 懒加载,不塞 dashboard 本体。
-    # 失败不阻塞 dashboard,但缺文件会断 rsync 同步链 → 兜底保证文件存在(合法空结构)。
+    # fail-closed(07-21 审查阻塞项1):build_reflections 失败时已在其内部原子落
+    # 安全空结构——落地成功才允许 dashboard 继续(空结构无隐私,后续同步安全);
+    # 连安全空结构都落不了地(下方校验不过)则继续抛错,整条流水非零,不得报成功。
     try:
         build_reflections()
     except Exception as e:  # noqa: BLE001
-        print(f"  ! reflections 降级: {e}")
-        rp = EXPORT_DIR / "reflections.json"
-        if not rp.exists():
-            rp.write_text(_dump({"meta": {"n": 0, "generated_at": ""}, "reflections": []}),
-                          encoding="utf-8")
+        print(f"  ! reflections 导出失败(fail-closed 校验中): {e}")
+        j = json.loads((EXPORT_DIR / "reflections.json").read_text(encoding="utf-8"))
+        if j.get("reflections") != []:
+            raise
+    return path
+
+
+def _write_reflections_atomic(payload: dict) -> Path:
+    """同目录临时文件 + os.replace 原子替换(07-21 审查阻塞项1):
+    正式文件任一时刻要么旧完整版要么新完整版,永无半截 JSON;临时文件成败都清理。"""
+    EXPORT_DIR.mkdir(exist_ok=True)
+    path = EXPORT_DIR / "reflections.json"
+    tmp = EXPORT_DIR / f".reflections.json.tmp.{os.getpid()}"
+    try:
+        tmp.write_text(_dump(payload), encoding="utf-8")
+        os.replace(tmp, path)
+    finally:
+        tmp.unlink(missing_ok=True)
     return path
 
 
@@ -517,27 +533,34 @@ def build_reflections() -> Path:
 
     只导出「当前叶子版本 且 visibility='public'」:某周新版转 private 后,该周旧版
     即使曾公开也整体消失(private 内容含标题/文件名零旁路泄漏)。零公开记录时输出
-    合法空结构(不缺文件不输出 null)。不输出本地路径/DSN/用户名等运行环境信息。"""
-    rows = []
-    with db.rv_conn() as conn, conn.cursor() as cur:
-        cur.execute("""SELECT r.reflection_id, r.week_end, r.title, r.content_md,
-                              r.content_sha256, r.source_filename,
-                              r.authored_at_utc8, r.recorded_at_utc8, r.version_no
-                       FROM weekly_reflection r
-                       WHERE r.visibility = 'public'
-                         AND NOT EXISTS (SELECT 1 FROM weekly_reflection c
-                                         WHERE c.supersedes_id = r.reflection_id)
-                       ORDER BY r.week_end DESC, r.reflection_id DESC""")
-        for rid, week_end, title, md, sha, fname, authored, recorded, ver in cur.fetchall():
-            rows.append({"reflection_id": rid, "week_end": str(week_end), "title": title,
-                         "content_md": md, "content_sha256": sha,
-                         "source_filename": fname,
-                         "authored_at": authored.isoformat(),
-                         "recorded_at": recorded.isoformat(), "version_no": ver})
-    EXPORT_DIR.mkdir(exist_ok=True)
-    path = EXPORT_DIR / "reflections.json"
-    generated = datetime.now(ZoneInfo(config.TZ)).strftime("%F %T")
-    path.write_text(_dump({"meta": {"n": len(rows), "generated_at": generated},
-                           "reflections": rows}), encoding="utf-8")
+    合法空结构(不缺文件不输出 null)。不输出本地路径/DSN/用户名等运行环境信息。
+
+    fail-closed:查询/序列化/写入任一步失败,先原子替换为安全空结构(旧公开内容
+    不得因"正式文件已存在"而残留),再把原异常向上抛;安全空结构也落不了地则
+    异常链继续向上,调用方必须以失败收场。"""
+    try:
+        rows = []
+        with db.rv_conn() as conn, conn.cursor() as cur:
+            cur.execute("""SELECT r.reflection_id, r.week_end, r.title, r.content_md,
+                                  r.content_sha256, r.source_filename,
+                                  r.authored_at_utc8, r.recorded_at_utc8, r.version_no
+                           FROM weekly_reflection r
+                           WHERE r.visibility = 'public'
+                             AND NOT EXISTS (SELECT 1 FROM weekly_reflection c
+                                             WHERE c.supersedes_id = r.reflection_id)
+                           ORDER BY r.week_end DESC, r.reflection_id DESC""")
+            for rid, week_end, title, md, sha, fname, authored, recorded, ver in cur.fetchall():
+                rows.append({"reflection_id": rid, "week_end": str(week_end), "title": title,
+                             "content_md": md, "content_sha256": sha,
+                             "source_filename": fname,
+                             "authored_at": authored.isoformat(),
+                             "recorded_at": recorded.isoformat(), "version_no": ver})
+        generated = datetime.now(ZoneInfo(config.TZ)).strftime("%F %T")
+        payload = {"meta": {"n": len(rows), "generated_at": generated}, "reflections": rows}
+        json.loads(_dump(payload))  # 序列化健全性前置:坏 payload 不得进正式文件
+    except Exception:
+        _write_reflections_atomic({"meta": {"n": 0, "generated_at": ""}, "reflections": []})
+        raise
+    path = _write_reflections_atomic(payload)
     print(f"  reflections: 公开 {len(rows)} 篇 → {path.name}")
     return path
