@@ -170,9 +170,10 @@ def stock_baseline_stats(rows) -> dict:
           for e, _m, _r, _x in rows if e is not None]
     out["always_long"] = _stats(al)
     out["legacy_mech_verdict_col"] = {
-        "label": "E0 存量 decision_score.mech_verdict 列原样(修复前记分行=always_long artifact,"
-                 "erratum;修复后到期行=新口径;仅封存对照,禁与新口径混池)",
-        **_stats([(m,) for _e, m, r, _x in rows if r is None and m])}
+        "label": "E0 存量 decision_score.mech_verdict 列封存说明:修复前记分行=always_long "
+                 "artifact(erratum),修复后到期行=新口径,同列跨两种口径——只留行数,"
+                 "禁输出混合命中率",
+        "n": sum(1 for _e, m, r, _x in rows if r is None and m)}
     return out
 
 
@@ -363,22 +364,26 @@ def override_slices(rows) -> dict:
 
 def stock_override_slices(rows) -> dict:
     """B8 覆写切片(P0):四桶配对以 stock_raw_mech 方向(raw 符号)取代 alignment 符号;
-    indeterminate 剔除四桶并单列计数,§6 对账三计数随桶一并披露(不得静默消失)。
+    按 e0/e1 纪元分池输出(禁混池,08-03 审查修正),indeterminate 剔除四桶并单列计数,
+    §6 对账三计数分纪元随桶一并披露(不得静默消失)。
     rows: [(direction, raw_directional_score, matrix, verdict, excess)]。
     mech 列同派生口径从 excess 重算,不消费存量 mech_verdict(artifact 隔离)。"""
-    slim = []
-    n = {"n_total": 0, "n_directional": 0, "n_neutral": 0, "n_indeterminate": 0}
+    slim = {"e0": [], "e1": []}
+    n = {ep: {"n_total": 0, "n_directional": 0, "n_neutral": 0, "n_indeterminate": 0}
+         for ep in slim}
     for direction, raw_col, matrix, verdict, excess in rows:
-        _epoch, mdir = stock_mech_class(raw_col, matrix)
-        n["n_total"] += 1
+        epoch, mdir = stock_mech_class(raw_col, matrix)
+        b = n[epoch]
+        b["n_total"] += 1
         if mdir is None:
-            n["n_indeterminate"] += 1
+            b["n_indeterminate"] += 1
             continue
-        n["n_neutral" if mdir == "中性" else "n_directional"] += 1
-        slim.append((direction, _DIR_SIGN.get(mdir, 0), verdict,
-                     _verdict(mdir, float(excess))))
-    assert n["n_total"] == n["n_directional"] + n["n_neutral"] + n["n_indeterminate"]
-    return {**override_slices(slim), **n}
+        b["n_neutral" if mdir == "中性" else "n_directional"] += 1
+        slim[epoch].append((direction, _DIR_SIGN.get(mdir, 0), verdict,
+                            _verdict(mdir, float(excess))))
+    for b in n.values():
+        assert b["n_total"] == b["n_directional"] + b["n_neutral"] + b["n_indeterminate"]
+    return {ep: {**override_slices(slim[ep]), **n[ep]} for ep in slim}
 
 
 # prompt_hash → 人读标签。新版本上线时在此登记一行;未登记哈希原样显示,不阻塞。

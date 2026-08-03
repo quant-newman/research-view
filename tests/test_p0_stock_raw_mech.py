@@ -131,17 +131,39 @@ def test_override_slices_uses_raw_not_alignment():
         ("偏多", None, _mx(price=0.01), "对", 1.0),  # E0 indeterminate → 剔除+计数
     ]
     out = stock_override_slices(rows)
-    assert out["n_indeterminate"] == 1
-    # §6 对账三计数随桶披露:总数=方向+中性+indeterminate
-    assert out["n_total"] == 5 and out["n_directional"] == 3 and out["n_neutral"] == 1
-    assert out["n_total"] == out["n_directional"] + out["n_neutral"] + out["n_indeterminate"]
-    assert out["override"]["llm"]["n"] == 1 and out["agree"]["llm"]["n"] == 1
-    assert out["llm_only"]["llm"]["n"] == 1 and out["suppress"]["llm"]["n"] == 1
+    e0, e1 = out["e0"], out["e1"]
+    assert e0["n_indeterminate"] == 1 and e0["n_total"] == 1
+    # §6 对账三计数分纪元随桶披露:总数=方向+中性+indeterminate
+    assert e1["n_total"] == 4 and e1["n_directional"] == 3 and e1["n_neutral"] == 1
+    for b in (e0, e1):
+        assert b["n_total"] == b["n_directional"] + b["n_neutral"] + b["n_indeterminate"]
+    assert e1["override"]["llm"]["n"] == 1 and e1["agree"]["llm"]["n"] == 1
+    assert e1["llm_only"]["llm"]["n"] == 1 and e1["suppress"]["llm"]["n"] == 1
     # 同一批卡走旧口径(alignment 恒 ≥1.0):override 桶为空 → 证明配对符号已换
     old = override_slices([("偏多", 1.9, "错", "对"), ("偏多", 2.6, "对", "对"),
                            ("偏多", 1.1, "对", "错"), ("中性", 1.4, "对", "对"),
                            ("偏多", 1.2, "对", None)])
     assert old["override"]["llm"]["n"] == 0 and old["agree"]["llm"]["n"] == 4
+
+
+def test_e0_e1_mixed_sample_no_pool_mixing():
+    """审查修正回归(08-03):E0/E1 混合样本禁混池——override 分纪元输出互不渗漏
+    (顶层无混合池),legacy 封存块只留说明与行数、不再输出跨口径混合命中率。"""
+    rows = [  # 同构方向/结果,分属两纪元:混池会把桶计数加总
+        ("偏多", -2.5, {}, "错", -9.0),              # E1:raw 偏空 → override
+        ("偏多", None, _mx(lhb=-0.03), "错", -9.0),  # E0:带外偏空 → override
+        ("偏空", None, _mx(lhb=-0.03), "对", -9.0),  # E0:agree
+    ]
+    out = stock_override_slices(rows)
+    assert set(out) == {"e0", "e1"}                  # 顶层只有分纪元池
+    assert out["e1"]["n_total"] == 1 and out["e1"]["override"]["llm"]["n"] == 1
+    assert out["e0"]["n_total"] == 2 and out["e0"]["override"]["llm"]["n"] == 1
+    assert out["e0"]["agree"]["llm"]["n"] == 1 and out["e1"]["agree"]["llm"]["n"] == 0
+    # legacy 块:只封存说明+行数(E0 非空原列 2 行),无任何命中率/对错统计字段
+    stats = stock_baseline_stats([(-9.0, "对", -2.5, {}), (7.0, "对", None, _mx(price=0.5)),
+                                  (-9.0, "错", None, _mx(lhb=-0.03))])
+    legacy = stats["legacy_mech_verdict_col"]
+    assert set(legacy) == {"label", "n"} and legacy["n"] == 2
 
 
 # ---------- 2) postgres:18 临时容器真 SQL 集成 ----------
