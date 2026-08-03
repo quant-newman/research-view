@@ -96,12 +96,84 @@ def _mech_dir(x) -> str:
 
 
 def baseline_stats(rows) -> dict:
-    """三列对照的两条基线。rows: [(excess, mech_verdict)]。
-    mech = sign(共振/对齐)方向按同规则记分;always_long = 恒偏多(从 excess 分布直接得出)。"""
+    """三列对照的两条基线(B6 节点侧,输入 sign(resonance),可负,无 P0 病灶)。
+    rows: [(excess, mech_verdict)]。always_long = 恒偏多(从 excess 分布直接得出)。"""
     mech = _stats([(m,) for _e, m in rows if m])
     al = [("对" if float(e) >= _HIT_TH else "错" if float(e) <= -_HIT_TH else "平",)
           for e, _m in rows if e is not None]
     return {"mech": mech, "always_long": _stats(al)}
+
+
+# ---------- 个股机械基线 stock_raw_mech(P0_MECHFIX,2026-07-14 裁决+勘误E1) ----------
+# 病灶:旧口径 sign(alignment),而 alignment 入池门槛恒 ≥1.0 → mech ≡ always_long(结构性)。
+# 主变体:raw_directional_score = 1.0·price_z + 1.0·mf_z + 0.8·news_z + 0.6·lhb_z(attn 不参与)。
+# E1(实施起发卡):卡表列全精度,>0/<0/=0 → 偏多/偏空/机械中性。
+# E0(实施前存量):卡表列 NULL(append-only 禁回填),派生层从 matrix 两位小数 z 纯函数重算,
+#   |raw|≤0.017(=0.005×Σ|w|,端点含入)记 indeterminate 禁强判,不入方向样本、单列计数披露。
+
+_W1 = {"price": 1.0, "mf": 1.0, "news": 0.8, "lhb": 0.6}  # w1 固定拷贝:E0 重算永远按 w1,
+_W1_BAND = 0.017                                          # 与 decision._W 日后变更(=新版本)解耦
+
+
+def raw_w1_recalc2dp(matrix) -> float | None:
+    """E0 派生重算(w1_recalc2dp):唯一合法输入 = matrix 两位小数 z。
+    matrix 缺源/非数值返回 None(不可判,并入 indeterminate,禁强判)。"""
+    if not isinstance(matrix, dict):
+        return None
+    try:
+        return sum(w * float(matrix[k]["z"]) for k, w in _W1.items())
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def _e0_dir(raw) -> str | None:
+    """E0 三段判定:带内(含 0.017 端点)→ None=indeterminate;带外正常判向。"""
+    if raw is None or abs(raw) <= _W1_BAND:
+        return None
+    return "偏多" if raw > 0 else "偏空"
+
+
+def stock_mech_class(raw_col, matrix) -> tuple[str, str | None]:
+    """个股机械方向分类 → (纪元, 方向)。方向 None = indeterminate(仅 E0 会出)。
+    E1 全精度 =0 记机械中性(记分走中性 ±2pp 口径);E0 的 0 落在误差带内=indeterminate,
+    与中性不混同。"""
+    if raw_col is not None:
+        return "e1", _mech_dir(raw_col)
+    return "e0", _e0_dir(raw_w1_recalc2dp(matrix))
+
+
+def stock_baseline_stats(rows) -> dict:
+    """个股基线(P0 新口径):stock_raw_mech 按纪元切分 + §6 对账等式披露
+    n_total = n_directional + n_neutral + n_indeterminate(禁静默剔除/禁只报缩分母命中率)。
+    rows: [(excess, mech_verdict, raw_directional_score, matrix)](已记分卡)。
+    mech 命中一律由派生纯函数从 excess 重算;已记分存量 mech_verdict 零改写零消费,
+    原列只在 legacy 块封存展示(修复前行 = always_long artifact,erratum,禁与新口径混池)。"""
+    ep = {"e1": {"weight_version": "w1", "n_total": 0, "n_directional": 0,
+                 "n_neutral": 0, "n_indeterminate": 0},
+          "e0": {"weight_version": "w1_recalc2dp", "band": _W1_BAND, "n_total": 0,
+                 "n_directional": 0, "n_neutral": 0, "n_indeterminate": 0}}
+    verdicts = {"e1": [], "e0": []}
+    for excess, _mv, raw_col, matrix in rows:
+        epoch, mdir = stock_mech_class(raw_col, matrix)
+        b = ep[epoch]
+        b["n_total"] += 1
+        if mdir is None:
+            b["n_indeterminate"] += 1
+            continue
+        b["n_neutral" if mdir == "中性" else "n_directional"] += 1
+        verdicts[epoch].append((_verdict(mdir, float(excess)),))
+    out = {}
+    for k, b in ep.items():
+        assert b["n_total"] == b["n_directional"] + b["n_neutral"] + b["n_indeterminate"]
+        out[k] = {**b, "mech": _stats(verdicts[k])}
+    al = [("对" if float(e) >= _HIT_TH else "错" if float(e) <= -_HIT_TH else "平",)
+          for e, _m, _r, _x in rows if e is not None]
+    out["always_long"] = _stats(al)
+    out["legacy_mech_verdict_col"] = {
+        "label": "E0 存量 decision_score.mech_verdict 列原样(修复前记分行=always_long artifact,"
+                 "erratum;修复后到期行=新口径;仅封存对照,禁与新口径混池)",
+        **_stats([(m,) for _e, m, r, _x in rows if r is None and m])}
+    return out
 
 
 def score_mature(conn=None) -> dict:
@@ -124,9 +196,11 @@ def score_mature(conn=None) -> dict:
         ntodo = [("node", *r) for r in cur.fetchall()]
         cur.execute("""WITH latest AS (
                 SELECT DISTINCT ON (trade_date, code)
-                       card_id, trade_date, code, ts_code, direction, horizon_days, alignment
+                       card_id, trade_date, code, ts_code, direction, horizon_days,
+                       raw_directional_score, matrix
                 FROM decision_card ORDER BY trade_date, code, card_id DESC)
-            SELECT l.card_id, l.trade_date, l.code, l.ts_code, l.direction, l.horizon_days, l.alignment
+            SELECT l.card_id, l.trade_date, l.code, l.ts_code, l.direction, l.horizon_days,
+                   l.raw_directional_score, l.matrix
             FROM latest l
             WHERE NOT EXISTS (SELECT 1 FROM decision_score ds WHERE ds.card_id = l.card_id)
             ORDER BY l.trade_date""")
@@ -184,11 +258,14 @@ def score_mature(conn=None) -> dict:
                              _verdict(_mech_dir(reso), excess)))
                         n["scored"] += 1
                     else:
-                        _k, card_id, _d0, code, ts, direction, _h, align = card
+                        _k, card_id, _d0, code, ts, direction, _h, raw_col, matrix = card
                         if ts not in rets:  # 停牌/退市等无区间行情
                             n["stock_pending"] += 1
                             continue
                         excess = rets[ts] - pool_ret
+                        # P0:mech 输入 alignment → stock_raw_mech(E1 全精度列/E0 派生重算);
+                        # indeterminate 记 NULL 不入方向样本;B8 正式 verdict 口径零触碰
+                        _epoch, mdir = stock_mech_class(raw_col, matrix)
                         cur.execute("""INSERT INTO decision_score(card_id,trade_date,code,end_date,
                                 stock_ret,pool_ret,excess,verdict,mech_verdict)
                             VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)
@@ -198,7 +275,7 @@ def score_mature(conn=None) -> dict:
                                 mech_verdict=EXCLUDED.mech_verdict, created_at=now()""",
                             (card_id, d0, code, d1, round(rets[ts], 2), round(pool_ret, 2),
                              round(excess, 2), _verdict(direction, excess),
-                             _verdict(_mech_dir(align), excess)))
+                             _verdict(mdir, excess) if mdir else None))
                         n["stock_scored"] += 1
         return n
     finally:
@@ -282,6 +359,26 @@ def override_slices(rows) -> dict:
     return {k: {"llm": _stats([(v,) for v, _m in rs]),
                 "mech": _stats([(m,) for _v, m in rs if m])}  # None=存量早卡缺列,跳过
             for k, rs in buckets.items()}
+
+
+def stock_override_slices(rows) -> dict:
+    """B8 覆写切片(P0):四桶配对以 stock_raw_mech 方向(raw 符号)取代 alignment 符号;
+    indeterminate 剔除四桶并单列计数,§6 对账三计数随桶一并披露(不得静默消失)。
+    rows: [(direction, raw_directional_score, matrix, verdict, excess)]。
+    mech 列同派生口径从 excess 重算,不消费存量 mech_verdict(artifact 隔离)。"""
+    slim = []
+    n = {"n_total": 0, "n_directional": 0, "n_neutral": 0, "n_indeterminate": 0}
+    for direction, raw_col, matrix, verdict, excess in rows:
+        _epoch, mdir = stock_mech_class(raw_col, matrix)
+        n["n_total"] += 1
+        if mdir is None:
+            n["n_indeterminate"] += 1
+            continue
+        n["n_neutral" if mdir == "中性" else "n_directional"] += 1
+        slim.append((direction, _DIR_SIGN.get(mdir, 0), verdict,
+                     _verdict(mdir, float(excess))))
+    assert n["n_total"] == n["n_directional"] + n["n_neutral"] + n["n_indeterminate"]
+    return {**override_slices(slim), **n}
 
 
 # prompt_hash → 人读标签。新版本上线时在此登记一行;未登记哈希原样显示,不阻塞。
@@ -464,18 +561,20 @@ def weekly(date_utc8: str) -> dict:
         _reconcile_week_ids(cur, date_utc8, "B8", "decision_score", [r[0] for r in swk])
         week = _stats([(r[-1],) for r in wk])
         stock_week = _stats([(r[-1],) for r in swk])
-        # 0b 三列对照:LLM方向 vs 机械基线(sign共振/对齐) vs 恒多基线
+        # 0b 三列对照:B6=sign(共振);B8=stock_raw_mech 纪元切分(P0,含 indeterminate 披露)
         cur.execute("SELECT excess, mech_verdict FROM card_score")
         baseline = baseline_stats(cur.fetchall())
-        cur.execute("SELECT excess, mech_verdict FROM decision_score")
-        stock_baseline = baseline_stats(cur.fetchall())
+        cur.execute("""SELECT ds.excess, ds.mech_verdict, dc.raw_directional_score, dc.matrix
+            FROM decision_score ds JOIN decision_card dc USING(card_id)""")
+        stock_baseline = stock_baseline_stats(cur.fetchall())
         # 覆写切片:LLM vs 机械符号 四桶配对(#30 五件套①,值班期唯一新增测量)
         cur.execute("""SELECT jc.direction, jc.resonance, cs.verdict, cs.mech_verdict
             FROM card_score cs JOIN judgment_card jc USING(card_id)""")
         override = override_slices(cur.fetchall())
-        cur.execute("""SELECT dc.direction, dc.alignment, ds.verdict, ds.mech_verdict
+        cur.execute("""SELECT dc.direction, dc.raw_directional_score, dc.matrix,
+                ds.verdict, ds.excess
             FROM decision_score ds JOIN decision_card dc USING(card_id)""")
-        stock_override = override_slices(cur.fetchall())
+        stock_override = stock_override_slices(cur.fetchall())
         # 版本分组:prompt_hash 同界标记 prompt/参照层变更(#28/#31 周报义务)
         cur.execute("""SELECT jc.prompt_hash, cs.verdict
             FROM card_score cs JOIN judgment_card jc USING(card_id)""")
@@ -579,8 +678,9 @@ def dashboard_block() -> dict | None:
         s_recent = [{"card_id": r[0], "code": r[1], "name": r[2], "direction": r[3],
                      "excess": float(r[4]), "verdict": r[5], "trade_date": str(r[6]),
                      "end_date": str(r[7])} for r in cur.fetchall()]
-        cur.execute("SELECT excess, mech_verdict FROM decision_score")
-        s_baseline = baseline_stats(cur.fetchall())
+        cur.execute("""SELECT ds.excess, ds.mech_verdict, dc.raw_directional_score, dc.matrix
+            FROM decision_score ds JOIN decision_card dc USING(card_id)""")
+        s_baseline = stock_baseline_stats(cur.fetchall())
         stock = ({"pending": s_pending, "cum": s_cum, "recent": s_recent, "baseline": s_baseline}
                  if (s_pending or s_cum["n"]) else None)
     return {"pending": pending, "cum": cum, "by_direction": by_dir, "by_source": by_src,

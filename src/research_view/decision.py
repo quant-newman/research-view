@@ -15,6 +15,7 @@ from . import config, db, evidence, llm
 from .evidence import _z
 
 _W = {"price": 1.0, "mf": 1.0, "news": 0.8, "lhb": 0.6}
+_WEIGHT_VERSION = "w1"  # 上述 _W 即 w1(P0_MECH_FIX_DESIGN §2);改权重=新版本号,新旧不混池
 _ATTN_W = 0.3      # 研报/人气榜注意力加成(不带方向,只加不减)
 _MIN_ALIGN = 1.0   # 对齐分门槛:个股证据与节点方向不共振就不进候选
 _PER_NODE = 3      # 每节点最多候选数
@@ -128,6 +129,12 @@ def _stock_facts(date_utc8: str, pool_codes: set[str]):
     return out
 
 
+def raw_directional(dz: dict) -> float:
+    """stock_raw_mech 主变体(P0_MECH_FIX_DESIGN §2):方向源全精度加权和,
+    attn(研报/人气)不带方向不参与。alignment = s·raw + attn 加成,raw 即其方向分子。"""
+    return sum(_W[k] * v for k, v in dz.items())
+
+
 def candidates(date_utc8: str) -> list[dict]:
     """当日 B6 方向节点卡 → 成分股按对齐分选 Top(代码算)。无方向卡返回空。"""
     with db.rv_conn() as conn, conn.cursor() as cur:
@@ -158,13 +165,15 @@ def candidates(date_utc8: str) -> list[dict]:
             f = facts.get(code)
             if not f or f["close"] is None:  # 无行情锚不可发卡(记不了分/给不了价位)
                 continue
-            align = s * sum(_W[k] * v for k, v in f["dz"].items()) + _ATTN_W * f["attn"]
-            scored.append((align, f))
+            raw = raw_directional(f["dz"])
+            align = s * raw + _ATTN_W * f["attn"]
+            scored.append((align, raw, f))
         scored.sort(key=lambda x: -x[0])
-        for align, f in scored[:_PER_NODE]:
+        for align, raw, f in scored[:_PER_NODE]:
             if align < _MIN_ALIGN or f["code"] in picked:
                 continue
             picked[f["code"]] = {**f, "alignment": round(align, 2),
+                                 "raw_directional_score": raw,  # 全精度固化,不经 matrix 两位小数舍入
                                  "node_id": nc["node_id"], "node_label": nmeta.get(nc["node_id"], ""),
                                  "node_card_id": nc["card_id"], "node_direction": nc["direction"],
                                  "node_thesis": nc["thesis"], "node_resonance": nc["resonance"]}
@@ -263,6 +272,7 @@ def generate(date_utc8: str) -> list[dict]:
             "evidence": [e for e in (c.get("evidence") or []) if isinstance(e, dict) and e.get("fact")][:4],
             "falsify": (c.get("falsify") or "").strip()[:200] or None,
             "matrix": f["matrix"], "alignment": f["alignment"], "close": f["close"],
+            "raw_directional_score": f["raw_directional_score"], "weight_version": _WEIGHT_VERSION,
             "prompt_hash": phash,
         })
     return cards
@@ -279,12 +289,13 @@ def persist(date_utc8: str) -> int:
             cur.execute("""INSERT INTO decision_card(trade_date,code,name,ts_code,node_id,
                     node_card_id,direction,confidence,subjective_prob,horizon_days,thesis,
                     entry_cond,exit_cond,
-                    evidence,falsify,matrix,alignment,close,model,prompt_hash)
-                VALUES(to_date(%s,'YYYYMMDD'),%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                    evidence,falsify,matrix,alignment,close,model,prompt_hash,
+                    raw_directional_score,weight_version)
+                VALUES(to_date(%s,'YYYYMMDD'),%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                 (date_utc8, c["code"], c["name"], c["ts_code"], c["node_id"], c["node_card_id"],
                  c["direction"], c["confidence"], c["subjective_prob"], c["horizon_days"],
                  c["thesis"], c["entry_cond"], c["exit_cond"],
                  json.dumps(c["evidence"], ensure_ascii=False), c["falsify"],
                  json.dumps(c["matrix"], ensure_ascii=False), c["alignment"], c["close"],
-                 model, c["prompt_hash"]))
+                 model, c["prompt_hash"], c["raw_directional_score"], c["weight_version"]))
     return len(cards)

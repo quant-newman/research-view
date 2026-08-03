@@ -40,7 +40,8 @@ CREATE TABLE card_score(card_id int PRIMARY KEY, trade_date date, end_date date,
     excess numeric, node_ret numeric, pool_ret numeric, verdict text, mech_verdict text);
 CREATE TABLE decision_card(card_id int PRIMARY KEY, code text, name text, direction text,
     confidence text, thesis text, evidence jsonb DEFAULT '[]', matrix jsonb DEFAULT '{}',
-    alignment numeric, prompt_hash text, subjective_prob numeric, trade_date date);
+    alignment numeric, raw_directional_score numeric, weight_version text,
+    prompt_hash text, subjective_prob numeric, trade_date date);
 CREATE TABLE decision_score(card_id int PRIMARY KEY, trade_date date, end_date date,
     excess numeric, stock_ret numeric, pool_ret numeric, verdict text, mech_verdict text);
 CREATE TABLE b7_weekly(week_end date PRIMARY KEY, stats jsonb, review jsonb, lessons jsonb,
