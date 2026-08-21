@@ -31,7 +31,8 @@
 | raw_news | major_news→funnel(域内判定,AMBIGUOUS_NAMES 防误命中)→B1 结构化(情绪/节点匹配);配额40次/天滚动窗,台账节流33次/天 | **2026-07-01** |
 | research_report | Tushare 研报,近30日滚动采集+节点打标;变动榜=同机构内配对 | 2026-06-01 |
 | fund_letter | 4源(BII/GS/MS/桥水汇总),周三cron;B5 relevance 评分 | 2026-07-01 |
-| hotspot_daily | 节点热度榜+DeepSeek 归因+利好利空 brief(sql/020) | 2026-06 下旬 |
+| hotspot_daily | 节点热度榜+DeepSeek 归因+利好利空 brief(sql/020);**sig=叙述层输入指纹(sql/032),同指纹复用上一版叙述不重烧 LLM**——指纹只含离散驱动字段(节点排序/新闻条目与条数/情绪/龙虎榜/净额5亿粗档),不含 ret_1d 与净额尾数 | 2026-06 下旬 |
+| research_digest | 评级/目标价变动榜(同机构内配对,纯代码)+ 机构观点提炼(DeepSeek 读标题);**views_sig=研报标题块指纹(sql/032),同指纹按 code 复用 view** | 2026-06 下旬 |
 | daily_report / report_increment | B3 报告(盘前锚点/盘中增量/盘后收口);narrative 2026-07-02 起 | 2026-06 下旬 |
 | mf_intraday_node | 盘中15min 节点主力累计(东财 push2delay,DC池∪自采);POOL=去重合计 | 2026-07-03 |
 | chip_cost | 筹码成本(Tushare cyq_perf 东财式估算:加权平均成本/获利盘/90%区间),核心池每日盘后 upsert,滚动30日;**展示层专用(个股详情),不进 B6/B8 证据矩阵**(sql/027) | 2026-07-03(首采) |

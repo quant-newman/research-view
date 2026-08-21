@@ -1,0 +1,38 @@
+=== [0] 前检:工作树必须干净(脏树部署=阻断) ===
+dirty=0  HEAD=a890609
+=== 已持有 /tmp/rv_orchestrate.lock,2026-08-21 12:41:32 UTC+8 ===
+
+=== [1] 迁移 032 先行(先于代码,幂等 IF NOT EXISTS) ===
+  迁移后列: [('hotspot_daily', 'sig'), ('research_digest', 'views_sig')]
+
+=== [2] 代码 → 数据节点(排除清单照 PROCESS §4) ===
+
+=== [2b] 部署留痕 DEPLOY_STATE.md ===
+commit: a890609
+at: 2026-08-21 12:41:35 UTC+8
+dirty: 0 条未提交
+
+=== [3] 实测①:阿里云跑一次 run_light(真实数据端到端,首档应真调 LLM 并落指纹) ===
+
+[本地 tee 在此被 10 分钟工具超时切断,远端 run_light 未受影响、自行跑完;
+ 后续步骤改为逐条手工执行,输出续记于下。]
+
+=== [3] 续:确认远端 run_light 已完成 + 新代码真的写了指纹 ===
+$ ssh <数据节点> "ls -l exports/dashboard.json && python -c '查 hotspot_daily/research_digest'"
+-rw-r--r-- 1 root root 1171468 12:43 exports/dashboard.json
+hotspot_daily: ('8b4a53c68409', '12:43:31', '资金聚焦机器人大会新品、mRNA癌苗突破、PCB电子布涨价、CPO论文及光纤出口新高')
+research_digest: ('cc5e016be48d', '12:42:24')
+  → 两列指纹均已落库,新代码端到端跑通(真实数据,非假数据)
+
+=== [5] 拉回 dashboard 等到 webdata/ ===
+-rw-rw-r-- 1 ubuntu ubuntu 1174709 12:55 webdata/dashboard.json
+
+=== [6] 线上 8092 验证(带浏览器 UA) ===
+hotspot headline: 资金聚焦机器人大会新品、mRNA癌苗突破、PCB电子布涨价、CPO论文及光纤出口新高
+hotspot items: 10 | 有reason: 10
+research.digest views: 15 | 有view: 15
+sample view: {"n": 42, "code": "603259", "name": "药明康德",
+              "view": "机构认为药明康德业绩超预期，上调全年业绩指引，初步禁令申请获批看好长期发展",
+              "scope": "核心池", "latest_rating": "Outperform"}
+  → 叙述内容完整,复用路径没有掏空前端任何字段
+  (首次核验误查顶层 research_digest 键报 0 条,实际键路径为 research.digest;查询口径错,数据无恙)
