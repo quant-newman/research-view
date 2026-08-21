@@ -6,6 +6,7 @@
 """
 from __future__ import annotations
 
+import hashlib
 import json
 
 from . import db, llm
@@ -98,10 +99,39 @@ def _signals(date_utc8: str, top: int = 10) -> list[dict]:
     return rows[:top]
 
 
+def _sig(rows: list[dict]) -> str:
+    """叙述层输入指纹(盘中每 15min 都调一次,输入没变就别重烧)。
+
+    只取驱动叙述的离散字段:节点集合与排序、新闻条目/条数/情绪计数、龙虎榜只数,
+    外加主力净额的 5 亿粗档(方向性大位移要能触发重算)。刻意排除 ret_1d 与净额尾数——
+    这类连续行情量每档都在变,含进指纹会让它恒变、门控形同虚设;而它们的最新值本来
+    就由统计行直接展示,不依赖叙述层刷新。
+    """
+    payload = [[r["node_id"], r["news_today"], r["pos"], r["neg"], r["lhb"],
+                round((r.get("mf") or 0.0) / 5.0), r["news"], r["stocks"][:4]] for r in rows]
+    return hashlib.sha1(json.dumps(payload, ensure_ascii=False).encode("utf-8")).hexdigest()
+
+
+def _cached(date_utc8: str, sig: str) -> dict | None:
+    """指纹一致则复用上一版叙述(headline/brief + 每节点 reason/trend),不调 LLM。"""
+    with db.rv_conn() as conn, conn.cursor() as cur:
+        cur.execute("""SELECT headline, brief, items FROM hotspot_daily
+            WHERE report_date = to_date(%s,'YYYYMMDD') AND sig = %s""", (date_utc8, sig))
+        row = cur.fetchone()
+    if not row:
+        return None
+    headline, brief, items = row
+    return {"headline": headline, "pos": (brief or {}).get("pos") or [],
+            "neg": (brief or {}).get("neg") or [],
+            "items": [{"node_id": it.get("node_id"), "reason": it.get("reason"), "trend": it.get("trend")}
+                      for it in (items or []) if isinstance(it, dict)]}
+
+
 def generate(date_utc8: str) -> dict:
     rows = _signals(date_utc8)
     if not rows:
-        return {"headline": "今日无显著主题热度信号。", "items": []}
+        return {"headline": "今日无显著主题热度信号。", "items": [], "sig": None}
+    sig = _sig(rows)
     blocks = []
     for i, r in enumerate(rows):
         nl = "；".join(r["news"]) if r["news"] else "(无当日新闻)"
@@ -122,11 +152,16 @@ def generate(date_utc8: str) -> dict:
 规则:items 顺序与条数尽量对应输入(可略去信号极弱的);reason/pos/neg 只陈述事实,禁止"看好/建议买入/值得关注"等判断词;pos/neg 不得引用输入之外的信息,无对应新闻则给空数组;trend 用输入里"今日vs昨日新闻数"参考。
 【信号】
 {chr(10).join(blocks)}"""
-    try:
-        j = llm.chat_json(SYSTEM, user, timeout=240)
-    except Exception as e:  # noqa: BLE001 综述失败降级:用统计信号直接出榜
-        print(f"  ! 热点综述失败,降级统计榜: {str(e)[:80]}")
-        j = {"headline": "今日主题热度(统计榜)", "items": []}
+    j = _cached(date_utc8, sig)
+    if j:
+        print("  热点综述:输入指纹未变,复用上一版(省 1 次 LLM)")
+    else:
+        try:
+            j = llm.chat_json(SYSTEM, user, timeout=240)
+        except Exception as e:  # noqa: BLE001 综述失败降级:用统计信号直接出榜
+            print(f"  ! 热点综述失败,降级统计榜: {str(e)[:80]}")
+            j = {"headline": "今日主题热度(统计榜)", "items": []}
+            sig = None  # 降级榜不落指纹,下一档必须重试,别把兜底文案钉死一整天
 
     # 把 DeepSeek 的 reason/trend 合并回统计行(以统计为准,叙述为辅)
     reason_by_node = {it.get("node_id"): it for it in j.get("items", []) if it.get("node_id")}
@@ -145,16 +180,16 @@ def generate(date_utc8: str) -> dict:
     # 利好/利空要点(LLM 汇总,失败/缺失=空,前端自动隐藏)
     brief = {"pos": [s for s in (j.get("pos") or []) if isinstance(s, str) and s.strip()][:5],
              "neg": [s for s in (j.get("neg") or []) if isinstance(s, str) and s.strip()][:5]}
-    return {"headline": j.get("headline") or "今日主题热度", "brief": brief, "items": items}
+    return {"headline": j.get("headline") or "今日主题热度", "brief": brief, "items": items, "sig": sig}
 
 
 def persist(date_utc8: str) -> int:
     out = generate(date_utc8)
     with db.rv_conn() as conn, conn.cursor() as cur:
-        cur.execute("""INSERT INTO hotspot_daily(report_date, headline, brief, items)
-            VALUES(to_date(%s,'YYYYMMDD'), %s, %s, %s)
+        cur.execute("""INSERT INTO hotspot_daily(report_date, headline, brief, items, sig)
+            VALUES(to_date(%s,'YYYYMMDD'), %s, %s, %s, %s)
             ON CONFLICT(report_date) DO UPDATE SET headline=EXCLUDED.headline,
-              brief=EXCLUDED.brief, items=EXCLUDED.items, generated_at=now()""",
+              brief=EXCLUDED.brief, items=EXCLUDED.items, sig=EXCLUDED.sig, generated_at=now()""",
             (date_utc8, out["headline"], json.dumps(out.get("brief") or {}, ensure_ascii=False),
-             json.dumps(out["items"], ensure_ascii=False)))
+             json.dumps(out["items"], ensure_ascii=False), out.get("sig")))
     return len(out["items"])

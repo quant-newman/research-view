@@ -7,6 +7,7 @@ Tushare report_rc 只有标题+评级+目标价(无正文),故:
 """
 from __future__ import annotations
 
+import hashlib
 import json
 
 from . import db, llm
@@ -79,15 +80,35 @@ def _changes(by_code: dict, top: int = 20):
     return out[:top]
 
 
-def _views(by_code: dict, top: int = 15):
+def _cached_views(date_utc8: str, sig: str) -> dict[str, str] | None:
+    """指纹一致(研报标题集合没变)则复用上一版观点提炼,返回 {code: view},不调 LLM。"""
+    with db.rv_conn() as conn, conn.cursor() as cur:
+        cur.execute("""SELECT views FROM research_digest
+            WHERE report_date = to_date(%s,'YYYYMMDD') AND views_sig = %s""", (date_utc8, sig))
+        row = cur.fetchone()
+    if not row:
+        return None
+    return {v["code"]: v.get("view") for v in (row[0] or []) if isinstance(v, dict) and v.get("code")}
+
+
+def _views(date_utc8: str, by_code: dict, top: int = 15):
+    """返回 (观点行, 指纹)。指纹=喂给 LLM 的研报标题块——盘中每 15min 调一次,
+    而标题集合只在新研报入库时才变,不变就复用已落库的 view。"""
     ranked = sorted(by_code.items(), key=lambda kv: -len(kv[1]["reports"]))[:top]
     ranked = [(c, d) for c, d in ranked if d["reports"]]
     if not ranked:
-        return []
+        return [], None
     blocks = []
     for i, (code, d) in enumerate(ranked):
         titles = "；".join(r["title"] for r in d["reports"][-4:] if r["title"])
         blocks.append(f"{i}. {d['name']}({code}) 近{len(d['reports'])}篇研报标题:{titles}")
+    sig = hashlib.sha1("\n".join(blocks).encode("utf-8")).hexdigest()
+    hit = _cached_views(date_utc8, sig)
+    if hit is not None:
+        print("  研报观点提炼:输入指纹未变,复用上一版(省 1 次 LLM)")
+        return [{"code": code, "name": d["name"], "scope": d["scope"], "n": len(d["reports"]),
+                 "view": hit.get(code), "latest_rating": d["reports"][-1]["rating"],
+                 "latest_tp": d["reports"][-1]["tp"]} for code, d in ranked], sig
     user = f"""下面每只票近期卖方研报标题(标题含机构论点)。逐条综合"机构观点",JSON:
 {{"items":[{{"i":序号,"view":"综合这些研报机构在说什么的中性一句话(如'多家看好MLCC超级周期、镍粉量价齐升'),≤50字,只转述不加判断"}}]}}
 {chr(10).join(blocks)}
@@ -99,23 +120,25 @@ def _views(by_code: dict, top: int = 15):
     except Exception as e:  # noqa: BLE001 提炼失败降级:空 view
         print(f"  ! 研报观点提炼失败: {str(e)[:80]}")
         m = {}
+        sig = None  # 失败不落指纹:下一档必须重试,别把空 view 钉死一整天
     return [{"code": code, "name": d["name"], "scope": d["scope"], "n": len(d["reports"]),
              "view": m.get(i), "latest_rating": d["reports"][-1]["rating"],
-             "latest_tp": d["reports"][-1]["tp"]} for i, (code, d) in enumerate(ranked)]
+             "latest_tp": d["reports"][-1]["tp"]} for i, (code, d) in enumerate(ranked)], sig
 
 
 def compute(date_utc8: str) -> dict:
     by_code = _collect(date_utc8)
-    return {"changes": _changes(by_code), "views": _views(by_code)}
+    views, views_sig = _views(date_utc8, by_code)
+    return {"changes": _changes(by_code), "views": views, "views_sig": views_sig}
 
 
 def persist(date_utc8: str) -> dict:
     out = compute(date_utc8)
     with db.rv_conn() as conn, conn.cursor() as cur:
-        cur.execute("""INSERT INTO research_digest(report_date, changes, views)
-            VALUES(to_date(%s,'YYYYMMDD'), %s, %s)
+        cur.execute("""INSERT INTO research_digest(report_date, changes, views, views_sig)
+            VALUES(to_date(%s,'YYYYMMDD'), %s, %s, %s)
             ON CONFLICT(report_date) DO UPDATE SET changes=EXCLUDED.changes,
-              views=EXCLUDED.views, generated_at=now()""",
+              views=EXCLUDED.views, views_sig=EXCLUDED.views_sig, generated_at=now()""",
             (date_utc8, json.dumps(out["changes"], ensure_ascii=False),
-             json.dumps(out["views"], ensure_ascii=False)))
+             json.dumps(out["views"], ensure_ascii=False), out["views_sig"]))
     return {"changes": len(out["changes"]), "views": len(out["views"])}

@@ -11,7 +11,7 @@ import json
 import re
 import statistics as st
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -162,6 +162,66 @@ def _fetch_news_raw(tickers: list[str]) -> list[dict]:
 
 B1_SYS = "你是金融信息整理器,不是分析师。只翻译+分类不下判断,严禁编造,输出严格JSON。"
 
+# ---------- B1 译文缓存 ----------
+# 美股档每小时一跑,而 yfinance/RSS 相邻档 80%+ 是同一批标题,原先每档全量重译
+# (新闻2批+舆情1-2批 ≈ 4 次/档 × 9 档/日)。按"标题+摘要"指纹缓存译文:同一条只译一次。
+# 译文是标题的确定性函数(temperature=0、只翻译不判断),复用无口径风险。
+CACHE_P = ROOT / "exports" / "us_b1_cache.json"
+CACHE_TTL_D = 7
+
+
+def _ckey(ns: str, r: dict) -> str:
+    return hashlib.sha1(f"{ns}|{r['title']}|{r.get('desc', '')}".encode("utf-8")).hexdigest()
+
+
+def _cache_load() -> dict:
+    try:
+        return json.loads(CACHE_P.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001 缓存坏/不存在都当空,绝不阻塞构建
+        return {}
+
+
+def _cache_save(cache: dict) -> None:
+    """过期清理(7天)+ 原子替换:半截文件会让下一档整批缓存作废。"""
+    cutoff = (datetime.now(ZoneInfo(TZ)) - timedelta(days=CACHE_TTL_D)).strftime("%Y-%m-%d")
+    cache = {k: v for k, v in cache.items() if (v.get("d") or "") >= cutoff}
+    try:
+        CACHE_P.parent.mkdir(parents=True, exist_ok=True)
+        tmp = CACHE_P.with_suffix(".tmp")
+        tmp.write_text(json.dumps(cache, ensure_ascii=False), encoding="utf-8")
+        tmp.replace(CACHE_P)
+    except Exception as e:  # noqa: BLE001 写缓存失败只是下次不命中,不该拖垮美股档
+        print(f"  ! B1 缓存写入失败(不影响本档): {str(e)[:80]}")
+
+
+def _b1_cached(ns: str, raw: list[dict], chunk_fn, batch: int) -> dict[int, dict]:
+    """返回 {raw下标: 提炼}。命中缓存的不进 LLM,只把 miss 分批送 chunk_fn。
+    chunk 失败返回空 → 该批不入缓存,下一档自然重试(降级仍走原标题)。"""
+    cache = _cache_load()
+    keys = [_ckey(ns, r) for r in raw]
+    out: dict[int, dict] = {}
+    miss = []
+    for i, k in enumerate(keys):
+        hit = cache.get(k)
+        if hit and hit.get("b"):
+            out[i] = hit["b"]
+        else:
+            miss.append(i)
+    today = datetime.now(ZoneInfo(TZ)).strftime("%Y-%m-%d")
+    for s in range(0, len(miss), batch):
+        idxs = miss[s:s + batch]
+        m = chunk_fn([raw[i] for i in idxs])
+        for j, i in enumerate(idxs):
+            b = m.get(j)
+            if b:
+                out[i] = b
+                cache[keys[i]] = {"b": b, "d": today}
+    if miss:
+        _cache_save(cache)
+    print(f"  B1[{ns}] {len(raw)} 条:缓存命中 {len(raw) - len(miss)},送 LLM {len(miss)} 条"
+          f"({-(-len(miss) // batch)} 批)")
+    return out
+
 
 def _b1_news_chunk(raw: list[dict]) -> dict[int, dict]:
     """单批(≤~35条)英文标题译中文一句话+情绪,返回 {序号: 提炼}。失败返回空(降级原标题)。"""
@@ -180,21 +240,19 @@ def _b1_news_chunk(raw: list[dict]) -> dict[int, dict]:
 
 
 def _b1_batch(raw: list[dict], batch: int = 35) -> list[dict]:
-    """新闻批量中文化。分批调用(60条单次输出 JSON 会过长截断)。"""
+    """新闻批量中文化。未命中缓存的部分分批调用(60条单次输出 JSON 会过长截断)。"""
     if not raw:
         return []
     sec_of = {t: s for t, _, s in US_UNIVERSE}
+    m = _b1_cached("news", raw, _b1_news_chunk, batch)
     out = []
-    for s in range(0, len(raw), batch):
-        chunk = raw[s:s + batch]
-        m = _b1_news_chunk(chunk)
-        for i, r in enumerate(chunk):
-            b = m.get(i, {})
-            out.append({"title": r["title"], "one_line": b.get("one_line") or r["title"],
-                        "summary": (b.get("summary") or "")[:280] or None,
-                        "sentiment": b.get("sentiment") or "中性", "src": r["src"], "url": r["url"],
-                        "sector": sec_of.get(r["from_ticker"], "科技"), "ticker": r["from_ticker"],
-                        "time": r.get("time", "")})
+    for i, r in enumerate(raw):
+        b = m.get(i, {})
+        out.append({"title": r["title"], "one_line": b.get("one_line") or r["title"],
+                    "summary": (b.get("summary") or "")[:280] or None,
+                    "sentiment": b.get("sentiment") or "中性", "src": r["src"], "url": r["url"],
+                    "sector": sec_of.get(r["from_ticker"], "科技"), "ticker": r["from_ticker"],
+                    "time": r.get("time", "")})
     return out
 
 
@@ -218,23 +276,21 @@ market 判断:主要讲 A股上市公司/A股板块/中国境内市场→"A股";
 
 
 def _b1_wire(raw: list[dict], batch: int = 40) -> list[dict]:
-    """西媒+社交源批量中文化。分批调用(条数多时避免单次 JSON 过大截断)。"""
+    """西媒+社交源批量中文化。未命中缓存的部分分批调用(避免单次 JSON 过大截断)。"""
     if not raw:
         return []
+    m = _b1_cached("wire", raw, _b1_wire_chunk, batch)
     out = []
-    for s in range(0, len(raw), batch):
-        chunk = raw[s:s + batch]
-        m = _b1_wire_chunk(chunk)
-        for i, r in enumerate(chunk):
-            b = m.get(i, {})
-            mk = b.get("market")
-            out.append({"title": r["title"], "one_line": b.get("one_line") or r["title"],
-                        "summary": (b.get("summary") or "")[:200] or None,
-                        "sentiment": b.get("sentiment") or "中性",
-                        "src": r["src"], "group": r["group"], "url": r["url"],
-                        "time": r.get("time", ""),
-                        "market": mk if mk in ("A股", "美股", "其他") else "其他",
-                        **({"weight": r["weight"]} if "weight" in r else {})})
+    for i, r in enumerate(raw):
+        b = m.get(i, {})
+        mk = b.get("market")
+        out.append({"title": r["title"], "one_line": b.get("one_line") or r["title"],
+                    "summary": (b.get("summary") or "")[:200] or None,
+                    "sentiment": b.get("sentiment") or "中性",
+                    "src": r["src"], "group": r["group"], "url": r["url"],
+                    "time": r.get("time", ""),
+                    "market": mk if mk in ("A股", "美股", "其他") else "其他",
+                    **({"weight": r["weight"]} if "weight" in r else {})})
     return out
 
 
