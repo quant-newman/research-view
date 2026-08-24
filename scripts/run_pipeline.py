@@ -6,6 +6,7 @@
 """
 from __future__ import annotations
 
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -34,6 +35,10 @@ def step(name, fn) -> bool:
 
 def main() -> None:
     date = sys.argv[1] if len(sys.argv) > 1 else datetime.now(ZoneInfo(config.TZ)).strftime("%Y%m%d")
+    # 盘后全量档不受 LLM 夜间窗口约束:它的常态时点 22:30 本就在窗内,而白天手动重跑时
+    # 若让 hotspots/research_digest 各自去查门,会把当天的热点叙述覆写成统计兜底榜——
+    # 全量档的语义是"跑就跑全套",这里一次性钉死(白天静默只针对盘中轻量档)。
+    os.environ.setdefault("RV_LLM_FORCE", "1")
     print(f"[Pipeline] {date} UTC+8")
     step("tech_universe", universe.build)
     def _fetch_news():
