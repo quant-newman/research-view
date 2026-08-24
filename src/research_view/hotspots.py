@@ -9,7 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 
-from . import db, llm
+from . import config, db, llm
 
 SYSTEM = (
     "你是投研信息整理器,不是分析师。基于给定的统计信号和新闻,综合'今天市场在炒什么主题',"
@@ -112,11 +112,18 @@ def _sig(rows: list[dict]) -> str:
     return hashlib.sha1(json.dumps(payload, ensure_ascii=False).encode("utf-8")).hexdigest()
 
 
-def _cached(date_utc8: str, sig: str) -> dict | None:
-    """指纹一致则复用上一版叙述(headline/brief + 每节点 reason/trend),不调 LLM。"""
+def _cached(date_utc8: str, sig: str | None) -> dict | None:
+    """复用已落库的叙述(headline/brief + 每节点 reason/trend),不调 LLM。
+
+    sig 给值=指纹一致才复用(常态门控);sig=None=当天任意版本都要(白天静默档,
+    宁可给上一版叙述配最新统计行,也不要让热点榜的归因整片空着)。
+    """
+    where, params = "", [date_utc8]
+    if sig is not None:
+        where, params = " AND sig = %s", [date_utc8, sig]
     with db.rv_conn() as conn, conn.cursor() as cur:
-        cur.execute("""SELECT headline, brief, items FROM hotspot_daily
-            WHERE report_date = to_date(%s,'YYYYMMDD') AND sig = %s""", (date_utc8, sig))
+        cur.execute(f"""SELECT headline, brief, items FROM hotspot_daily
+            WHERE report_date = to_date(%s,'YYYYMMDD'){where}""", tuple(params))
         row = cur.fetchone()
     if not row:
         return None
@@ -153,8 +160,16 @@ def generate(date_utc8: str) -> dict:
 【信号】
 {chr(10).join(blocks)}"""
     j = _cached(date_utc8, sig)
+    allowed, why = config.llm_allowed()
     if j:
         print("  热点综述:输入指纹未变,复用上一版(省 1 次 LLM)")
+    elif not allowed:
+        # 白天静默档:统计行照常最新,叙述沿用当天上一版(还没有就先出统计榜)。
+        # sig 置空——沿用的叙述并不对应当前指纹,夜间窗口一开必须重算,不能被钉死。
+        j = _cached(date_utc8, None)
+        print(f"  热点综述:{why},{'沿用当天上一版叙述' if j else '当天尚无叙述,先出统计榜'}")
+        j = j or {"headline": "今日主题热度(统计榜)", "items": []}
+        sig = None
     else:
         try:
             j = llm.chat_json(SYSTEM, user, timeout=240)

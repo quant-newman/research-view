@@ -81,8 +81,8 @@ scripts/:`run_pipeline.py`(盘后主管道 17 步,含 calibration_freeze/ref_sna
 
 | 时点 | 任务 | 内容 |
 |---|---|---|
-| 08:30 | run_premarket | yfinance 隔夜→盘前报告(锚点)→dashboard |
-| 08:00-23:30 每15min | run_intraday(run_light) | 新闻(整半点,配额台账)/研报/热点/**盘中增量**/资金快照+自采+异动检测;收尾调 push_alerts 推送 |
+| 07:40 | run_premarket | yfinance 隔夜→盘前报告(锚点)→dashboard;08-24 由 08:30 前移进 LLM 夜间窗口尾巴(美股夏令时 04:00 收盘,隔夜数据早已就绪,零内容损失) |
+| 08:00-23:30 每15min | run_intraday(run_light) | 新闻(整半点,配额台账)/研报/热点/**盘中增量**/资金快照+自采+异动检测;收尾调 push_alerts 推送。**白天档受 LLM 夜间窗口约束(见下)**,行情/资金/推送不受影响 |
 | 交易时段每5min(:05等非整刻) | run_mf(run_light --mf-only) | 纯资金档(约2s,零LLM/零配额):自采→节点+个股快照→异动检测→导出;与15min档合成5min分辨率曲线;锁忙即跳过;收尾调 push_alerts 推送 |
 | 周末 09:00-23:00 每2h | run_intraday(run_light) | **周末低频档(DECISIONS #36)**:周末新闻发酵补采(同走配额台账)+热点/看板保鲜;资金步非交易日自动零开销 |
 | 22:30 | run_afterhours(run_pipeline) | 全量:采集→漏斗→B1→事件→热力→研报→**B3→热点→B6发卡→B8发卡→B7记分**→导出;顺带拉备份 |
@@ -92,6 +92,13 @@ scripts/:`run_pipeline.py`(盘后主管道 17 步,含 calibration_freeze/ref_sna
 | 每日 21:00+23:30(数据节点) | backup_db | pg_dump 自定义格式 .dump+产出即 pg_restore --list 校验 TOC(失败删残件退出非零)(同日文件覆盖,23:30档含当日判断卡/记分),exports tar 含数据节点 .env;盘后 rsync 异地留存,两地各14天(DECISIONS #39) |
 | 每月2号 16:10 | restore_drill | **月度还原演练**:最新异地 .dump 真还原进一次性 postgres 容器+核心资产表行数校验,失败 lib_alert+飞书,容器用后即弃(DECISIONS #39) |
 | 每日 23:50(含周末) | watchdog | 独立看门狗:停摆(>20h)/交易日静默零/周一🟢心跳,只异常出声(飞书) |
+
+**LLM 夜间窗口(DECISIONS #48,`config.llm_allowed`)**:DeepSeek 只在 **UTC+8 18:00–08:00** 跑,
+白天留 **09:45 / 15:15** 两档补做点(对齐 cron 火点,命中给 15min 宽限抵消 flock 排队)。
+白天静默档里新闻照抓照落库、行情资金照刷,只是 ① B1 结构化与盘中增量整步跳过(下一个开窗档
+批量补做)② 热点/研报观点降级为「统计行最新 + 沿用当天上一版叙述」且不落指纹(落了会把白天的
+旧叙述钉到夜间去)。手动补跑用 `run_light.py --llm` 或 `RV_LLM_FORCE=1`。其余编排(盘后 22:30 /
+美股 21:30-05:00 / 信函周三 07:00 / 成绩单周日 20:00 / 盘前 07:40)本就全在窗口内。
 
 ## 7. 前端(web/,React+TS+Vite+Tailwind+ECharts,Bloomberg 暗色,A股红涨绿跌)
 

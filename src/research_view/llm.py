@@ -26,6 +26,11 @@ def _loads_lenient(content: str) -> dict:
 def chat_json(system: str, user: str, timeout: int = 120, retries: int = 2) -> dict:
     """调 DeepSeek chat,强制 JSON 输出,返回解析后的 dict。失败(网络/坏JSON)退避重试(5s/15s)。
     模型见 config.deepseek_model()(默认 v4-pro 旗舰,带思考故默认超时放宽到 120s)。"""
+    # 不拦,只打标:夜间窗口(config.llm_allowed)由各调用点上游把关,这里是"漏网可观测"的
+    # 兜底——真在这里硬拦,手动补跑会变成一片假失败,比它防的问题更糟(告警载体教训)。
+    ok, why = config.llm_allowed()
+    if not ok:
+        print(f"  ⚠ 窗口外 LLM 调用({why}) —— 若非手动补跑,说明有调用点漏了时段门")
     key, base = config.deepseek()
     body = json.dumps({
         "model": config.deepseek_model(),

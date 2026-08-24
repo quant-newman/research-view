@@ -10,7 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 
-from . import db, llm
+from . import config, db, llm
 
 # 评级分档(数值越大越积极)
 RATING_SCORE = {
@@ -80,11 +80,17 @@ def _changes(by_code: dict, top: int = 20):
     return out[:top]
 
 
-def _cached_views(date_utc8: str, sig: str) -> dict[str, str] | None:
-    """指纹一致(研报标题集合没变)则复用上一版观点提炼,返回 {code: view},不调 LLM。"""
+def _cached_views(date_utc8: str, sig: str | None) -> dict[str, str] | None:
+    """复用已落库的观点提炼,返回 {code: view},不调 LLM。
+
+    sig 给值=标题集合没变才复用(常态门控);sig=None=当天任意版本都要(白天静默档)。
+    """
+    where, params = "", [date_utc8]
+    if sig is not None:
+        where, params = " AND views_sig = %s", [date_utc8, sig]
     with db.rv_conn() as conn, conn.cursor() as cur:
-        cur.execute("""SELECT views FROM research_digest
-            WHERE report_date = to_date(%s,'YYYYMMDD') AND views_sig = %s""", (date_utc8, sig))
+        cur.execute(f"""SELECT views FROM research_digest
+            WHERE report_date = to_date(%s,'YYYYMMDD'){where}""", tuple(params))
         row = cur.fetchone()
     if not row:
         return None
@@ -113,6 +119,15 @@ def _views(date_utc8: str, by_code: dict, top: int = 15):
 {{"items":[{{"i":序号,"view":"综合这些研报机构在说什么的中性一句话(如'多家看好MLCC超级周期、镍粉量价齐升'),≤50字,只转述不加判断"}}]}}
 {chr(10).join(blocks)}
 不许出现"建议买入/值得关注"等你自己的判断词。"""
+    allowed, why = config.llm_allowed()
+    if not allowed:
+        # 白天静默档:沿用当天上一版 view(没有就留空,前端自动隐藏);统计列仍最新。
+        # sig 置空——沿用的 view 不对应当前标题集合,夜间窗口一开必须重算。
+        old = _cached_views(date_utc8, None) or {}
+        print(f"  研报观点提炼:{why},{'沿用当天上一版' if old else '当天尚无提炼,留空'}")
+        return [{"code": code, "name": d["name"], "scope": d["scope"], "n": len(d["reports"]),
+                 "view": old.get(code), "latest_rating": d["reports"][-1]["rating"],
+                 "latest_tp": d["reports"][-1]["tp"]} for code, d in ranked], None
     try:
         j = llm.chat_json(SYS, user, timeout=240)
         items = j.get("items", []) if isinstance(j, dict) else (j if isinstance(j, list) else [])

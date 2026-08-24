@@ -73,3 +73,74 @@ def test_digest_views_failure_leaves_no_sig(monkeypatch):
     monkeypatch.setattr(llm, "chat_json", _boom)
     rows, sig = RD._views("20260821", BY_CODE)
     assert rows[0]["view"] is None and sig is None
+
+
+# ---- 夜间调用窗口(2026-08-24 降本批#2)----
+# 钉住三件事:窗口边界(跨零点,最容易写成 and)、白天补做点的 15min 宽限(cron 火点到
+# 真正执行之间隔着 flock 排队,卡死精确 HHMM 会让补做点凭空丢失)、白天静默档里叙述层
+# 降级为"沿用当天上一版且不落指纹"(落了指纹就会把白天的旧叙述钉到夜间去)。
+from datetime import datetime  # noqa: E402
+from zoneinfo import ZoneInfo  # noqa: E402
+
+from research_view import config  # noqa: E402
+
+
+def _at(hhmm: str) -> datetime:
+    return datetime(2026, 8, 24, int(hhmm[:2]), int(hhmm[2:]), tzinfo=ZoneInfo(config.TZ))
+
+
+@pytest.mark.parametrize("hhmm,ok", [
+    ("1800", True), ("2330", True), ("0000", True), ("0759", True),  # 夜间窗口(跨零点)
+    ("0800", False), ("1200", False), ("1730", False), ("1759", False),  # 白天静默
+    ("0945", True), ("0952", True), ("0959", True), ("1000", False),  # 补做点 + 15min 宽限
+    ("1515", True), ("1529", True), ("1530", False), ("1514", False),
+])
+def test_llm_window(monkeypatch, hhmm, ok):
+    monkeypatch.delenv("RV_LLM_FORCE", raising=False)
+    monkeypatch.delenv("LLM_DAY_SLOTS", raising=False)
+    assert config.llm_allowed(_at(hhmm))[0] is ok
+
+
+def test_llm_window_force_and_slot_override(monkeypatch):
+    monkeypatch.delenv("LLM_DAY_SLOTS", raising=False)
+    monkeypatch.setenv("RV_LLM_FORCE", "1")
+    assert config.llm_allowed(_at("1200"))[0] is True     # 手动补跑豁免
+    monkeypatch.delenv("RV_LLM_FORCE")
+    monkeypatch.setenv("LLM_DAY_SLOTS", "1300")
+    assert config.llm_allowed(_at("1300"))[0] is True     # 补做点可配
+    assert config.llm_allowed(_at("0945"))[0] is False    # 覆盖即替换,不是叠加
+
+
+def test_hotspot_daytime_reuses_without_pinning_sig(monkeypatch):
+    """白天静默档:不调 LLM,沿用当天上一版叙述,但 sig 必须置空——否则夜间开窗后
+    指纹一致会直接命中这份白天的旧叙述,门控变成"一天只生成一次"。"""
+    monkeypatch.setattr(H, "_signals", lambda d: [ROW])
+    monkeypatch.setattr(H.config, "llm_allowed", lambda now=None: (False, "白天静默档1200"))
+    monkeypatch.setattr(H.llm, "chat_json", _boom)
+    monkeypatch.setattr(H, "_cached", lambda d, s: None if s else {
+        "headline": "上一版总览", "pos": [], "neg": [],
+        "items": [{"node_id": "n1", "reason": "上一版归因", "trend": "升温"}]})
+    out = H.generate("20260824")
+    assert out["sig"] is None
+    assert out["headline"] == "上一版总览"
+    assert out["items"][0]["reason"] == "上一版归因"
+    assert out["items"][0]["ret_1d"] == 1.23  # 统计行仍是最新一档
+
+
+def test_hotspot_daytime_without_any_narrative_falls_back_to_stats(monkeypatch):
+    monkeypatch.setattr(H, "_signals", lambda d: [ROW])
+    monkeypatch.setattr(H.config, "llm_allowed", lambda now=None: (False, "白天静默档1200"))
+    monkeypatch.setattr(H.llm, "chat_json", _boom)
+    monkeypatch.setattr(H, "_cached", lambda d, s: None)
+    out = H.generate("20260824")
+    assert out["sig"] is None and out["items"][0]["reason"]  # 统计兜底文案,不空着
+
+
+def test_digest_daytime_reuses_without_pinning_sig(monkeypatch):
+    by_code = {"300661": {"name": "圣邦股份", "scope": "core",
+                          "reports": [{"title": "模拟芯片复苏", "rating": "买入", "tp": 100.0}]}}
+    monkeypatch.setattr(RD.config, "llm_allowed", lambda now=None: (False, "白天静默档1200"))
+    monkeypatch.setattr(RD.llm, "chat_json", _boom)
+    monkeypatch.setattr(RD, "_cached_views", lambda d, s: None if s else {"300661": "上一版观点"})
+    views, sig = RD._views("20260824", by_code)
+    assert sig is None and views[0]["view"] == "上一版观点"

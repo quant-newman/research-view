@@ -8,9 +8,16 @@
 用法: ./.venv/bin/python scripts/run_light.py [YYYYMMDD] [--news 强制抓新闻(手动补抓用)]
       --mf-only 纯资金档:只跑 补采→快照→导出(三步共约2s,无 DeepSeek/新闻配额),
       供 5 分钟高频 cron(run_mf.sh)在 :00/:15/:30/:45 全量档之间加密资金曲线。
+      --llm 无视夜间窗口强制跑叙述层(手动补做/取证用)。
+
+LLM 时段门(08-24 降本批#2,config.llm_allowed):DeepSeek 只在 UTC+8 18:00–08:00 跑,
+白天留 09:45/15:15 两档补做点。白天静默档里新闻照抓照落库、行情资金照刷,只是
+B1 结构化与盘中增量整步跳过(下一个开窗档补做),热点/研报观点由模块内自行降级为
+"统计行最新 + 沿用当天上一版叙述"。
 """
 from __future__ import annotations
 
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -37,6 +44,8 @@ def main() -> None:
     now = datetime.now(ZoneInfo(config.TZ))
     args = [a for a in sys.argv[1:] if not a.startswith("-")]
     date = args[0] if args else now.strftime("%Y%m%d")
+    if "--llm" in sys.argv:
+        os.environ["RV_LLM_FORCE"] = "1"  # 同时豁免 hotspots/research_digest 模块内的门
     if "--mf-only" in sys.argv:
         print(f"[Light] {date} UTC+8 纯资金档")
         step("moneyflow_rt_extra", moneyflow.collect_rt_extra)
@@ -57,7 +66,11 @@ def main() -> None:
     else:
         print("  fetch_news: 跳过(:15/:45 档不抓;强制用 --news)")
     step("funnel", run_funnel)
-    step("structure_b1", run_structure)
+    llm_ok, why = config.llm_allowed(now)
+    if llm_ok:
+        step("structure_b1", run_structure)
+    else:
+        print(f"  structure_b1: 跳过({why});新闻已落库,开窗档批量补做")
     # 盘中资金流补采:DC 监控池(agu产业表)未覆盖的核心池票走东财 push2delay 自采
     # (非交易日/DC未开盘零开销);报告/热点/export 通过 moneyflow.latest() 自动用上
     step("moneyflow_rt_extra", moneyflow.collect_rt_extra)
@@ -67,7 +80,10 @@ def main() -> None:
     step("research_digest", lambda: research_digest.persist(date))
     # 盘中增量条目(演进式):有实质变化(新闻≥3或资金位移≥2亿)才追加时间线一条,
     # 不再每15min重烧完整 B3 报告——报告主体盘中=盘前锚点+增量时间线,盘后收口
-    step("report_increment", lambda: report.persist_increment(date))
+    if llm_ok:
+        step("report_increment", lambda: report.persist_increment(date))
+    else:
+        print(f"  report_increment: 跳过({why});报告主体盘后 B3 收口")
     step("hotspots", lambda: {"n": hotspots.persist(date)})
     step("export_dashboard", lambda: str(export.build_dashboard(date)))
 

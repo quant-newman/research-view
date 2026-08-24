@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import os
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 # 项目根 = 本文件上溯三级(src/research_view/config.py -> 项目根)
 ROOT = Path(__file__).resolve().parents[2]
@@ -57,6 +59,41 @@ def deepseek_model() -> str:
 
 def tushare_token() -> str:
     return require("TUSHARE_TOKEN")
+
+
+# ---- DeepSeek 夜间调用窗口(2026-08-24 降本批#2,使用者拍板)----
+# 只在 UTC+8 18:00–08:00 烧 LLM。白天默认静默(新闻照抓照落库,只是不做叙述层),
+# 留两档补做点让盘中不至于半天没摘要;补做点对齐 cron 火点 :00/:15/:30/:45——
+# 09:45 早盘新闻已出、15:15 收盘后尾盘异动已定。可用 .env LLM_DAY_SLOTS 覆盖。
+LLM_NIGHT_FROM, LLM_NIGHT_TO = 18, 8
+_DAY_SLOTS_DEFAULT = "0945,1515"
+
+
+def _slot_hit(now: datetime, slots: list[str]) -> str | None:
+    """命中判定给 15 分钟宽限:cron 火点到真正执行之间隔着 flock 排队(最长 900s)与 ssh,
+    卡死 HHMM 精确相等会让补做点在编排拥堵时凭空丢失。宽限 <15min 保证一个火点只命中一次。"""
+    cur = now.hour * 60 + now.minute
+    for s in slots:
+        if 0 <= cur - (int(s[:2]) * 60 + int(s[2:])) < 15:
+            return s
+    return None
+
+
+def llm_allowed(now: datetime | None = None) -> tuple[bool, str]:
+    """这一档该不该调 DeepSeek。返回 (允许, 中文原因)——原因直接进日志,便于事后对账。
+
+    RV_LLM_FORCE=1 全局豁免(手动补跑/取证)。窗口跨零点,故判据是 or 不是 and。
+    """
+    if os.environ.get("RV_LLM_FORCE") == "1":
+        return True, "RV_LLM_FORCE=1 强制"
+    now = now or datetime.now(ZoneInfo(TZ))
+    if now.hour >= LLM_NIGHT_FROM or now.hour < LLM_NIGHT_TO:
+        return True, f"夜间窗口{LLM_NIGHT_FROM}:00–0{LLM_NIGHT_TO}:00"
+    slots = [x.strip() for x in os.environ.get("LLM_DAY_SLOTS", _DAY_SLOTS_DEFAULT).split(",") if x.strip()]
+    hit = _slot_hit(now, slots)
+    if hit:
+        return True, f"白天补做点{hit}"
+    return False, f"白天静默档{now:%H%M}(窗口18:00–08:00,补做点{'/'.join(slots)})"
 
 
 def calibration_freeze() -> bool:
