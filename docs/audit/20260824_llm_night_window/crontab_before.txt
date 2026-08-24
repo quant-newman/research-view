@@ -1,0 +1,51 @@
+
+# trademan: 每日 2:00 数据库备份，保留 7 天
+0 2 * * * /home/ubuntu/trademan/db/backup-daily.sh /home/ubuntu/trademan/db/backups
+
+# mofangrearch 投研看板(本机时区=UTC;下方时间为 UTC,括号内为 UTC+8 目标)
+30 0 * * 1-5 /usr/bin/bash /home/ubuntu/mofangrearch/scripts/run_premarket.sh >> /home/ubuntu/mofangrearch/logs/premarket-$(date +\%Y\%m\%d).log 2>&1  # 08:30 UTC+8 盘前
+30 14 * * 1-5 /usr/bin/bash /home/ubuntu/mofangrearch/scripts/run_afterhours.sh >> /home/ubuntu/mofangrearch/logs/afterhours-$(date +\%Y\%m\%d).log 2>&1  # 22:30 UTC+8 盘后
+*/15 0-15 * * 1-5 /usr/bin/bash /home/ubuntu/mofangrearch/scripts/run_intraday.sh >> /home/ubuntu/mofangrearch/logs/intraday-$(date +\%Y\%m\%d).log 2>&1  # 盘中轻量刷新 每15min UTC+8 08:00-23:30
+0 1-15/2 * * 6,0 /usr/bin/bash /home/ubuntu/mofangrearch/scripts/run_intraday.sh >> /home/ubuntu/mofangrearch/logs/intraday-$(date +\%Y\%m\%d).log 2>&1  # 周末低频档 每2h UTC+8 09:00-23:00:周末新闻发酵补采(DECISIONS #36)
+0 14-21 * * 1-5 /usr/bin/bash /home/ubuntu/mofangrearch/scripts/run_us.sh >> /home/ubuntu/mofangrearch/logs/us-$(date +\%Y\%m\%d).log 2>&1  # 美股时段每小时刷新(UTC+8 22:00-05:00,夏令时盘中21:30-04:00;收盘后一档自动标收盘)
+30 13 * * 1-5 /usr/bin/bash /home/ubuntu/mofangrearch/scripts/run_us.sh >> /home/ubuntu/mofangrearch/logs/us-$(date +\%Y\%m\%d).log 2>&1  # 21:30 UTC+8 夏令时美股开盘档(冬令时=开盘前预热档)
+0 23 * * 2 /usr/bin/bash /home/ubuntu/mofangrearch/scripts/run_fund_letters.sh >> /home/ubuntu/mofangrearch/logs/letters-$(date +\%Y\%m\%d).log 2>&1  # 信函周更 07:00 UTC+8 周三(BII周评美东周一发,此时已就绪)
+0 12 * * 0 /usr/bin/bash /home/ubuntu/mofangrearch/scripts/run_scorecard.sh >> /home/ubuntu/mofangrearch/logs/scorecard-$(date +\%Y\%m\%d).log 2>&1  # B7周度成绩单 20:00 UTC+8 周日(到期补记分+周报+lessons回灌下周B6)
+# radar库备份异地副本：每日22:30 CST(14:30 UTC)从阿里云拉取，本地保留30天(P0-1)
+30 14 * * * rsync -az --timeout=120 ALIYUN:/opt/radar/backups/ $HOME/radar-backups/ && find $HOME/radar-backups -name "radar_*.dump" -mtime +30 -delete
+50 15 * * * /usr/bin/python3 /home/ubuntu/mofangrearch/scripts/watchdog.py >> /home/ubuntu/mofangrearch/logs/watchdog-$(date +\%Y\%m\%d).log 2>&1  # 23:50 UTC+8 独立看门狗:停摆/静默零/周一心跳(DECISIONS #33)
+20 2 * * * /home/ubuntu/Crucible/scripts/backup_judgment_db.sh >> /home/ubuntu/Crucible/data/backup_runs.log 2>&1 # crucible-judgment-backup
+20 3 * * * /usr/bin/python3 /home/ubuntu/Crucible/scripts/backup_watchdog.py >> /home/ubuntu/Crucible/data/backup_runs.log 2>&1 # crucible-backup-watchdog
+5,10,20,25,35,40,50,55 1-6 * * 1-5 /usr/bin/bash /home/ubuntu/mofangrearch/scripts/run_mf.sh >> /home/ubuntu/mofangrearch/logs/mf-$(date +\%Y\%m\%d).log 2>&1  # 资金5分钟档 UTC+8 09:05-14:55(:00/:15/:30/:45归盘中全量档,合成5min分辨率)
+10 8 2 * * /usr/bin/bash /home/ubuntu/mofangrearch/scripts/restore_drill.sh >> /home/ubuntu/mofangrearch/logs/drill-$(date +\%Y\%m\%d).log 2>&1  # 16:10 UTC+8 月度备份还原演练
+*/5 * * * * /usr/bin/bash /home/ubuntu/mofangrearch/scripts/watch_services.sh >> /home/ubuntu/mofangrearch/logs/svcwatch-$(date +\%Y\%m\%d).log 2>&1  # 服务级看门狗:web/chat容器+宿主nginx探活,挂了自动拉起+飞书(全天)
+13,43 * * * * /usr/bin/python3 /home/ubuntu/ww-patrol/patrol.py >> /home/ubuntu/ww-patrol/cron.err 2>&1
+7,22,37,52 * * * * /usr/bin/python3 /home/ubuntu/ww-patrol/ww_watch.py >> /home/ubuntu/ww-patrol/ww_watch.err 2>&1
+27 * * * * /usr/bin/python3 /home/ubuntu/ww-patrol/slowline.py >> /home/ubuntu/ww-patrol/slowline.err 2>&1
+47 * * * * /usr/bin/python3 /home/ubuntu/ww-patrol/hana_watch.py >> /home/ubuntu/ww-patrol/hana_watch.err 2>&1
+4,19,34,49 * * * * /usr/bin/python3 /home/ubuntu/ww-patrol/short_watch.py >> /home/ubuntu/ww-patrol/short_watch.err 2>&1
+17 * * * * /usr/bin/python3 /home/ubuntu/ww-patrol/dist_watch.py >> /home/ubuntu/ww-patrol/dist_watch.err 2>&1
+33 * * * * /usr/bin/python3 /home/ubuntu/ww-patrol/verdict_watch.py >> /home/ubuntu/ww-patrol/verdict_watch.err 2>&1
+2 * * * * /usr/bin/python3 /home/ubuntu/ww-patrol/night_watch.py >> /home/ubuntu/ww-patrol/night_watch.err 2>&1
+10 0 * * * /usr/bin/python3 /home/ubuntu/ww-patrol/night_watch.py --digest --hours=24 >> /home/ubuntu/ww-patrol/night_watch.err 2>&1
+30 0 * * * /usr/bin/python3 /home/ubuntu/ww-patrol/panorama.py >> /home/ubuntu/ww-patrol/panorama.err 2>&1
+10 1 * * * cd /home/ubuntu/trademan-new && /usr/bin/python3 scripts/x5d_snapshot.py >> /home/ubuntu/ww-patrol/x5_daily.log 2>&1
+30 2 * * 1 cd /home/ubuntu/trademan-new && /usr/bin/flock -n /tmp/x5c1.lock /usr/bin/python3 scripts/x5c1_holders_full.py --budget 400000 >> /home/ubuntu/ww-patrol/x5c1.log 2>&1
+*/5 * * * * /usr/bin/python3 /home/ubuntu/ww-patrol/trade_watch.py >> /home/ubuntu/ww-patrol/trade_watch.err 2>&1
+50 23 * * * /usr/bin/python3 /home/ubuntu/ww-patrol/self_audit.py >> /home/ubuntu/ww-patrol/self_audit.err 2>&1
+*/30 * * * * /usr/bin/python3 /home/ubuntu/ww-patrol/actor_watch.py >> /home/ubuntu/ww-patrol/actor_watch.err 2>&1
+38 * * * * cd /home/ubuntu/trademan-new && /usr/bin/python3 scripts/x6b_ledger.py backfill >> /home/ubuntu/ww-patrol/ledger_backfill.log 2>&1
+42 * * * * /usr/bin/python3 /home/ubuntu/ww-patrol/bank_oi_watch.py >> /home/ubuntu/ww-patrol/bank_oi_watch.err 2>&1
+3,18,33,48 * * * * /usr/bin/python3 /home/ubuntu/ww-patrol/x3ar_cross_oi.py >> /home/ubuntu/ww-patrol/x3ar_cross_oi.err 2>&1
+# X.10c-1 全市场数据层（第三类进程：**会写库**，故不放 ww-patrol —— 那十一条的纪律是纯只读）
+20 0 * * * cd /home/ubuntu/trademan-new && /home/ubuntu/.local/bin/uv run python scripts/x10c_universe.py >> /home/ubuntu/mk-collect/universe.log 2>&1
+12 * * * * cd /home/ubuntu/trademan-new && /home/ubuntu/.local/bin/uv run python scripts/x10c_backfill.py --incremental >> /home/ubuntu/mk-collect/backfill.log 2>&1
+# X.10c-2/-3 费率与 OI 增量（同第三类：会写库，故不进 ww-patrol 只读组）
+24 * * * * cd /home/ubuntu/trademan-new && /home/ubuntu/.local/bin/uv run python scripts/x10c_funding.py --incremental >> /home/ubuntu/mk-collect/funding.log 2>&1
+36 * * * * cd /home/ubuntu/trademan-new && /home/ubuntu/.local/bin/uv run python scripts/x10c_oi.py --incremental >> /home/ubuntu/mk-collect/oi.log 2>&1
+# X.10c-4 日线增量（每日一次；错开 00:20 universe 与整点各条，用户 2026-08-21 拍板"上 cron"）
+40 0 * * * cd /home/ubuntu/trademan-new && /home/ubuntu/.local/bin/uv run python scripts/x10c_backfill.py --interval 1d --incremental >> /home/ubuntu/mk-collect/backfill_1d.log 2>&1
+# X.10c-8 不可再生表副本（OI + 逐日 universe 快照；重拉不回来，用户 2026-08-22 "先积累着数据"后立项）
+55 0 * * * cd /home/ubuntu/trademan-new && /home/ubuntu/.local/bin/uv run python scripts/x10c_backup.py >> /home/ubuntu/mk-collect/backup_core.log 2>&1
+50 */4 * * * /usr/bin/python3 /home/ubuntu/ww-patrol/market_hot.py --push >> /home/ubuntu/ww-patrol/market_hot.log 2>&1
+35 0 * * * cd /home/ubuntu/trademan-new && /home/ubuntu/.local/bin/uv run python scripts/x10d_snapshot.py >> /home/ubuntu/ww-report/build.log 2>&1

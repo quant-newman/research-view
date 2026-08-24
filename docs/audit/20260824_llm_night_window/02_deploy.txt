@@ -1,0 +1,35 @@
+== clean 前检 ==
+0
+== rsync ==
+<f..t...... .pytest_cache/v/cache/lastfailed
+<f.st...... .pytest_cache/v/cache/nodeids
+<f.st...... docs/ARCHITECTURE.md
+<f.st...... docs/DECISIONS.md
+<f.st...... docs/ROADMAP.md
+<f.st...... scripts/run_light.py
+<f.st...... src/research_view/config.py
+<f.st...... src/research_view/hotspots.py
+<f.st...... src/research_view/llm.py
+<f.st...... src/research_view/research_digest.py
+<f.st...... src/research_view/structure.py
+.d..t...... tests/
+<f+++++++++ tests/test_b1_batch.py
+<f.st...... tests/test_llm_gate.py
+rsync rc=0
+== DEPLOY_STATE ==
+commit: b292354
+at: 2026-08-24 22:12:18 UTC+8
+dirty: 0 条未提交
+6c6
+< 30 0 * * 1-5 /usr/bin/bash /home/ubuntu/mofangrearch/scripts/run_premarket.sh >> /home/ubuntu/mofangrearch/logs/premarket-$(date +\%Y\%m\%d).log 2>&1  # 08:30 UTC+8 盘前
+---
+> 40 23 * * 0-4 /usr/bin/bash /home/ubuntu/mofangrearch/scripts/run_premarket.sh >> /home/ubuntu/mofangrearch/logs/premarket-$(TZ=Asia/Shanghai date +\%Y\%m\%d).log 2>&1  # 07:40 UTC+8 盘前(DECISIONS #48:挪进 DeepSeek 夜间窗口;UTC 23:40 周日-周四=UTC+8 07:40 周一-周五)
+== 补丁部署 2026-08-24 22:42:21 UTC+8 ==
+== clean 前检 ==
+0
+<f.st...... scripts/run_light.py
+<f.st...... scripts/run_pipeline.py
+rsync rc=0
+commit: b0a77dc
+at: 2026-08-24 22:42:22 UTC+8
+dirty: 0 条未提交

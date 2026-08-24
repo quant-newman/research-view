@@ -1,0 +1,50 @@
+== #48 生产首跑取证(2026-08-24 夜,UTC+8)==
+采集时间:2026-08-24 23:47 UTC+8
+线上版本:ssh 数据节点 cat /opt/research_view/DEPLOY_STATE.md
+  commit: b0a77dc
+  at: 2026-08-24 22:42:22 UTC+8
+  dirty: 0 条未提交
+说明:22:12 部署 b292354,22:42 补丁部署 b0a77dc;当日 22:15 起的档跑的是新代码。
+     08-24 全天处在夜间窗口内的时段才被新代码覆盖,白天静默档/补做点的生产验证
+     须等 08-25(周二)首个完整交易日,已登记 ROADMAP。
+
+-- 1. 22:30 盘后全量档(run_pipeline,补丁2 RV_LLM_FORCE setdefault 生效)--
+[afterhours 2026-08-24 22:30:01 UTC+8] 阿里云跑完整 pipeline 20260824 ...
+  structure_b1: {'structured': 1, 'chain_relevant': 1, 'pruned': 0, 'calls': 1}
+  research_digest: {'changes': 0, 'views': 15}
+  hotspots: {'n': 10}
+  judgment_cards: {'n': 8} / decision_cards: {'n': 12}
+  export_dashboard: /opt/research_view/exports/dashboard.json
+  health level: yellow
+[afterhours] 完成。前端 8092 已更新。
+→ 全量档跑通,发卡/记分/导出全部照旧;热点叙述未被统计兜底榜覆写(补丁2 目的达成)。
+  单条新闻不构成批,calls=1 属预期(批量下限就是 1)。
+
+-- 2. 夜间盘中轻量档 B1 批量实跑(logs/intraday-20260824.log)--
+23:15 档  structure_b1: {'structured': 0,  'chain_relevant': 0,  'pruned': 0, 'calls': 0}
+23:30 档  structure_b1: {'structured': 28, 'chain_relevant': 21, 'pruned': 7, 'calls': 4}
+23:45 档  structure_b1: {'structured': 0,  'chain_relevant': 0,  'pruned': 0, 'calls': 0}
+→ 28 条 / 4 次 = **7.0 条每次**,落在预期 6–8 区间(8+8+8+4 分批);
+  按旧逐条口径这一档要 28 次,省 24 次。
+→ 部署后合计(含盘后档):structured=29 / calls=5;剔除盘后单条档为 28/4=7.0。
+
+-- 3. 三条负向断言(grep 全天日志)--
+grep "⚠ 窗口外 LLM 调用"  logs/*20260824*.log  → 0 命中(无调用点漏时段门)
+grep "只对齐回"           logs/*20260824*.log  → 0 命中(批内零掉条,无错位丢弃)
+grep "整批失败,拆逐条"    logs/*20260824*.log  → 0 命中(无整批降级)
+
+-- 4. 指纹门控仍在工作(#47 那批未被本批破坏)--
+23:15 / 23:45 两档:"热点综述:输入指纹未变,复用上一版(省 1 次 LLM)"
+→ 夜间窗口内 sig 照常落地;白天降级不落指纹的路径待 08-25 白天档验证。
+
+-- 5. 排程 --
+crontab 盘前条目已是 `40 23 * * 0-4`(UTC)= 07:40 UTC+8 周一–周五,
+日志名 `premarket-$(TZ=Asia/Shanghai date +%Y%m%d).log`;
+下一次触发 = UTC 2026-08-24 23:40 → 落 logs/premarket-20260825.log(观察点④)。
+
+-- 未决(转 ROADMAP 08-25 观察点)--
+① 白天静默档 `structure_b1: 跳过(白天静默档…)` 是否如期出现
+② 09:45 / 15:15 两个补做点是否命中(含 flock 排队时的 15min 宽限)
+③ structured:calls 全天比值是否稳定 6–8
+④ 07:40 盘前档是否正常出隔夜美股与盘前报告、日志名是否为 premarket-20260825.log
+⑤ 白天积压新闻是否在 18:00 首个夜间档后补齐 summary/sentiment(不跨天)
