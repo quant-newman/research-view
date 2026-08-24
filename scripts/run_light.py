@@ -66,8 +66,12 @@ def main() -> None:
     else:
         print("  fetch_news: 跳过(:15/:45 档不抓;强制用 --news)")
     step("funnel", run_funnel)
+    # 时段门一档只判一次,判完就钉住整档:后面的 hotspots/research_digest 模块内也要查门,
+    # 而一档跑下来要好几分钟,让它们各自看墙上时钟会跨过边界——09:59 起跑的补做点档
+    # B1 批量做完已是 10:01,热点叙述反而被判静默,补做点就白设了。
     llm_ok, why = config.llm_allowed(now)
     if llm_ok:
+        os.environ["RV_LLM_FORCE"] = "1"
         step("structure_b1", run_structure)
     else:
         print(f"  structure_b1: 跳过({why});新闻已落库,开窗档批量补做")
