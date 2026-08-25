@@ -71,6 +71,10 @@ def main() -> None:
     # B1 批量做完已是 10:01,热点叙述反而被判静默,补做点就白设了。
     llm_ok, why = config.llm_allowed(now)
     if llm_ok:
+        # 放行也留痕:静默档的跳过行是"门在工作"的负面证据,放行却不打任何标记,
+        # 于是"补做点是否命中"只能靠 structure_b1 没打跳过来反证。补做点被 flock
+        # 挤出 15min 宽限而丢失时,日志里没有任何正面信号可查(告警载体自身失败的同族盲区)。
+        print(f"  LLM 时段门: 放行({why})")
         os.environ["RV_LLM_FORCE"] = "1"
         step("structure_b1", run_structure)
     else:
