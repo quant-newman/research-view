@@ -1,0 +1,21 @@
+=== 10:30 档(部署后首档)===
+[Light] 20260825 UTC+8 盘中刷新
+  fetch_news: {'n': 63}
+  funnel: {'processed': 10, 'relevant': 0}
+  structure_b1: 跳过(白天静默档1030(窗口18:00–08:00,补做点0945/1515));新闻已落库,开窗档批量补做
+  moneyflow_rt_extra: {'missing': 81, 'fetched': 81}
+  mf_snapshot: {'date': '2026-08-25', 'hhmm': '10:31', 'nodes': 75, 'stocks': 247}
+  mf_alerts: {'hhmm': '10:31', 'alerts': 2}
+  research: {'reports': 461, 'market_total': 1758, 'pool': 278, 'broad': 183}
+  研报观点提炼:白天静默档1030(窗口18:00–08:00,补做点0945/1515),沿用当天上一版
+  research_digest: {'changes': 0, 'views': 15}
+  report_increment: 跳过(白天静默档1030(窗口18:00–08:00,补做点0945/1515));报告主体盘后 B3 收口
+  热点综述:输入指纹未变,复用上一版(省 1 次 LLM)
+  hotspots: {'n': 10}
+  trends: A股 309 只 / 美股 47 只
+  reflections: 公开 2 篇 → reflections.json
+  export_dashboard: /opt/research_view/exports/dashboard.json
+push_alerts: 触及日上限30,剩余3条只进看板不推
+push_alerts: 推送0条 → 1台设备
+
+[exited with code 0]

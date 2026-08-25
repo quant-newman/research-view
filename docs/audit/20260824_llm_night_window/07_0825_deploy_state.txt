@@ -1,0 +1,7 @@
+commit: f39576e
+at: 2026-08-25 10:25:13 UTC+8
+dirty: 0 条未提交
+--- 落地校验 ---
+13:LLM 时段门(08-24 降本批#2,config.llm_allowed):DeepSeek 只在 UTC+8 18:00–08:00 跑,
+77:        print(f"  LLM 时段门: 放行({why})")
+compile ok

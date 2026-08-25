@@ -1,0 +1,4 @@
+今日抓取入库(fetched_at>=08-25 00:00) = 53
+  relevant=true            : 28
+  relevant 且 llm_done     : 28
+  ★积压(relevant 未 llm_done): 0
